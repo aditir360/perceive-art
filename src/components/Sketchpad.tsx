@@ -1,5 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Volume2,
+  VolumeX,
+  Pencil,
+  Hand,
+  Undo2,
+  Eraser,
+  Waves,
+  Palette,
+  Box,
+  Keyboard,
+  Sparkles,
+} from "lucide-react";
 
 type Point = { x: number; y: number };
 type Stroke = { color: string; points: Point[] };
