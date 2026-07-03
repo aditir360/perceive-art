@@ -290,14 +290,23 @@ export function Sketchpad() {
     <div className="grid gap-6 lg:grid-cols-[1fr_260px]">
       <div className="rounded-3xl bg-card p-4 shadow-lg ring-1 ring-primary/20">
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Button onClick={toggleSound} variant={soundOn ? "default" : "secondary"} aria-pressed={soundOn}>
-            {soundOn ? "🔊 Sound On" : "🔇 Sound Off"} (S)
+          <Button onClick={toggleSound} variant={soundOn ? "default" : "secondary"} aria-pressed={soundOn} className="gap-2 rounded-full">
+            {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            {soundOn ? "Sound On" : "Sound Off"}
+            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">S</kbd>
           </Button>
-          <Button onClick={toggleDrawing} variant={drawing ? "default" : "secondary"} aria-pressed={drawing}>
-            {drawing ? "✏️ Drawing" : "✋ Idle"} (Space)
+          <Button onClick={toggleDrawing} variant={drawing ? "default" : "secondary"} aria-pressed={drawing} className="gap-2 rounded-full">
+            {drawing ? <Pencil className="h-4 w-4" /> : <Hand className="h-4 w-4" />}
+            {drawing ? "Drawing" : "Idle"}
+            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">Space</kbd>
           </Button>
-          <Button onClick={undo} variant="outline">↶ Undo</Button>
-          <Button onClick={clearCanvas} variant="outline">🧹 Clear (C)</Button>
+          <Button onClick={undo} variant="outline" className="gap-2 rounded-full">
+            <Undo2 className="h-4 w-4" /> Undo
+          </Button>
+          <Button onClick={clearCanvas} variant="outline" className="gap-2 rounded-full">
+            <Eraser className="h-4 w-4" /> Clear
+            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">C</kbd>
+          </Button>
         </div>
         <svg
           ref={svgRef}
@@ -351,7 +360,9 @@ export function Sketchpad() {
 
       <aside className="space-y-5">
         <section aria-labelledby="colors-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
-          <h2 id="colors-heading" className="mb-2 text-sm font-semibold">Colors</h2>
+          <h2 id="colors-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <Palette className="h-4 w-4 text-primary" /> Palette
+          </h2>
           <div className="flex flex-wrap gap-2">
             {COLORS.map((c) => (
               <button
@@ -367,16 +378,26 @@ export function Sketchpad() {
         </section>
 
         <section aria-labelledby="export-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
-          <h2 id="export-heading" className="mb-2 text-sm font-semibold">Export</h2>
+          <h2 id="export-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <Sparkles className="h-4 w-4 text-primary" /> Bring it to life
+          </h2>
           <div className="grid gap-2">
-            <Button onClick={exportSwell}>🫧 Swell Paper SVG</Button>
-            <Button onClick={exportColor} variant="secondary">🎨 Color SVG</Button>
-            <Button onClick={exportStl} variant="outline">🧊 3D Print (STL)</Button>
+            <Button onClick={exportSwell} className="justify-start gap-2 rounded-full">
+              <Waves className="h-4 w-4" /> Swell Paper SVG
+            </Button>
+            <Button onClick={exportColor} variant="secondary" className="justify-start gap-2 rounded-full">
+              <Palette className="h-4 w-4" /> Color SVG
+            </Button>
+            <Button onClick={exportStl} variant="outline" className="justify-start gap-2 rounded-full">
+              <Box className="h-4 w-4" /> 3D Print (STL)
+            </Button>
           </div>
         </section>
 
         <section aria-labelledby="kbd-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20 text-xs text-muted-foreground">
-          <h2 id="kbd-heading" className="mb-2 text-sm font-semibold text-foreground">Keyboard</h2>
+          <h2 id="kbd-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Keyboard className="h-4 w-4 text-primary" /> Keyboard
+          </h2>
           <ul className="space-y-1">
             <li>Arrows — move brush (Shift = faster)</li>
             <li>Space / D — toggle drawing</li>
