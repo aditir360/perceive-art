@@ -65,28 +65,28 @@ function Index() {
 
       {/* Mission */}
       <section id="mission" className="mx-auto -mt-2 max-w-5xl px-6 pb-16 pt-0 sm:-mt-1">
-        <div className="relative pt-18 sm:pt-20">
+        <div className="relative pt-16 sm:pt-20">
           <img
             src={bearPeek}
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-0 z-10 h-44 w-44 -translate-x-1/2 -translate-y-4 select-none object-contain drop-shadow-xl sm:h-56 sm:w-56 sm:-translate-y-12"
+            className="pointer-events-none absolute left-1/2 top-0 z-10 h-44 w-44 -translate-x-1/2 select-none object-contain drop-shadow-xl sm:h-56 sm:w-56"
           />
-          <div className="rounded-3xl bg-card px-8 pb-8 pt-20 shadow-sm ring-1 ring-primary/15 sm:px-12 sm:pb-12 sm:pt-24">
-          <div className="flex items-center gap-3">
-            <Heart className="h-5 w-5 text-primary" />
-            <span className="text-sm font-semibold uppercase tracking-widest text-primary">Our mission</span>
-          </div>
-          <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-            Creativity shouldn't require sight.
-          </h2>
-          <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Most drawing tools assume you can see the canvas. We disagree. Perceive was built
-            so that <strong className="text-foreground">3.4 million blind and low-vision people</strong> in
-            the US — and millions more worldwide — can express themselves visually through the
-            senses they already trust: hearing and touch. Our goal is a world where making art
-            is a right, not a privilege granted by vision.
-          </p>
+          <div className="rounded-3xl bg-card px-8 pb-8 pt-24 shadow-sm ring-1 ring-primary/15 sm:px-12 sm:pb-12 sm:pt-32">
+            <div className="flex items-center gap-3">
+              <Heart className="h-5 w-5 text-primary" />
+              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Our mission</span>
+            </div>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+              Creativity shouldn't require sight.
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Most drawing tools assume you can see the canvas. We disagree. Perceive was built
+              so that <strong className="text-foreground">3.4 million blind and low-vision people</strong> in
+              the US — and millions more worldwide — can express themselves visually through the
+              senses they already trust: hearing and touch. Our goal is a world where making art
+              is a right, not a privilege granted by vision.
+            </p>
           </div>
         </div>
       </section>
