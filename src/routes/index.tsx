@@ -64,16 +64,15 @@ function Index() {
       </header>
 
       {/* Mission */}
-      <section id="mission" className="mx-auto -mt-2 max-w-5xl px-6 pb-16 pt-0 sm:-mt-1">
-        <div className="relative" style={{ paddingTop: "5rem" }}>
+      <section id="mission" className="mx-auto mt-10 max-w-5xl px-6 pb-16 sm:mt-16">
+        <div className="relative pt-40 sm:pt-52">
           <img
             src={bearPeek}
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 select-none object-contain drop-shadow-xl"
-            style={{ width: "13rem", height: "13rem" }}
+            className="pointer-events-none absolute left-1/2 top-0 z-10 h-56 w-56 -translate-x-1/2 select-none object-contain object-bottom drop-shadow-xl sm:h-72 sm:w-72"
           />
-          <div className="rounded-3xl bg-card px-8 pb-8 shadow-sm ring-1 ring-primary/15 sm:px-12 sm:pb-12" style={{ paddingTop: "10.5rem" }}>
+          <div className="rounded-3xl bg-card px-8 pb-8 pt-10 shadow-sm ring-1 ring-primary/15 sm:px-12 sm:pb-12 sm:pt-12">
             <div className="flex items-center gap-3">
               <Heart className="h-5 w-5 text-primary" />
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">Our mission</span>
