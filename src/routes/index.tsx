@@ -131,12 +131,12 @@ function Index() {
             <Sparkles className="h-3.5 w-3.5" /> Live audio canvas
           </span>
         </div>
-        <div className="relative">
+        <div className="relative pt-16 sm:pt-24">
           <img
             src={bearPeek}
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute -top-24 right-4 z-10 h-40 w-40 select-none drop-shadow-xl sm:-top-32 sm:right-10 sm:h-52 sm:w-52"
+            className="pointer-events-none absolute right-4 top-0 z-10 h-28 w-28 -translate-y-1/3 select-none drop-shadow-xl sm:right-10 sm:h-44 sm:w-44 md:h-52 md:w-52"
           />
           <Sketchpad />
         </div>
