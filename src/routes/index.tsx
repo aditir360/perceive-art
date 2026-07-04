@@ -40,7 +40,7 @@ function Index() {
       </nav>
 
       {/* Hero */}
-      <header id="top" className="mx-auto max-w-6xl px-6 pt-16 pb-10 text-center">
+      <header id="top" className="mx-auto max-w-6xl px-6 pt-16 pb-2 text-center">
         <span className="inline-flex items-center gap-2 rounded-full bg-card px-4 py-1.5 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
           <Sparkles className="h-3.5 w-3.5" /> A sonic-tactile art studio
         </span>
@@ -64,13 +64,13 @@ function Index() {
       </header>
 
       {/* Mission */}
-      <section id="mission" className="mx-auto max-w-5xl px-6 pt-20 pb-16 sm:pt-24">
-        <div className="relative pt-24 sm:pt-28">
+      <section id="mission" className="mx-auto max-w-5xl px-6 pt-6 pb-16 sm:pt-8">
+        <div className="relative pt-28 sm:pt-32">
           <img
             src={bearPeek}
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-0 z-10 h-40 w-40 -translate-x-1/2 select-none object-contain drop-shadow-xl sm:h-48 sm:w-48"
+            className="pointer-events-none absolute left-1/2 top-0 z-10 h-52 w-52 -translate-x-1/2 -translate-y-3 select-none object-contain drop-shadow-xl sm:h-60 sm:w-60 sm:-translate-y-5"
           />
           <div className="rounded-3xl bg-card p-8 shadow-sm ring-1 ring-primary/15 sm:p-12">
           <div className="flex items-center gap-3">
