@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Sketchpad } from "@/components/Sketchpad";
+import { ListenButton } from "@/components/ListenButton";
 import bearLogo from "@/assets/bear-logo.jpeg.asset.json";
 import bearPeek from "@/assets/bear-peek-cropped.png";
 import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight } from "lucide-react";
@@ -87,6 +88,12 @@ function Index() {
               senses they already trust: hearing and touch. Our goal is a world where making art
               is a right, not a privilege granted by vision.
             </p>
+            <div className="mt-5">
+              <ListenButton
+                label="Listen to our mission"
+                text="Our mission. Creativity shouldn't require sight. Most drawing tools assume you can see the canvas. We disagree. Perceive was built so that 3.4 million blind and low-vision people in the US, and millions more worldwide, can express themselves visually through the senses they already trust: hearing and touch. Our goal is a world where making art is a right, not a privilege granted by vision."
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -97,7 +104,13 @@ function Index() {
         <p className="mx-auto mt-3 max-w-2xl text-center text-muted-foreground">
           Three senses, one canvas. Move, listen, and print.
         </p>
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
+        <div className="mt-6 flex justify-center">
+          <ListenButton
+            label="Listen to how it works"
+            text="How Perceive works. Three senses, one canvas. Move, listen, and print. First: hear the canvas. Your cursor's horizontal position pans the sound left and right. Vertical position raises or lowers the pitch. You always know where you are. Second: draw with intention. Tap space to start a line and tap again to connect it. A soft chime confirms every choice, and edges buzz gently so you never get lost. Third: hold your art. Export a high-contrast SVG for swell paper, or a ready-to-print STL, and turn what you heard into something you can run your fingers across."
+          />
+        </div>
+        <div className="mt-8 grid gap-6 md:grid-cols-3">
           {[
             {
               icon: Ear,
@@ -121,6 +134,9 @@ function Index() {
               </div>
               <h3 className="mt-4 text-lg font-semibold">{title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
+              <div className="mt-4">
+                <ListenButton label={`Listen`} text={`${title}. ${body}`} />
+              </div>
             </div>
           ))}
         </div>
