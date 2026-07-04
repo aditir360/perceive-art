@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Sketchpad } from "@/components/Sketchpad";
 import bearLogo from "@/assets/bear-logo.jpeg.asset.json";
-import bearPeek from "@/assets/bear-peek.png";
+import bearPeek from "@/assets/bear-peek-cropped.png";
 import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -40,7 +40,7 @@ function Index() {
       </nav>
 
       {/* Hero */}
-      <header id="top" className="mx-auto max-w-6xl px-6 pt-16 pb-10 text-center">
+      <header id="top" className="mx-auto max-w-6xl px-6 pt-10 pb-0 text-center sm:pt-12">
         <span className="inline-flex items-center gap-2 rounded-full bg-card px-4 py-1.5 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
           <Sparkles className="h-3.5 w-3.5" /> A sonic-tactile art studio
         </span>
@@ -53,7 +53,7 @@ function Index() {
           using pitch, pan, and rhythm as a canvas. Every drawing can be exported to swell
           paper or a 3D print, so art you hear becomes art you can hold.
         </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Button asChild size="lg" className="rounded-full">
             <a href="#studio" className="gap-2">Start creating <ArrowRight className="h-4 w-4" /></a>
           </Button>
@@ -64,29 +64,30 @@ function Index() {
       </header>
 
       {/* Mission */}
-      <section id="mission" className="mx-auto max-w-5xl px-6 pt-20 pb-16 sm:pt-24">
-        <div className="relative pt-24 sm:pt-28">
+      <section id="mission" className="mx-auto -mt-2 max-w-5xl px-6 pb-16 pt-0 sm:-mt-1">
+        <div className="relative" style={{ paddingTop: "5rem" }}>
           <img
             src={bearPeek}
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-0 z-10 h-40 w-40 -translate-x-1/2 select-none object-contain drop-shadow-xl sm:h-48 sm:w-48"
+            className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 select-none object-contain drop-shadow-xl"
+            style={{ width: "13rem", height: "13rem" }}
           />
-          <div className="rounded-3xl bg-card p-8 shadow-sm ring-1 ring-primary/15 sm:p-12">
-          <div className="flex items-center gap-3">
-            <Heart className="h-5 w-5 text-primary" />
-            <span className="text-sm font-semibold uppercase tracking-widest text-primary">Our mission</span>
-          </div>
-          <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-            Creativity shouldn't require sight.
-          </h2>
-          <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Most drawing tools assume you can see the canvas. We disagree. Perceive was built
-            so that <strong className="text-foreground">3.4 million blind and low-vision people</strong> in
-            the US — and millions more worldwide — can express themselves visually through the
-            senses they already trust: hearing and touch. Our goal is a world where making art
-            is a right, not a privilege granted by vision.
-          </p>
+          <div className="rounded-3xl bg-card px-8 pb-8 shadow-sm ring-1 ring-primary/15 sm:px-12 sm:pb-12" style={{ paddingTop: "10.5rem" }}>
+            <div className="flex items-center gap-3">
+              <Heart className="h-5 w-5 text-primary" />
+              <span className="text-sm font-semibold uppercase tracking-widest text-primary">Our mission</span>
+            </div>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+              Creativity shouldn't require sight.
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Most drawing tools assume you can see the canvas. We disagree. Perceive was built
+              so that <strong className="text-foreground">3.4 million blind and low-vision people</strong> in
+              the US — and millions more worldwide — can express themselves visually through the
+              senses they already trust: hearing and touch. Our goal is a world where making art
+              is a right, not a privilege granted by vision.
+            </p>
           </div>
         </div>
       </section>
