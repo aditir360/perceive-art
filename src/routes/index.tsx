@@ -40,7 +40,7 @@ function Index() {
       </nav>
 
       {/* Hero */}
-      <header id="top" className="mx-auto max-w-6xl px-6 pt-16 pb-2 text-center">
+      <header id="top" className="mx-auto max-w-6xl px-6 pt-10 pb-0 text-center sm:pt-12">
         <span className="inline-flex items-center gap-2 rounded-full bg-card px-4 py-1.5 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
           <Sparkles className="h-3.5 w-3.5" /> A sonic-tactile art studio
         </span>
@@ -53,7 +53,7 @@ function Index() {
           using pitch, pan, and rhythm as a canvas. Every drawing can be exported to swell
           paper or a 3D print, so art you hear becomes art you can hold.
         </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Button asChild size="lg" className="rounded-full">
             <a href="#studio" className="gap-2">Start creating <ArrowRight className="h-4 w-4" /></a>
           </Button>
@@ -64,13 +64,13 @@ function Index() {
       </header>
 
       {/* Mission */}
-      <section id="mission" className="mx-auto max-w-5xl px-6 pt-0 pb-16 sm:pt-2">
-        <div className="relative pt-24 sm:pt-28">
+      <section id="mission" className="mx-auto -mt-2 max-w-5xl px-6 pb-16 pt-0 sm:-mt-1">
+        <div className="relative pt-18 sm:pt-20">
           <img
             src={bearPeek}
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-0 z-10 h-40 w-40 -translate-x-1/2 translate-y-5 select-none object-contain drop-shadow-xl sm:h-48 sm:w-48 sm:translate-y-4"
+            className="pointer-events-none absolute left-1/2 top-0 z-10 h-44 w-44 -translate-x-1/2 translate-y-8 select-none object-contain drop-shadow-xl sm:h-56 sm:w-56 sm:translate-y-5"
           />
           <div className="rounded-3xl bg-card p-8 shadow-sm ring-1 ring-primary/15 sm:p-12">
           <div className="flex items-center gap-3">
