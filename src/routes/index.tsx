@@ -70,9 +70,9 @@ function Index() {
             src={bearPeek}
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-0 z-10 h-44 w-44 -translate-x-1/2 translate-y-8 select-none object-contain drop-shadow-xl sm:h-56 sm:w-56 sm:translate-y-5"
+            className="pointer-events-none absolute left-1/2 top-0 z-10 h-44 w-44 -translate-x-1/2 -translate-y-4 select-none object-contain drop-shadow-xl sm:h-56 sm:w-56 sm:-translate-y-12"
           />
-          <div className="rounded-3xl bg-card p-8 shadow-sm ring-1 ring-primary/15 sm:p-12">
+          <div className="rounded-3xl bg-card px-8 pb-8 pt-20 shadow-sm ring-1 ring-primary/15 sm:px-12 sm:pb-12 sm:pt-24">
           <div className="flex items-center gap-3">
             <Heart className="h-5 w-5 text-primary" />
             <span className="text-sm font-semibold uppercase tracking-widest text-primary">Our mission</span>
