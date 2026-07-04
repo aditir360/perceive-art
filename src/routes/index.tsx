@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Sketchpad } from "@/components/Sketchpad";
 import bearLogo from "@/assets/bear-logo.jpg.asset.json";
+import bearPeek from "@/assets/bear-peek.png";
 import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -24,9 +25,9 @@ function Index() {
           <img
             src={bearLogo.url}
             alt="Perceive logo"
-            className="h-11 w-11 rounded-full shadow-md ring-2 ring-primary/40"
+            className="h-16 w-16 rounded-full shadow-md ring-2 ring-primary/40 sm:h-20 sm:w-20"
           />
-          <span className="text-xl font-bold tracking-tight text-foreground">Perceive</span>
+          <span className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Perceive</span>
         </a>
         <div className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
           <a href="#mission" className="transition-colors hover:text-foreground">Mission</a>
@@ -130,7 +131,15 @@ function Index() {
             <Sparkles className="h-3.5 w-3.5" /> Live audio canvas
           </span>
         </div>
-        <Sketchpad />
+        <div className="relative">
+          <img
+            src={bearPeek}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-24 right-4 z-10 h-40 w-40 select-none drop-shadow-xl sm:-top-32 sm:right-10 sm:h-52 sm:w-52"
+          />
+          <Sketchpad />
+        </div>
       </section>
 
       <footer className="border-t border-primary/10 bg-card/50 py-8">
