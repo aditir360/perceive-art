@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Sketchpad } from "@/components/Sketchpad";
+import bearLogo from "@/assets/bear-logo.jpeg.asset.json";
 import bearPeek from "@/assets/bear-peek.png";
 import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,9 +23,9 @@ function Index() {
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 pt-6">
         <a href="#top" className="flex items-center gap-3">
           <img
-            src={bearPeek}
+            src={bearLogo.url}
             alt="Perceive logo"
-            className="h-14 w-14 rounded-full bg-card object-cover object-top shadow-md ring-2 ring-primary/40 sm:h-16 sm:w-16"
+            className="h-14 w-14 rounded-full bg-card object-cover shadow-md ring-2 ring-primary/40 sm:h-16 sm:w-16"
           />
           <span className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Perceive</span>
         </a>
@@ -63,8 +64,15 @@ function Index() {
       </header>
 
       {/* Mission */}
-      <section id="mission" className="mx-auto max-w-5xl px-6 py-16">
-        <div className="rounded-3xl bg-card p-8 shadow-sm ring-1 ring-primary/15 sm:p-12">
+      <section id="mission" className="mx-auto max-w-5xl px-6 pt-20 pb-16 sm:pt-24">
+        <div className="relative pt-24 sm:pt-28">
+          <img
+            src={bearPeek}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-0 z-10 h-40 w-40 -translate-x-1/2 select-none object-contain drop-shadow-xl sm:h-48 sm:w-48"
+          />
+          <div className="rounded-3xl bg-card p-8 shadow-sm ring-1 ring-primary/15 sm:p-12">
           <div className="flex items-center gap-3">
             <Heart className="h-5 w-5 text-primary" />
             <span className="text-sm font-semibold uppercase tracking-widest text-primary">Our mission</span>
@@ -79,6 +87,7 @@ function Index() {
             senses they already trust: hearing and touch. Our goal is a world where making art
             is a right, not a privilege granted by vision.
           </p>
+          </div>
         </div>
       </section>
 
@@ -130,13 +139,7 @@ function Index() {
             <Sparkles className="h-3.5 w-3.5" /> Live audio canvas
           </span>
         </div>
-        <div className="relative pt-20 sm:pt-24">
-          <img
-            src={bearPeek}
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute left-4 top-0 z-10 h-32 w-32 -translate-y-1/2 select-none drop-shadow-xl sm:left-8 sm:h-44 sm:w-44 md:h-52 md:w-52"
-          />
+        <div>
           <Sketchpad />
         </div>
       </section>
