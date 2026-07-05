@@ -161,10 +161,13 @@ function Index() {
       </section>
 
       <footer className="border-t border-primary/10 bg-card/50 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 text-xs text-muted-foreground sm:flex-row">
-          <div className="flex items-center gap-2">
-            <Heart className="h-3.5 w-3.5 text-primary" />
-            <span>Made with care for accessible creativity.</span>
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-xs text-muted-foreground sm:flex-row">
+          <div className="flex items-center gap-2 text-center sm:text-left">
+            <Heart className="h-3.5 w-3.5 shrink-0 text-primary" />
+            <span className="whitespace-pre-line">
+              Made with care for accessible creativity.{"\n"}
+              Founded by Aditi Ranjan
+            </span>
           </div>
           <span>© {new Date().getFullYear()} Perceive</span>
         </div>
