@@ -166,7 +166,7 @@ function Index() {
             <Heart className="h-3.5 w-3.5 shrink-0 text-primary" />
             <span className="whitespace-pre-line">
               Made with care for accessible creativity.{"\n"}
-              Founded by Aditi Ranjan
+              Founded and developed by Aditi Ranjan
             </span>
           </div>
           <span>© {new Date().getFullYear()} Perceive</span>
