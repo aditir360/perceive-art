@@ -56,6 +56,7 @@ function Index() {
           <a href="#mission" className="transition-colors hover:text-foreground">Mission</a>
           <a href="#how" className="transition-colors hover:text-foreground">How it works</a>
           <a href="#studio" className="transition-colors hover:text-foreground">Studio</a>
+          <Link to="/team" className="transition-colors hover:text-foreground" activeProps={{ className: "font-semibold text-foreground" }}>Team</Link>
         </div>
         <Button asChild className="rounded-full">
           <a href="#studio" className="gap-2">Open studio <ArrowRight className="h-4 w-4" /></a>
