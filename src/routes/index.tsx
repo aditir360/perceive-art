@@ -20,7 +20,7 @@ function Index() {
       </div>
 
       {/* Bouncing cute symbols */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         {[
           { Icon: Music, top: "8%", left: "6%", size: 28, dur: "5s", delay: "0s", rot: "-12deg", color: "text-primary/40" },
           { Icon: Heart, top: "14%", left: "88%", size: 24, dur: "6s", delay: "0.6s", rot: "10deg", color: "text-accent-foreground/30" },
