@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Sketchpad } from "@/components/Sketchpad";
 import { ListenButton } from "@/components/ListenButton";
-import bearLogo from "@/assets/bear-logo.jpeg.asset.json";
 import bearPeek from "@/assets/bear-peek-cropped.png";
 import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,7 @@ function Index() {
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 pt-6">
         <a href="#top" className="flex items-center gap-3">
           <img
-            src={bearLogo.url}
+            src="/bear-logo.jpeg"
             alt="Perceive logo"
             className="h-14 w-14 rounded-full bg-card object-cover shadow-md ring-2 ring-primary/40 sm:h-16 sm:w-16"
           />
