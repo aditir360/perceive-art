@@ -144,3 +144,13 @@
     color: var(--color-foreground);
   }
 }
+
+@keyframes float-bounce {
+  0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+  50% { transform: translateY(-24px) rotate(calc(var(--rot, 0deg) + 8deg)); }
+}
+
+.animate-float-bounce {
+  animation: float-bounce var(--dur, 6s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Sketchpad } from "@/components/Sketchpad";
 import { ListenButton } from "@/components/ListenButton";
 import bearPeek from "@/assets/bear-peek-cropped.png";
-import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight } from "lucide-react";
+import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight, Music, Music2, Star, Palette, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -17,6 +17,29 @@ function Index() {
         <div className="absolute -top-40 -left-32 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
         <div className="absolute top-1/3 -right-32 h-96 w-96 rounded-full bg-accent/30 blur-3xl" />
         <div className="absolute bottom-0 left-1/2 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-secondary/30 blur-3xl" />
+      </div>
+
+      {/* Bouncing cute symbols */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        {[
+          { Icon: Music, top: "8%", left: "6%", size: 28, dur: "5s", delay: "0s", rot: "-12deg", color: "text-primary/40" },
+          { Icon: Heart, top: "14%", left: "88%", size: 24, dur: "6s", delay: "0.6s", rot: "10deg", color: "text-accent-foreground/30" },
+          { Icon: Sparkles, top: "28%", left: "3%", size: 22, dur: "7s", delay: "1.2s", rot: "8deg", color: "text-primary/50" },
+          { Icon: Star, top: "36%", left: "92%", size: 26, dur: "5.5s", delay: "0.3s", rot: "-6deg", color: "text-primary/40" },
+          { Icon: Music2, top: "52%", left: "7%", size: 30, dur: "6.5s", delay: "1s", rot: "14deg", color: "text-primary/45" },
+          { Icon: Headphones, top: "60%", left: "90%", size: 28, dur: "7s", delay: "0.8s", rot: "-10deg", color: "text-primary/40" },
+          { Icon: Palette, top: "74%", left: "5%", size: 26, dur: "5.8s", delay: "1.5s", rot: "6deg", color: "text-accent-foreground/35" },
+          { Icon: Heart, top: "82%", left: "85%", size: 22, dur: "6.2s", delay: "0.4s", rot: "-14deg", color: "text-primary/45" },
+          { Icon: Sparkles, top: "92%", left: "50%", size: 24, dur: "5.4s", delay: "1.8s", rot: "12deg", color: "text-primary/40" },
+          { Icon: Music, top: "44%", left: "48%", size: 20, dur: "6.8s", delay: "2s", rot: "-8deg", color: "text-primary/25" },
+        ].map(({ Icon, top, left, size, dur, delay, rot, color }, i) => (
+          <Icon
+            key={i}
+            className={`absolute animate-float-bounce ${color}`}
+            style={{ top, left, width: size, height: size, ["--dur" as never]: dur, ["--delay" as never]: delay, ["--rot" as never]: rot }}
+            strokeWidth={2.2}
+          />
+        ))}
       </div>
 
       {/* Nav */}
