@@ -87,8 +87,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "Perceive — Draw with Sound. Feel with Touch." },
       { name: "twitter:description", content: "Perceive is a sonic-tactile art studio for blind and sighted creators. Sketch with audio feedback, then export to swell paper or 3D print." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/RemvBDOJinh3hC18nGHfV1qsDv92/social-images/social-1783102854592-Screenshot_2026-07-03_at_11.20.32_AM.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/RemvBDOJinh3hC18nGHfV1qsDv92/social-images/social-1783102854592-Screenshot_2026-07-03_at_11.20.32_AM.webp" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/U6fgLYpsemeL5pweXn1Tih64gJ83/social-images/social-1783986160556-Screenshot_2026-07-13_at_4.41.58_PM.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/U6fgLYpsemeL5pweXn1Tih64gJ83/social-images/social-1783986160556-Screenshot_2026-07-13_at_4.41.58_PM.webp" },
     ],
     links: [
       {
