@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ListenButton } from "@/components/ListenButton";
+import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Heart, Sparkles, Music, Music2, Star, Headphones, Palette, Lightbulb, Mail } from "lucide-react";
+import { Heart, Sparkles, Music, Music2, Star, Headphones, Palette, Lightbulb, Mail } from "lucide-react";
 
 export const Route = createFileRoute("/team")({
   head: () => ({
@@ -50,21 +51,7 @@ function TeamPage() {
       </div>
 
       {/* Nav */}
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 pt-6">
-        <Link to="/" className="flex items-center gap-3">
-          <img
-            src="/bear-logo.jpeg"
-            alt="Perceive logo"
-            className="h-14 w-14 rounded-full bg-card object-cover shadow-md ring-2 ring-primary/40 sm:h-16 sm:w-16"
-          />
-          <span className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Perceive</span>
-        </Link>
-        <Button asChild variant="ghost" className="rounded-full">
-          <Link to="/" className="gap-2">
-            <ArrowLeft className="h-4 w-4" /> Back home
-          </Link>
-        </Button>
-      </nav>
+      <SiteHeader />
 
       {/* Hero */}
       <header className="mx-auto max-w-6xl px-6 pt-12 pb-6 text-center sm:pt-16">

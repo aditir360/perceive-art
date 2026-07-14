@@ -1,6 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Sketchpad } from "@/components/Sketchpad";
 import { ListenButton } from "@/components/ListenButton";
+import { SiteHeader } from "@/components/SiteHeader";
 import bearPeek from "@/assets/bear-peek-cropped.png";
 import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight, Music, Music2, Star, Palette, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,25 +44,7 @@ function Index() {
       </div>
 
       {/* Nav */}
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 pt-6">
-        <a href="#top" className="flex items-center gap-3">
-          <img
-            src="/bear-logo.jpeg"
-            alt="Perceive logo"
-            className="h-14 w-14 rounded-full bg-card object-cover shadow-md ring-2 ring-primary/40 sm:h-16 sm:w-16"
-          />
-          <span className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Perceive</span>
-        </a>
-        <div className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
-          <a href="#mission" className="transition-colors hover:text-foreground">Mission</a>
-          <a href="#how" className="transition-colors hover:text-foreground">How it works</a>
-          <a href="#studio" className="transition-colors hover:text-foreground">Studio</a>
-          <Link to="/team" className="transition-colors hover:text-foreground" activeProps={{ className: "font-semibold text-foreground" }}>Team</Link>
-        </div>
-        <Button asChild className="rounded-full">
-          <a href="#studio" className="gap-2">Open studio <ArrowRight className="h-4 w-4" /></a>
-        </Button>
-      </nav>
+      <SiteHeader />
 
       {/* Hero */}
       <header id="top" className="mx-auto max-w-6xl px-6 pt-10 pb-0 text-center sm:pt-12">
