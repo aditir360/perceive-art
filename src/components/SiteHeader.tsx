@@ -26,13 +26,14 @@ export function SiteHeader() {
         {/* Desktop navigation */}
         <div className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
           {scrollLinks.map((link) => (
-            <a
+            <Link
               key={link.label}
-              href={`#${link.hash}`}
+              to="/"
+              hash={link.hash}
               className="transition-colors hover:text-foreground"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
           <Link
             to="/team"
@@ -46,9 +47,9 @@ export function SiteHeader() {
 
         {/* Desktop CTA */}
         <Button asChild className="hidden rounded-full sm:inline-flex">
-          <a href="#studio" className="gap-2">
+          <Link to="/" hash="studio" className="gap-2">
             Open studio <ArrowRight className="h-4 w-4" />
-          </a>
+          </Link>
         </Button>
       </div>
 
@@ -58,13 +59,14 @@ export function SiteHeader() {
         className="mt-4 flex gap-3 overflow-x-auto pb-2 sm:hidden"
       >
         {scrollLinks.map((link) => (
-          <a
+          <Link
             key={link.label}
-            href={`#${link.hash}`}
+            to="/"
+            hash={link.hash}
             className="shrink-0 rounded-full bg-card px-4 py-2 text-sm font-medium text-muted-foreground shadow-sm ring-1 ring-primary/15 transition-colors hover:bg-primary/10 hover:text-foreground"
           >
             {link.label}
-          </a>
+          </Link>
         ))}
         <Link
           to="/team"
@@ -74,12 +76,13 @@ export function SiteHeader() {
         >
           Team
         </Link>
-        <a
-          href="#studio"
+        <Link
+          to="/"
+          hash="studio"
           className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
         >
           Studio <ArrowRight className="h-3.5 w-3.5" />
-        </a>
+        </Link>
       </nav>
     </header>
   );
