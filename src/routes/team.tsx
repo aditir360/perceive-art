@@ -135,7 +135,7 @@ function TeamPage() {
             <h2 className="mt-5 text-xl font-bold text-foreground">Chelsea Hung</h2>
             <p className="mt-1 text-sm font-semibold text-primary">Director of Product Development</p>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Chelsea shapes the Perceive experience end to end — turning ideas into
+              Chelsea shapes the Perceive experience end to end, turning ideas into
               accessible, thoughtfully designed features that make sonic-tactile creation
               feel intuitive for every user.
             </p>
