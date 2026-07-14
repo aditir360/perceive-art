@@ -186,15 +186,17 @@ function TeamPage() {
           <div className="flex items-center gap-2 text-center sm:text-left">
             <Heart className="h-3.5 w-3.5 shrink-0 text-primary" />
             <span className="whitespace-pre-line">
-              Made with care for accessible creativity.
+              Made with care for accessible creativity.{"\u00a0"}{"\n"}
+              contact.percieve@gmail.com{"\n"}
+              {"\u00a0"}
             </span>
           </div>
           <a
             href="mailto:contact.percieve@gmail.com"
             className="flex items-center gap-1.5 text-primary hover:underline"
           >
+            {"\n"}
             <Mail className="h-3.5 w-3.5" />
-            contact.percieve@gmail.com
           </a>
           <span>© {new Date().getFullYear()} Perceive</span>
         </div>
