@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ListenButton } from "@/components/ListenButton";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Heart, Sparkles, Music, Music2, Star, Headphones, Palette, Lightbulb } from "lucide-react";
+import { ArrowLeft, Heart, Sparkles, Music, Music2, Star, Headphones, Palette, Lightbulb, Mail } from "lucide-react";
 
 export const Route = createFileRoute("/team")({
   head: () => ({
@@ -189,6 +189,13 @@ function TeamPage() {
               Made with care for accessible creativity.
             </span>
           </div>
+          <a
+            href="mailto:contact.percieve@gmail.com"
+            className="flex items-center gap-1.5 text-primary hover:underline"
+          >
+            <Mail className="h-3.5 w-3.5" />
+            contact.percieve@gmail.com
+          </a>
           <span>© {new Date().getFullYear()} Perceive</span>
         </div>
       </footer>
