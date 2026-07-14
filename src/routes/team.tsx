@@ -69,7 +69,7 @@ function TeamPage() {
       {/* Hero */}
       <header className="mx-auto max-w-6xl px-6 pt-12 pb-6 text-center sm:pt-16">
         <span className="inline-flex items-center gap-2 rounded-full bg-card px-4 py-1.5 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
-          <Sparkles className="h-3.5 w-3.5" /> The hearts behind the mission
+          <Sparkles className="h-3.5 w-3.5" /> The people behind the mission
         </span>
         <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl">
           Meet the <span className="text-primary">team</span>
