@@ -98,12 +98,12 @@ function TeamPage() {
             <p className="mt-1 text-sm font-semibold text-primary">Founder & Executive Director</p>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               Aditi leads Perceive's vision and mission. She believes in using art for social good,
-              building tools that let blind and sighted creators express themselves together.
+              building tools by leveraging technology, that let blind and sighted creators express themselves together.
             </p>
             <div className="mt-4">
               <ListenButton
                 label="Listen"
-                text="Aditi Ranjan, Founder and Executive Director. Aditi leads Perceive's vision and mission. She believes in using art for social good, building tools that let blind and sighted creators express themselves together."
+                text="Aditi Ranjan, Founder and Executive Director. Aditi leads Perceive's vision and mission. She believes in using art for social good, building tools by leveraging technology, that let blind and sighted creators express themselves together."
               />
             </div>
           </article>
@@ -135,14 +135,14 @@ function TeamPage() {
             <h2 className="mt-5 text-xl font-bold text-foreground">Chelsea Hung</h2>
             <p className="mt-1 text-sm font-semibold text-primary">Director of Product Development</p>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Chelsea shapes the Perceive experience end to end, turning ideas into
+              Chelsea helps shape the Perceive experience by turning ideas into
               accessible, thoughtfully designed features that make sonic-tactile creation
               feel intuitive for every user.
             </p>
             <div className="mt-4">
               <ListenButton
                 label="Listen"
-                text="Chelsea Hung, Director of Product Development. Chelsea shapes the Perceive experience end to end, turning ideas into accessible, thoughtfully designed features that make sonic-tactile creation feel intuitive for every user."
+                text="Chelsea Hung, Director of Product Development. Chelsea helps shape the Perceive experience by turning ideas into accessible, thoughtfully designed features that make sonic-tactile creation feel intuitive for every user."
               />
             </div>
           </article>
