@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ListenButton } from "@/components/ListenButton";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Heart, Sparkles, Music, Music2, Star, Headphones, Palette } from "lucide-react";
+import { ArrowLeft, Heart, Sparkles, Music, Music2, Star, Headphones, Palette, Lightbulb } from "lucide-react";
 
 export const Route = createFileRoute("/team")({
   head: () => ({
@@ -88,7 +88,7 @@ function TeamPage() {
 
       {/* Team grid */}
       <section className="mx-auto max-w-6xl px-6 py-8">
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {/* Aditi Ranjan */}
           <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
@@ -123,6 +123,26 @@ function TeamPage() {
               <ListenButton
                 label="Listen"
                 text="Haasini Arunachalam, Director of Outreach and Partnerships. Haasini leads our social media platforms and collaborates with other organizations for partnerships that push our mission forward."
+              />
+            </div>
+          </article>
+
+          {/* Chelsea Hung */}
+          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+              <Lightbulb className="h-7 w-7" />
+            </div>
+            <h2 className="mt-5 text-xl font-bold text-foreground">Chelsea Hung</h2>
+            <p className="mt-1 text-sm font-semibold text-primary">Director of Product Development</p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Chelsea shapes the Perceive experience end to end — turning ideas into
+              accessible, thoughtfully designed features that make sonic-tactile creation
+              feel intuitive for every user.
+            </p>
+            <div className="mt-4">
+              <ListenButton
+                label="Listen"
+                text="Chelsea Hung, Director of Product Development. Chelsea shapes the Perceive experience end to end, turning ideas into accessible, thoughtfully designed features that make sonic-tactile creation feel intuitive for every user."
               />
             </div>
           </article>
@@ -166,8 +186,7 @@ function TeamPage() {
           <div className="flex items-center gap-2 text-center sm:text-left">
             <Heart className="h-3.5 w-3.5 shrink-0 text-primary" />
             <span className="whitespace-pre-line">
-              Made with care for accessible creativity.{"\n"}
-              Founded and developed by Aditi Ranjan
+              Made with care for accessible creativity.
             </span>
           </div>
           <span>© {new Date().getFullYear()} Perceive</span>
