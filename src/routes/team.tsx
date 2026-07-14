@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ListenButton } from "@/components/ListenButton";
+import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Heart, Sparkles, Music, Music2, Star, Headphones, Palette, Lightbulb, Mail } from "lucide-react";
 
