@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ListenButton } from "@/components/ListenButton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
-import { Heart, Sparkles, Music, Music2, Star, Headphones, Palette, Lightbulb, Mail } from "lucide-react";
+import { Heart, Sparkles, Music, Music2, Star, Headphones, Palette, Lightbulb, Mail, Instagram, Linkedin } from "lucide-react";
 
 export const Route = createFileRoute("/team")({
   head: () => ({
