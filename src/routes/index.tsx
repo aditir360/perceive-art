@@ -3,7 +3,7 @@ import { Sketchpad } from "@/components/Sketchpad";
 import { ListenButton } from "@/components/ListenButton";
 import { SiteHeader } from "@/components/SiteHeader";
 import bearPeek from "@/assets/bear-peek-cropped.png";
-import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight, Music, Music2, Star, Palette, Headphones } from "lucide-react";
+import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight, Music, Music2, Star, Palette, Headphones, Mail, Instagram, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -174,6 +174,33 @@ function Index() {
               Made with care for accessible creativity.{"\u00a0"}{"\n"}
               contact.perceive@gmail.com{"\u00a0"}
             </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <a
+              href="mailto:contact.perceive@gmail.com"
+              aria-label="Email Perceive"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+            >
+              <Mail className="h-4 w-4" />
+            </a>
+            <a
+              href="https://www.instagram.com/perceive.art.or"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Perceive on Instagram"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+            >
+              <Instagram className="h-4 w-4" />
+            </a>
+            <a
+              href="https://www.linkedin.com/company/perceive-art/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Perceive on LinkedIn"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+            >
+              <Linkedin className="h-4 w-4" />
+            </a>
           </div>
           <span>© {new Date().getFullYear()} Perceive</span>
         </div>
