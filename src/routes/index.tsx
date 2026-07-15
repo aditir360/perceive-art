@@ -175,6 +175,33 @@ function Index() {
               contact.perceive@gmail.com{"\u00a0"}
             </span>
           </div>
+          <div className="flex items-center gap-3">
+            <a
+              href="mailto:contact.perceive@gmail.com"
+              aria-label="Email Perceive"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+            >
+              <Mail className="h-4 w-4" />
+            </a>
+            <a
+              href="https://www.instagram.com/perceive.art.or"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Perceive on Instagram"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+            >
+              <Instagram className="h-4 w-4" />
+            </a>
+            <a
+              href="https://www.linkedin.com/company/perceive-art/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Perceive on LinkedIn"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+            >
+              <Linkedin className="h-4 w-4" />
+            </a>
+          </div>
           <span>© {new Date().getFullYear()} Perceive</span>
         </div>
       </footer>
