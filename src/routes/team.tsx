@@ -187,7 +187,7 @@ function TeamPage() {
               <Mail className="h-4 w-4" />
             </a>
             <a
-              href="https://www.instagram.com/perceive.art.or"
+              href="https://www.instagram.com/perceive.art_?igsh=NTc4MTIwNjQ2YQ%3D%3D&utm_source=qr"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Perceive on Instagram"
