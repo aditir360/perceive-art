@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Sketchpad } from "@/components/Sketchpad";
 import { ListenButton } from "@/components/ListenButton";
+import { SiteHeader } from "@/components/SiteHeader";
 import bearPeek from "@/assets/bear-peek-cropped.png";
-import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight, Music, Music2, Star, Palette, Headphones } from "lucide-react";
+import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight, Music, Music2, Star, Palette, Headphones, Mail, Instagram, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -43,24 +44,7 @@ function Index() {
       </div>
 
       {/* Nav */}
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 pt-6">
-        <a href="#top" className="flex items-center gap-3">
-          <img
-            src="/bear-logo.jpeg"
-            alt="Perceive logo"
-            className="h-14 w-14 rounded-full bg-card object-cover shadow-md ring-2 ring-primary/40 sm:h-16 sm:w-16"
-          />
-          <span className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Perceive</span>
-        </a>
-        <div className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
-          <a href="#mission" className="transition-colors hover:text-foreground">Mission</a>
-          <a href="#how" className="transition-colors hover:text-foreground">How it works</a>
-          <a href="#studio" className="transition-colors hover:text-foreground">Studio</a>
-        </div>
-        <Button asChild className="rounded-full">
-          <a href="#studio" className="gap-2">Open studio <ArrowRight className="h-4 w-4" /></a>
-        </Button>
-      </nav>
+      <SiteHeader />
 
       {/* Hero */}
       <header id="top" className="mx-auto max-w-6xl px-6 pt-10 pb-0 text-center sm:pt-12">
@@ -187,9 +171,36 @@ function Index() {
           <div className="flex items-center gap-2 text-center sm:text-left">
             <Heart className="h-3.5 w-3.5 shrink-0 text-primary" />
             <span className="whitespace-pre-line">
-              Made with care for accessible creativity.{"\n"}
-              Founded and developed by Aditi Ranjan
+              Made with care for accessible creativity.{"\u00a0"}{"\n"}
+              contact.perceive.art@gmail.com{"\u00a0"}
             </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <a
+              href="mailto:contact.perceive.art@gmail.com"
+              aria-label="Email Perceive"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+            >
+              <Mail className="h-4 w-4" />
+            </a>
+            <a
+              href="https://www.instagram.com/perceive.art.or"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Perceive on Instagram"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+            >
+              <Instagram className="h-4 w-4" />
+            </a>
+            <a
+              href="https://www.linkedin.com/company/perceive-art/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Perceive on LinkedIn"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+            >
+              <Linkedin className="h-4 w-4" />
+            </a>
           </div>
           <span>© {new Date().getFullYear()} Perceive</span>
         </div>
