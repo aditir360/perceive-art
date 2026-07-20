@@ -172,12 +172,12 @@ function Index() {
             <Heart className="h-3.5 w-3.5 shrink-0 text-primary" />
             <span className="whitespace-pre-line">
               Made with care for accessible creativity.{"\u00a0"}{"\n"}
-              contact.perceive@gmail.com{"\u00a0"}
+              contact.perceive.art@gmail.com{"\u00a0"}
             </span>
           </div>
           <div className="flex items-center gap-3">
             <a
-              href="mailto:contact.perceive@gmail.com"
+              href="mailto:contact.perceive.art@gmail.com"
               aria-label="Email Perceive"
               className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
             >
