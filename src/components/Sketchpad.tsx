@@ -130,6 +130,7 @@ export function Sketchpad() {
   }, [color, cursor, playCue, say]);
 
   const toggleSound = useCallback(() => {
+    trackClick();
     setSoundOn((s) => {
       const next = !s;
       if (next) {
