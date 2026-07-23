@@ -166,6 +166,24 @@ function Index() {
         </div>
       </section>
 
+      {/* Feedback */}
+      <section className="mx-auto max-w-6xl px-6 pb-20">
+        <div className="rounded-3xl bg-card p-8 text-center shadow-sm ring-1 ring-primary/15 sm:p-10">
+          <p className="text-sm text-muted-foreground">
+            Have improvements or new features and advancements to recommend?{" "}
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLSdG2YExqtuXOD8MGkRUPJpYgdbs3wpZNALVpLXo1SRCWK15Ng/viewform?usp=header"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Submit this form here
+            </a>
+            .
+          </p>
+        </div>
+      </section>
+
       <footer className="border-t border-primary/10 bg-card/50 py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-xs text-muted-foreground sm:flex-row">
           <div className="flex items-center gap-2 text-center sm:text-left">
