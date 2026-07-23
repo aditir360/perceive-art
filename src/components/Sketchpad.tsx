@@ -111,6 +111,7 @@ export function Sketchpad() {
   }, [drawing, color, updateAudio, buzzBorder]);
 
   const toggleDrawing = useCallback(() => {
+    trackClick();
     setDrawing((d) => {
       const next = !d;
       if (next) {
