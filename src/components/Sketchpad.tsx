@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { trackClick, useCanvasClicks } from "@/lib/usage";
 import {
   Volume2,
   VolumeX,
@@ -46,6 +47,7 @@ export function Sketchpad() {
   const [announce, setAnnounce] = useState("Welcome to Sonic Bear Studio. Press S to start sound, D to toggle drawing, arrow keys to move.");
 
   const say = useCallback((msg: string) => setAnnounce(msg), []);
+  const stats = useCanvasClicks();
 
   const ensureAudio = useCallback(() => {
     if (audioRef.current) return audioRef.current;
@@ -109,6 +111,7 @@ export function Sketchpad() {
   }, [drawing, color, updateAudio, buzzBorder]);
 
   const toggleDrawing = useCallback(() => {
+    trackClick();
     setDrawing((d) => {
       const next = !d;
       if (next) {
@@ -128,6 +131,7 @@ export function Sketchpad() {
   }, [color, cursor, playCue, say]);
 
   const toggleSound = useCallback(() => {
+    trackClick();
     setSoundOn((s) => {
       const next = !s;
       if (next) {
@@ -149,12 +153,14 @@ export function Sketchpad() {
     setDrawing(false);
     playCue(200, 0.2);
     say("Canvas cleared");
+    trackClick();
   }, [playCue, say]);
 
   const pickColor = useCallback((c: { name: string; value: string }) => {
     setColor(c.value);
     playCue(523 + COLORS.findIndex((x) => x.value === c.value) * 60);
     say(`Color ${c.name} selected`);
+    trackClick();
   }, [playCue, say]);
 
   // Keyboard
@@ -168,6 +174,7 @@ export function Sketchpad() {
       else if (e.key === " " || e.key.toLowerCase() === "d") { e.preventDefault(); toggleDrawing(); }
       else if (e.key.toLowerCase() === "s") { e.preventDefault(); toggleSound(); }
       else if (e.key.toLowerCase() === "c") { e.preventDefault(); clearCanvas(); }
+      if ([" ", "d", "s", "c"].includes(e.key.toLowerCase()) && !e.repeat) trackClick();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -191,6 +198,7 @@ export function Sketchpad() {
     setDrawing(true);
     setCurrent({ color, points: [p] });
     updateAudio(p);
+    trackClick();
   };
   const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const p = svgPoint(e);
@@ -235,10 +243,12 @@ export function Sketchpad() {
   const exportSwell = () => {
     download("sonic-bear-swell.svg", buildSvgString(true), "image/svg+xml");
     say("Exported high-contrast SVG for swell paper");
+    trackClick();
   };
   const exportColor = () => {
     download("sonic-bear-color.svg", buildSvgString(false), "image/svg+xml");
     say("Exported color SVG");
+    trackClick();
   };
   const exportStl = () => {
     // Simple extrusion: each line segment becomes a thin rectangular prism
@@ -278,17 +288,25 @@ export function Sketchpad() {
     const stl = `solid sonic_bear\n${facets.join("\n")}\nendsolid sonic_bear`;
     download("sonic-bear.stl", stl, "model/stl");
     say("Exported 3D printable STL file");
+    trackClick();
   };
 
   const undo = () => {
     setStrokes((s) => s.slice(0, -1));
     playCue(300);
     say("Last line undone");
+    trackClick();
   };
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_260px]">
       <div className="rounded-3xl bg-card p-4 shadow-lg ring-1 ring-primary/20">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary ring-1 ring-primary/20">
+          <Sparkles className="h-3.5 w-3.5" />
+          {stats.data == null
+            ? "Counting canvas moments…"
+            : `${stats.data.toLocaleString()} canvas moments created worldwide`}
+        </div>
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <Button onClick={toggleSound} variant={soundOn ? "default" : "secondary"} aria-pressed={soundOn} className="gap-2 rounded-full">
             {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
