@@ -162,16 +162,16 @@ function Index() {
 
       {/* Studio */}
       <section id="studio" className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4 rounded-3xl bg-gradient-to-br from-primary/10 via-transparent to-accent/10 p-6 ring-1 ring-primary/10 sm:p-8">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">The Studio</h2>
+            <span className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
+              <Palette className="h-3.5 w-3.5" /> Live audio canvas
+            </span>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">The Studio</h2>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
               Turn on sound, pick a color, and start a line. Every move plays back to you.
             </p>
           </div>
-          <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary ring-1 ring-primary/20">
-            <Sparkles className="h-3.5 w-3.5" /> Live audio canvas
-          </span>
         </div>
         <div>
           <Sketchpad />
