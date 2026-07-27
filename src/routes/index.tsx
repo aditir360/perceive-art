@@ -214,7 +214,7 @@ function Index() {
               <Mail className="h-4 w-4" />
             </a>
             <a
-              href="https://www.instagram.com/perceive.art.or"
+              href="https://www.instagram.com/perceive.art_/"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Perceive on Instagram"
