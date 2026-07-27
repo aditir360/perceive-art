@@ -1,27 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Users, Heart } from "lucide-react";
+import { Sparkles, Users, Zap } from "lucide-react";
 
 interface RollingStatsProps {
   drawingCount: number | null | undefined;
 }
 
-interface TilePosition {
-  id: string;
-  x: number;
-  y: number;
-}
-
-const TILE_POSITIONS: TilePosition[] = [
-  { id: "drawings", x: 15, y: 30 },
-  { id: "reach", x: 85, y: 25 },
-  { id: "heart", x: 50, y: 65 },
-  { id: "free", x: 30, y: 75 },
-];
-
 export function RollingStats({ drawingCount }: RollingStatsProps) {
   const [displayCount, setDisplayCount] = useState(0);
   const [displayReach, setDisplayReach] = useState(0);
-  const svgRef = useRef<SVGSVGElement>(null);
   const animationRef = useRef<number | null>(null);
   const reachAnimationRef = useRef<number | null>(null);
   const prevCountRef = useRef<number | null>(null);
@@ -104,104 +90,75 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
   }, []);
 
   return (
-    <div className="relative w-full aspect-video max-w-4xl mx-auto rounded-3xl overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
-      
-      {/* SVG for connecting lines */}
-      <svg
-        ref={svgRef}
-        className="absolute inset-0 w-full h-full"
-        style={{ filter: "drop-shadow(0 0 20px rgba(159, 106, 154, 0.3))" }}
-      >
-        <defs>
-          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="rgb(var(--color-primary))" stopOpacity="0.4" />
-            <stop offset="50%" stopColor="rgb(var(--color-accent))" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="rgb(var(--color-secondary))" stopOpacity="0.4" />
-          </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
+    <div className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-accent/10 to-secondary/10 p-8 shadow-xl ring-2 ring-primary/30 backdrop-blur-xl border border-primary/20">
+      {/* Background animation elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-accent/20 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+      </div>
 
-        {/* Connecting lines - creating constellation pattern */}
-        <line x1="15%" y1="30%" x2="85%" y2="25%" stroke="url(#lineGradient)" strokeWidth="2" filter="url(#glow)" opacity="0.5" />
-        <line x1="85%" y1="25%" x2="50%" y2="65%" stroke="url(#lineGradient)" strokeWidth="2" filter="url(#glow)" opacity="0.5" />
-        <line x1="50%" y1="65%" x2="30%" y2="75%" stroke="url(#lineGradient)" strokeWidth="2" filter="url(#glow)" opacity="0.5" />
-        <line x1="30%" y1="75%" x2="15%" y2="30%" stroke="url(#lineGradient)" strokeWidth="2" filter="url(#glow)" opacity="0.5" />
-        <line x1="15%" y1="30%" x2="50%" y2="65%" stroke="url(#lineGradient)" strokeWidth="1.5" filter="url(#glow)" opacity="0.3" />
-        
-        {/* Connection nodes */}
-        <circle cx="15%" cy="30%" r="4" fill="url(#lineGradient)" opacity="0.6" />
-        <circle cx="85%" cy="25%" r="4" fill="url(#lineGradient)" opacity="0.6" />
-        <circle cx="50%" cy="65%" r="4" fill="url(#lineGradient)" opacity="0.6" />
-        <circle cx="30%" cy="75%" r="4" fill="url(#lineGradient)" opacity="0.6" />
-      </svg>
-
-      {/* Floating metric tiles */}
-      <div className="absolute inset-0 w-full h-full pointer-events-none">
-        {/* Drawings - Top Left */}
-        <div className="absolute top-[30%] left-[15%] -translate-x-1/2 -translate-y-1/2 pointer-events-auto">
-          <div className="group relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-transparent rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative rounded-2xl bg-gradient-to-br from-white/30 to-white/10 dark:from-slate-800/50 dark:to-slate-900/30 backdrop-blur-xl border border-primary/40 p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110">
-              <div className="text-center">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Drawings</p>
-                <p className="text-3xl font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  {displayCount}
-                </p>
+      <div className="relative z-10 grid grid-cols-2 gap-8">
+        {/* Drawings Created */}
+        <div className="group">
+          <div className="relative rounded-3xl bg-gradient-to-br from-white/50 to-white/30 dark:from-slate-800/60 dark:to-slate-900/40 p-6 shadow-lg backdrop-blur-md border border-primary/30 transition-all duration-300 hover:shadow-xl hover:border-primary/50">
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            
+            <div className="relative z-10 flex items-center gap-2 mb-3">
+              <div className="rounded-xl bg-gradient-to-br from-primary/30 to-primary/20 p-2.5 shadow-md">
+                <Sparkles className="h-4 w-4 text-primary" />
               </div>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Drawings</span>
+            </div>
+            
+            <div className="relative">
+              <div className="text-4xl font-black bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-pulse">
+                {drawingCount === null || drawingCount === undefined ? "—" : displayCount.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground/80 mt-1 font-medium">created worldwide</p>
             </div>
           </div>
         </div>
 
-        {/* Reach - Top Right */}
-        <div className="absolute top-[25%] right-[15%] translate-x-1/2 -translate-y-1/2 pointer-events-auto">
-          <div className="group relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-accent/40 to-transparent rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative rounded-2xl bg-gradient-to-br from-white/30 to-white/10 dark:from-slate-800/50 dark:to-slate-900/30 backdrop-blur-xl border border-accent/40 p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110">
-              <div className="text-center">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Reach</p>
-                <p className="text-3xl font-black bg-gradient-to-r from-accent to-secondary bg-clip-text text-transparent">
-                  {displayReach}+
-                </p>
+        {/* People Reached */}
+        <div className="group">
+          <div className="relative rounded-3xl bg-gradient-to-br from-white/50 to-white/30 dark:from-slate-800/60 dark:to-slate-900/40 p-6 shadow-lg backdrop-blur-md border border-accent/30 transition-all duration-300 hover:shadow-xl hover:border-accent/50">
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            
+            <div className="relative z-10 flex items-center gap-2 mb-3">
+              <div className="rounded-xl bg-gradient-to-br from-accent/30 to-accent/20 p-2.5 shadow-md">
+                <Users className="h-4 w-4 text-accent" />
               </div>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reach</span>
+            </div>
+            
+            <div className="relative">
+              <div className="text-4xl font-black bg-gradient-to-r from-accent via-secondary to-accent bg-clip-text text-transparent animate-pulse">
+                {displayReach.toLocaleString()}+
+              </div>
+              <p className="text-xs text-muted-foreground/80 mt-1 font-medium">people impacted</p>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Heart - Bottom Center */}
-        <div className="absolute bottom-[35%] left-1/2 -translate-x-1/2 pointer-events-auto">
-          <div className="group relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-transparent rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative rounded-2xl bg-gradient-to-br from-white/30 to-white/10 dark:from-slate-800/50 dark:to-slate-900/30 backdrop-blur-xl border border-primary/40 p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110">
-              <div className="text-center">
-                <Heart className="h-8 w-8 text-primary mx-auto mb-2" />
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Accessible</p>
-              </div>
-            </div>
-          </div>
+      {/* Animated progress bar */}
+      <div className="relative z-10 mt-6 flex items-center gap-3">
+        <div className="flex-1 h-2 bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 rounded-full overflow-hidden backdrop-blur-sm border border-primary/30">
+          <div 
+            className="h-full bg-gradient-to-r from-primary via-accent to-secondary rounded-full shadow-lg shadow-primary/40"
+            style={{
+              width: drawingCount && drawingCount > 0 ? `${Math.min((displayCount / drawingCount) * 100, 100)}%` : "0%",
+              transition: "width 0.1s ease-out",
+              boxShadow: "0 0 20px rgba(var(--color-primary, 159, 106, 154), 0.6)",
+            }}
+          />
         </div>
+        <Zap className="h-4 w-4 text-primary opacity-60 animate-pulse" />
+      </div>
 
-        {/* Free - Bottom Left */}
-        <div className="absolute bottom-[25%] left-[30%] -translate-x-1/2 pointer-events-auto">
-          <div className="group relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-secondary/40 to-transparent rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative rounded-2xl bg-gradient-to-br from-white/30 to-white/10 dark:from-slate-800/50 dark:to-slate-900/30 backdrop-blur-xl border border-secondary/40 p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110">
-              <div className="text-center">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Forever</p>
-                <p className="text-2xl font-black bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
-                  100% Free
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Sparkle accents */}
+      <div className="absolute top-4 right-8 z-0 opacity-20">
+        <Sparkles className="h-6 w-6 text-primary animate-spin" style={{ animationDuration: "4s" }} />
       </div>
     </div>
   );
