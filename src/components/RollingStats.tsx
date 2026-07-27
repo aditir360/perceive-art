@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Users } from "lucide-react";
+import { Sparkles, Users, Zap } from "lucide-react";
 
 interface RollingStatsProps {
   drawingCount: number | null | undefined;
@@ -7,17 +7,20 @@ interface RollingStatsProps {
 
 export function RollingStats({ drawingCount }: RollingStatsProps) {
   const [displayCount, setDisplayCount] = useState(0);
+  const [displayReach, setDisplayReach] = useState(0);
   const animationRef = useRef<number | null>(null);
+  const reachAnimationRef = useRef<number | null>(null);
   const prevCountRef = useRef<number | null>(null);
+  const reachAnimatedRef = useRef(false);
 
+  // Animate drawings count
   useEffect(() => {
-    // Only animate if we have a valid number and it's different from before
     if (drawingCount === null || drawingCount === undefined || drawingCount === prevCountRef.current) {
       return;
     }
 
     const startTime = Date.now();
-    const duration = 1500; // 1.5 seconds animation
+    const duration = 1500;
     const previousValue = prevCountRef.current ?? 0;
     prevCountRef.current = drawingCount;
 
@@ -26,7 +29,6 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      // Easing function for faster start, slower end (ease-out)
       const easeProgress = progress < 0.5 
         ? 4 * progress * progress * progress 
         : 1 - Math.pow(-2 * progress + 2, 3) / 2;
@@ -50,53 +52,113 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
     };
   }, [drawingCount]);
 
+  // Animate reach count (0 to 300)
+  useEffect(() => {
+    if (reachAnimatedRef.current) return;
+    reachAnimatedRef.current = true;
+
+    const startTime = Date.now();
+    const duration = 2000;
+    const targetReach = 300;
+
+    const animate = () => {
+      const now = Date.now();
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      const easeProgress = progress < 0.5 
+        ? 4 * progress * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+      const current = Math.floor(easeProgress * targetReach);
+      setDisplayReach(current);
+
+      if (progress < 1) {
+        reachAnimationRef.current = requestAnimationFrame(animate);
+      } else {
+        setDisplayReach(targetReach);
+      }
+    };
+
+    reachAnimationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (reachAnimationRef.current) {
+        cancelAnimationFrame(reachAnimationRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <div className="w-full rounded-3xl bg-gradient-to-br from-primary/5 via-accent/5 to-secondary/5 p-6 shadow-lg ring-1 ring-primary/20 backdrop-blur-sm border border-primary/10">
-      <div className="grid grid-cols-2 gap-6">
+    <div className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-accent/10 to-secondary/10 p-8 shadow-xl ring-2 ring-primary/30 backdrop-blur-xl border border-primary/20">
+      {/* Background animation elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-accent/20 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+      </div>
+
+      <div className="relative z-10 grid grid-cols-2 gap-8">
         {/* Drawings Created */}
-        <div className="flex flex-col items-center justify-center space-y-2 rounded-2xl bg-white/40 dark:bg-slate-800/40 p-4 backdrop-blur-md border border-primary/20">
-          <div className="flex items-center gap-2">
-            <div className="rounded-full bg-primary/20 p-2">
-              <Sparkles className="h-4 w-4 text-primary" />
+        <div className="group">
+          <div className="relative rounded-3xl bg-gradient-to-br from-white/50 to-white/30 dark:from-slate-800/60 dark:to-slate-900/40 p-6 shadow-lg backdrop-blur-md border border-primary/30 transition-all duration-300 hover:shadow-xl hover:border-primary/50">
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            
+            <div className="relative z-10 flex items-center gap-2 mb-3">
+              <div className="rounded-xl bg-gradient-to-br from-primary/30 to-primary/20 p-2.5 shadow-md">
+                <Sparkles className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Drawings</span>
             </div>
-            <span className="text-xs font-medium text-muted-foreground">Drawings</span>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              {drawingCount === null || drawingCount === undefined ? "—" : displayCount.toLocaleString()}
+            
+            <div className="relative">
+              <div className="text-4xl font-black bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-pulse">
+                {drawingCount === null || drawingCount === undefined ? "—" : displayCount.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground/80 mt-1 font-medium">created worldwide</p>
             </div>
-            <p className="text-[10px] text-muted-foreground/70">created worldwide</p>
           </div>
         </div>
 
         {/* People Reached */}
-        <div className="flex flex-col items-center justify-center space-y-2 rounded-2xl bg-white/40 dark:bg-slate-800/40 p-4 backdrop-blur-md border border-accent/20">
-          <div className="flex items-center gap-2">
-            <div className="rounded-full bg-accent/20 p-2">
-              <Users className="h-4 w-4 text-accent" />
+        <div className="group">
+          <div className="relative rounded-3xl bg-gradient-to-br from-white/50 to-white/30 dark:from-slate-800/60 dark:to-slate-900/40 p-6 shadow-lg backdrop-blur-md border border-accent/30 transition-all duration-300 hover:shadow-xl hover:border-accent/50">
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            
+            <div className="relative z-10 flex items-center gap-2 mb-3">
+              <div className="rounded-xl bg-gradient-to-br from-accent/30 to-accent/20 p-2.5 shadow-md">
+                <Users className="h-4 w-4 text-accent" />
+              </div>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reach</span>
             </div>
-            <span className="text-xs font-medium text-muted-foreground">Reach</span>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold bg-gradient-to-r from-accent to-secondary bg-clip-text text-transparent">
-              300+
+            
+            <div className="relative">
+              <div className="text-4xl font-black bg-gradient-to-r from-accent via-secondary to-accent bg-clip-text text-transparent animate-pulse">
+                {displayReach.toLocaleString()}+
+              </div>
+              <p className="text-xs text-muted-foreground/80 mt-1 font-medium">people impacted</p>
             </div>
-            <p className="text-[10px] text-muted-foreground/70">people impacted</p>
           </div>
         </div>
       </div>
 
-      {/* Animated bar beneath */}
-      <div className="mt-4 flex items-center gap-2">
-        <div className="flex-1 h-1 bg-gradient-to-r from-primary via-accent to-secondary rounded-full overflow-hidden">
+      {/* Animated progress bar */}
+      <div className="relative z-10 mt-6 flex items-center gap-3">
+        <div className="flex-1 h-2 bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 rounded-full overflow-hidden backdrop-blur-sm border border-primary/30">
           <div 
-            className="h-full bg-gradient-to-r from-primary via-accent to-secondary rounded-full animate-pulse"
+            className="h-full bg-gradient-to-r from-primary via-accent to-secondary rounded-full shadow-lg shadow-primary/40"
             style={{
               width: drawingCount && drawingCount > 0 ? `${Math.min((displayCount / drawingCount) * 100, 100)}%` : "0%",
               transition: "width 0.1s ease-out",
+              boxShadow: "0 0 20px rgba(var(--color-primary, 159, 106, 154), 0.6)",
             }}
           />
         </div>
+        <Zap className="h-4 w-4 text-primary opacity-60 animate-pulse" />
+      </div>
+
+      {/* Sparkle accents */}
+      <div className="absolute top-4 right-8 z-0 opacity-20">
+        <Sparkles className="h-6 w-6 text-primary animate-spin" style={{ animationDuration: "4s" }} />
       </div>
     </div>
   );
