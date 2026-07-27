@@ -24,6 +24,10 @@ const COLORS = [
   { name: "Peach", value: "#f9a8a8" },
   { name: "Plum", value: "#9b72cf" },
   { name: "Ink", value: "#3a1f2b" },
+  // Additional palette colors
+  { name: "Mint", value: "#48b376" },
+  { name: "Sky", value: "#4da6ff" },
+  { name: "Sun", value: "#f5a623" },
 ];
 
 const WIDTH = 900;
