@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Sketchpad } from "@/components/Sketchpad";
+import { RollingStats } from "@/components/RollingStats";
 import { ListenButton } from "@/components/ListenButton";
 import { SiteHeader } from "@/components/SiteHeader";
+import { useCanvasClicks } from "@/lib/usage";
 import bearPeek from "@/assets/bear-peek-cropped.png";
 import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight, Music, Music2, Star, Palette, Headphones, Mail, Instagram, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +13,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const stats = useCanvasClicks();
+
   return (
     <div className="min-h-screen">
       {/* Soft blush background glows */}
@@ -69,6 +73,11 @@ function Index() {
           </Button>
         </div>
       </header>
+
+      {/* Impact Stats */}
+      <section className="mx-auto mt-10 max-w-4xl px-6">
+        <RollingStats drawingCount={stats.data} />
+      </section>
 
       {/* Mission */}
       <section id="mission" className="mx-auto mt-10 max-w-5xl px-6 pb-16 sm:mt-16">
