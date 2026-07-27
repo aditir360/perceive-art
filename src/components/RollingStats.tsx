@@ -91,6 +91,9 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
 
   return (
     <div className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-accent/10 to-secondary/10 p-8 shadow-xl ring-2 ring-primary/30 backdrop-blur-xl border border-primary/20">
+      {/* Top glow line effect */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent opacity-60" style={{ boxShadow: "0 0 30px rgba(var(--color-primary, 159, 106, 154), 0.8)" }} />
+      
       {/* Background animation elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl animate-pulse" />
