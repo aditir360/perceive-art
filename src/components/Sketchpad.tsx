@@ -308,8 +308,8 @@ export function Sketchpad() {
         <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary ring-1 ring-primary/20">
           <Sparkles className="h-3.5 w-3.5" />
           {stats.data == null
-            ? "Counting canvas moments…"
-            : `${stats.data.toLocaleString()} canvas moments created worldwide`}
+            ? "Counting canvas drawings…"
+            : `${stats.data.toLocaleString()} canvas drawings created worldwide`}
         </div>
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <Button onClick={toggleSound} variant={soundOn ? "default" : "secondary"} aria-pressed={soundOn} className="gap-2 rounded-full">
@@ -381,6 +381,24 @@ export function Sketchpad() {
       </div>
 
       <aside className="space-y-5">
+        <section aria-labelledby="stats-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
+          <h2 id="stats-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <Sparkles className="h-4 w-4 text-primary" /> Impact
+          </h2>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Drawings Created</span>
+              <span className="font-semibold text-primary">
+                {stats.data == null ? "—" : stats.data.toLocaleString()}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">People Reached</span>
+              <span className="font-semibold text-primary">300+</span>
+            </div>
+          </div>
+        </section>
+
         <section aria-labelledby="colors-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
           <h2 id="colors-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
             <Palette className="h-4 w-4 text-primary" /> Palette
