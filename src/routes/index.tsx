@@ -178,7 +178,51 @@ function Index() {
         </div>
       </section>
 
-      {/* Feedback */}
+  
+
+      {/* Coming soon */}
+      <section className="mx-auto max-w-6xl px-6 pb-20">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-card to-accent/15 p-10 text-center shadow-sm ring-1 ring-primary/20 sm:p-14">
+          <div aria-hidden className="pointer-events-none absolute inset-0 -z-0">
+            <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
+            <div className="absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-accent/25 blur-3xl" />
+          </div>
+
+          <div className="relative">
+            <span className="inline-flex items-center gap-2 rounded-full bg-card px-4 py-1.5 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
+              <Rocket className="h-3.5 w-3.5" /> Coming soon
+            </span>
+
+            <h2 className="mx-auto mt-5 max-w-xl bg-gradient-to-br from-[oklch(0.42_0.19_10)] to-[oklch(0.32_0.13_340)] bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-4xl">
+              More features coming soon
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground sm:text-base">
+              We're just getting started. Here's a taste of what's next for Perceive.
+            </p>
+
+            <div className="mx-auto mt-8 grid max-w-3xl gap-4 sm:grid-cols-3">
+              {[
+                { icon: Users2, title: "Collaborative canvas", body: "Draw together with someone else in real time." },
+                { icon: Smartphone, title: "Mobile studio", body: "The full sonic canvas, right in your pocket." },
+                { icon: Wand2, title: "More audio guides", body: "New shapes, patterns, and freeform templates." },
+              ].map(({ icon: Icon, title, body }) => (
+                <div
+                  key={title}
+                  className="rounded-2xl bg-card/70 p-5 text-left shadow-sm ring-1 ring-primary/15 backdrop-blur-sm transition-transform hover:-translate-y-1"
+                >
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15">
+                    <Icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="mt-3 text-sm font-semibold">{title}</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+       {/* Feedback */}
       <section className="mx-auto max-w-6xl px-6 pb-20">
         <div className="rounded-3xl bg-card p-8 text-center shadow-sm ring-1 ring-primary/15 sm:p-10">
           <p className="text-sm text-muted-foreground">
