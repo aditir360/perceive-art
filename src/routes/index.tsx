@@ -50,6 +50,9 @@ function Index() {
 
       {/* Nav */}
       <SiteHeader />
+      
+      {/* Cute preview cards */}
+      <StudioPreviewCards />
 
       {/* Hero */}
       <header id="top" className="mx-auto max-w-6xl px-6 pt-10 pb-0 text-center sm:pt-12">
@@ -114,8 +117,7 @@ function Index() {
         </div>
       </section>
 
-      {/* Studio preview */}
-      <StudioPreviewCards />
+  
 
       {/* How it works */}
       <section id="how" className="mx-auto max-w-6xl px-6 pb-16">
