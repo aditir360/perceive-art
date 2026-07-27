@@ -29,8 +29,8 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      const easeProgress = progress < 0.5 
-        ? 4 * progress * progress * progress 
+      const easeProgress = progress < 0.5
+        ? 4 * progress * progress * progress
         : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
       const current = Math.floor(previousValue + easeProgress * (drawingCount - previousValue));
@@ -66,8 +66,8 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      const easeProgress = progress < 0.5 
-        ? 4 * progress * progress * progress 
+      const easeProgress = progress < 0.5
+        ? 4 * progress * progress * progress
         : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
       const current = Math.floor(easeProgress * targetReach);
@@ -90,75 +90,57 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
   }, []);
 
   return (
-    <div className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-accent/10 to-secondary/10 p-8 shadow-xl ring-2 ring-primary/30 backdrop-blur-xl border border-primary/20">
-      {/* Background animation elements */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-accent/20 to-transparent rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
-      </div>
-
-      <div className="relative z-10 grid grid-cols-2 gap-8">
+    <div className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-card to-accent/10 p-6 shadow-sm ring-1 ring-primary/20 sm:p-8">
+      <div className="relative grid grid-cols-2 gap-4 sm:gap-6">
         {/* Drawings Created */}
-        <div className="group">
-          <div className="relative rounded-3xl bg-gradient-to-br from-white/50 to-white/30 dark:from-slate-800/60 dark:to-slate-900/40 p-6 shadow-lg backdrop-blur-md border border-primary/30 transition-all duration-300 hover:shadow-xl hover:border-primary/50">
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            
-            <div className="relative z-10 flex items-center gap-2 mb-3">
-              <div className="rounded-xl bg-gradient-to-br from-primary/30 to-primary/20 p-2.5 shadow-md">
-                <Sparkles className="h-4 w-4 text-primary" />
-              </div>
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Drawings</span>
+        <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-primary/15 transition-shadow hover:shadow-md sm:p-6">
+          <div className="flex items-center gap-2">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15">
+              <Sparkles className="h-4 w-4 text-primary" />
             </div>
-            
-            <div className="relative">
-              <div className="text-4xl font-black bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-pulse">
-                {drawingCount === null || drawingCount === undefined ? "—" : displayCount.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground/80 mt-1 font-medium">created worldwide</p>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Drawings
+            </span>
+          </div>
+          <div className="mt-3">
+            <div className="text-4xl font-black leading-none text-foreground sm:text-5xl">
+              {drawingCount === null || drawingCount === undefined ? "—" : displayCount.toLocaleString()}
             </div>
+            <p className="mt-1.5 text-xs font-medium text-muted-foreground">created worldwide</p>
           </div>
         </div>
 
         {/* People Reached */}
-        <div className="group">
-          <div className="relative rounded-3xl bg-gradient-to-br from-white/50 to-white/30 dark:from-slate-800/60 dark:to-slate-900/40 p-6 shadow-lg backdrop-blur-md border border-accent/30 transition-all duration-300 hover:shadow-xl hover:border-accent/50">
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            
-            <div className="relative z-10 flex items-center gap-2 mb-3">
-              <div className="rounded-xl bg-gradient-to-br from-accent/30 to-accent/20 p-2.5 shadow-md">
-                <Users className="h-4 w-4 text-accent" />
-              </div>
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reach</span>
+        <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-accent/40 transition-shadow hover:shadow-md sm:p-6">
+          <div className="flex items-center gap-2">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent/40">
+              <Users className="h-4 w-4 text-accent-foreground" />
             </div>
-            
-            <div className="relative">
-              <div className="text-4xl font-black bg-gradient-to-r from-accent via-secondary to-accent bg-clip-text text-transparent animate-pulse">
-  {displayReach.toLocaleString()}+
-              </div>
-              <p className="text-xs text-muted-foreground/80 mt-1 font-medium">people impacted</p>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Reach
+            </span>
+          </div>
+          <div className="mt-3">
+            <div className="text-4xl font-black leading-none text-foreground sm:text-5xl">
+              {displayReach.toLocaleString()}+
             </div>
+            <p className="mt-1.5 text-xs font-medium text-muted-foreground">people impacted</p>
           </div>
         </div>
       </div>
 
-      {/* Animated progress bar */}
-      <div className="relative z-10 mt-6 flex items-center gap-3">
-        <div className="flex-1 h-2 bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 rounded-full overflow-hidden backdrop-blur-sm border border-primary/30">
-          <div 
-            className="h-full bg-gradient-to-r from-primary via-accent to-secondary rounded-full shadow-lg shadow-primary/40"
+      {/* Progress bar */}
+      <div className="relative mt-6 flex items-center gap-3">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-primary/15">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
             style={{
               width: drawingCount && drawingCount > 0 ? `${Math.min((displayCount / drawingCount) * 100, 100)}%` : "0%",
               transition: "width 0.1s ease-out",
-              boxShadow: "0 0 20px rgba(var(--color-primary, 159, 106, 154), 0.6)",
             }}
           />
         </div>
-        <Zap className="h-4 w-4 text-primary opacity-60 animate-pulse" />
-      </div>
-
-      {/* Sparkle accents */}
-      <div className="absolute top-4 right-8 z-0 opacity-20">
-        <Sparkles className="h-6 w-6 text-primary animate-spin" style={{ animationDuration: "4s" }} />
+        <Zap className="h-4 w-4 shrink-0 text-primary/70" />
       </div>
     </div>
   );
