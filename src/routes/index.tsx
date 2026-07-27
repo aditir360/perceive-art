@@ -101,11 +101,8 @@ function Index() {
               Creativity shouldn't require sight.
             </h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Most drawing tools assume you can see the canvas. We disagree. Perceive was built
-              so that <strong className="text-foreground">3.4 million blind and low-vision people</strong> in
-              the US — and millions more worldwide — can express themselves visually through the
-              senses they already trust: hearing and touch. Our goal is a world where making art
-              is a right, not a privilege granted by vision.
+              Art has always been about expression, but most creative tools are designed around vision. Perceive reimagines the canvas by making drawing accessible through hearing, touch, and spatial interaction — empowering blind and low-vision artists while inviting every creator to explore a new way of making art. We believe creativity belongs to everyone, and the ability to create should never depend on how you see the world.
+
             </p>
             <div className="mt-5">
               <ListenButton
