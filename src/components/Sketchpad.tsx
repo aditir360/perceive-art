@@ -17,7 +17,27 @@ import {
   Map,
   ChevronRight,
   X,
+  Circle,
+  Square,
+  Heart,
+  Star,
+  Triangle,
+  Orbit,
+  Home,
 } from "lucide-react";
+
+// Icon + colour badge per guide, reusing the same swatches from the palette
+// below (Rose, Gold, Sky, etc.) instead of introducing new colours or emoji.
+const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
+  circle:   { Icon: Circle,   color: "#c9a0dc" }, // Lavender
+  square:   { Icon: Square,   color: "#5c6b7a" }, // Slate
+  heart:    { Icon: Heart,    color: "#e88aab" }, // Rose
+  star:     { Icon: Star,     color: "#e0b04f" }, // Gold
+  triangle: { Icon: Triangle, color: "#ff7f6b" }, // Coral
+  wave:     { Icon: Waves,    color: "#4da6ff" }, // Sky
+  spiral:   { Icon: Orbit,    color: "#9b72cf" }, // Plum
+  house:    { Icon: Home,     color: "#48b376" }, // Mint
+};
 
 type Point = { x: number; y: number };
 type Stroke = { color: string; points: Point[] };
@@ -325,7 +345,27 @@ export function Sketchpad() {
 
   const stats = useCanvasClicks();
 
-  const say = useCallback((msg: string) => setAnnounce(msg), []);
+  const say = useCallback((msg: string) => {
+    setAnnounce(msg);
+    // Real spoken narration — independent of the Sound On/Off toggle (that
+    // switch only controls the pitch/pan sonification voice). Cancel any
+    // utterance in flight so rapid checkpoints don't queue up and stack.
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(msg);
+      utter.rate = 1.02;
+      utter.pitch = 1;
+      window.speechSynthesis.speak(utter);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   const ensureAudio = useCallback(() => {
     if (audioRef.current) return audioRef.current;
@@ -669,7 +709,7 @@ export function Sketchpad() {
   const activeGuide = guideKey ? SHAPE_GUIDES[guideKey] : null;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+    <div className="grid items-start gap-6 lg:grid-cols-[1fr_280px]">
 
       {/* ── Canvas area ── */}
       <div className="rounded-3xl bg-card p-4 shadow-lg ring-1 ring-primary/20">
@@ -829,13 +869,10 @@ export function Sketchpad() {
         <p className="mt-2.5 text-xs text-muted-foreground">
           Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours
         </p>
-      </div>
 
-      {/* ── Sidebar ── */}
-      <aside className="space-y-5">
-
-        {/* Audio Guides */}
-        <section aria-labelledby="guides-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
+        {/* Audio Guides — moved here from the sidebar so this card doesn't sit
+            half-empty next to the taller settings column */}
+        <section aria-labelledby="guides-heading" className="mt-4 border-t border-border pt-4">
           <button
             id="guides-heading"
             onClick={() => setGuidesPanelOpen((o) => !o)}
@@ -857,30 +894,42 @@ export function Sketchpad() {
           )}
 
           {guidesPanelOpen && (
-            <div className="mt-2 grid gap-2">
-              {Object.entries(SHAPE_GUIDES).map(([key, guide]) => (
-                <button
-                  key={key}
-                  onClick={() => guideKey === key ? stopGuide() : startGuide(key)}
-                  className={`flex items-start gap-3 rounded-2xl p-3 text-left transition ring-1 ${
-                    guideKey === key
-                      ? "bg-primary/15 ring-primary/50 text-primary"
-                      : "bg-background/50 ring-border hover:bg-primary/8 hover:ring-primary/30"
-                  }`}
-                >
-                  <span className="text-xl leading-none">{guide.emoji}</span>
-                  <div>
-                    <div className="text-sm font-medium leading-tight">
-                      {guide.name}
-                      {guideKey === key && <span className="ml-1.5 text-[10px] font-normal opacity-70">(active — press to stop)</span>}
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {Object.entries(SHAPE_GUIDES).map(([key, guide]) => {
+                const { Icon, color } = GUIDE_ICONS[key];
+                return (
+                  <button
+                    key={key}
+                    onClick={() => guideKey === key ? stopGuide() : startGuide(key)}
+                    className={`flex items-start gap-3 rounded-2xl p-3 text-left transition ring-1 ${
+                      guideKey === key
+                        ? "bg-primary/15 ring-primary/50 text-primary"
+                        : "bg-background/50 ring-border hover:bg-primary/8 hover:ring-primary/30"
+                    }`}
+                  >
+                    <span
+                      className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+                      style={{ backgroundColor: `${color}26` }}
+                    >
+                      <Icon className="h-4 w-4" style={{ color }} />
+                    </span>
+                    <div>
+                      <div className="text-sm font-medium leading-tight">
+                        {guide.name}
+                        {guideKey === key && <span className="ml-1.5 text-[10px] font-normal opacity-70">(active — press to stop)</span>}
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground leading-snug">{guide.description}</div>
                     </div>
-                    <div className="mt-0.5 text-[11px] text-muted-foreground leading-snug">{guide.description}</div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           )}
         </section>
+      </div>
+
+      {/* ── Sidebar ── */}
+      <aside className="space-y-5">
 
         {/* Palette */}
         <section aria-labelledby="colors-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
