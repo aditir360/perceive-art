@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Sketchpad } from "@/components/Sketchpad";
 import { RollingStats } from "@/components/RollingStats";
+import { StudioPreviewCards } from "@/components/StudioPreviewCards";
 import { ListenButton } from "@/components/ListenButton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useCanvasClicks } from "@/lib/usage";
@@ -112,6 +113,9 @@ function Index() {
           </div>
         </div>
       </section>
+
+      {/* Studio preview */}
+      <StudioPreviewCards />
 
       {/* How it works */}
       <section id="how" className="mx-auto max-w-6xl px-6 pb-16">
