@@ -325,7 +325,27 @@ export function Sketchpad() {
 
   const stats = useCanvasClicks();
 
-  const say = useCallback((msg: string) => setAnnounce(msg), []);
+  const say = useCallback((msg: string) => {
+    setAnnounce(msg);
+    // Real spoken narration — independent of the Sound On/Off toggle (that
+    // switch only controls the pitch/pan sonification voice). Cancel any
+    // utterance in flight so rapid checkpoints don't queue up and stack.
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(msg);
+      utter.rate = 1.02;
+      utter.pitch = 1;
+      window.speechSynthesis.speak(utter);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   const ensureAudio = useCallback(() => {
     if (audioRef.current) return audioRef.current;
@@ -669,7 +689,7 @@ export function Sketchpad() {
   const activeGuide = guideKey ? SHAPE_GUIDES[guideKey] : null;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+    <div className="grid items-start gap-6 lg:grid-cols-[1fr_280px]">
 
       {/* ── Canvas area ── */}
       <div className="rounded-3xl bg-card p-4 shadow-lg ring-1 ring-primary/20">
@@ -829,13 +849,10 @@ export function Sketchpad() {
         <p className="mt-2.5 text-xs text-muted-foreground">
           Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours
         </p>
-      </div>
 
-      {/* ── Sidebar ── */}
-      <aside className="space-y-5">
-
-        {/* Audio Guides */}
-        <section aria-labelledby="guides-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
+        {/* Audio Guides — moved here from the sidebar so this card doesn't sit
+            half-empty next to the taller settings column */}
+        <section aria-labelledby="guides-heading" className="mt-4 border-t border-border pt-4">
           <button
             id="guides-heading"
             onClick={() => setGuidesPanelOpen((o) => !o)}
@@ -857,7 +874,7 @@ export function Sketchpad() {
           )}
 
           {guidesPanelOpen && (
-            <div className="mt-2 grid gap-2">
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {Object.entries(SHAPE_GUIDES).map(([key, guide]) => (
                 <button
                   key={key}
@@ -881,6 +898,10 @@ export function Sketchpad() {
             </div>
           )}
         </section>
+      </div>
+
+      {/* ── Sidebar ── */}
+      <aside className="space-y-5">
 
         {/* Palette */}
         <section aria-labelledby="colors-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
