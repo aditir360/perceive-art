@@ -179,7 +179,7 @@ function Index() {
       <section className="mx-auto max-w-6xl px-6 pb-20">
         <div className="rounded-3xl bg-card p-8 text-center shadow-sm ring-1 ring-primary/15 sm:p-10">
           <p className="text-sm text-muted-foreground">
-            Have improvements or new features and advancements to recommend?{" "}
+            Have recommendations for new features or improvements?{" "}
             <a
               href="https://docs.google.com/forms/d/e/1FAIpQLSdG2YExqtuXOD8MGkRUPJpYgdbs3wpZNALVpLXo1SRCWK15Ng/viewform?usp=header"
               target="_blank"
