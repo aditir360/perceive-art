@@ -2,33 +2,36 @@ import { useEffect, useRef, useState } from "react";
 import { Sparkles, Users } from "lucide-react";
 
 interface RollingStatsProps {
-  drawingCount: number | null;
+  drawingCount: number | null | undefined;
 }
 
 export function RollingStats({ drawingCount }: RollingStatsProps) {
   const [displayCount, setDisplayCount] = useState(0);
   const animationRef = useRef<number | null>(null);
-  const hasAnimatedRef = useRef(false);
+  const prevCountRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (drawingCount === null || hasAnimatedRef.current) return;
+    // Only animate if we have a valid number and it's different from before
+    if (drawingCount === null || drawingCount === undefined || drawingCount === prevCountRef.current) {
+      return;
+    }
 
-    hasAnimatedRef.current = true;
     const startTime = Date.now();
-    const duration = 2000; // 2 seconds animation
-    const startValue = 0;
+    const duration = 1500; // 1.5 seconds animation
+    const previousValue = prevCountRef.current ?? 0;
+    prevCountRef.current = drawingCount;
 
     const animate = () => {
       const now = Date.now();
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      // Easing function for faster start, slower end
+      // Easing function for faster start, slower end (ease-out)
       const easeProgress = progress < 0.5 
         ? 4 * progress * progress * progress 
         : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
-      const current = Math.floor(easeProgress * drawingCount);
+      const current = Math.floor(previousValue + easeProgress * (drawingCount - previousValue));
       setDisplayCount(current);
 
       if (progress < 1) {
@@ -60,7 +63,7 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              {drawingCount === null ? "—" : displayCount.toLocaleString()}
+              {drawingCount === null || drawingCount === undefined ? "—" : displayCount.toLocaleString()}
             </div>
             <p className="text-[10px] text-muted-foreground/70">created worldwide</p>
           </div>
@@ -89,7 +92,7 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
           <div 
             className="h-full bg-gradient-to-r from-primary via-accent to-secondary rounded-full animate-pulse"
             style={{
-              width: drawingCount ? `${Math.min((displayCount / drawingCount) * 100, 100)}%` : "0%",
+              width: drawingCount && drawingCount > 0 ? `${Math.min((displayCount / drawingCount) * 100, 100)}%` : "0%",
               transition: "width 0.1s ease-out",
             }}
           />
