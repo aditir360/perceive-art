@@ -139,16 +139,16 @@ function TeamPage() {
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
               <Music className="h-7 w-7" />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-foreground">Social Media Team</h2>
+            <h2 className="mt-5 text-xl font-bold text-foreground">Join our team!</h2>
             <p className="mt-1 text-sm font-semibold text-primary">Opening positions soon</p>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              We're expanding! Soon we'll be looking for passionate storytellers to help grow
+              We're expanding! Soon we'll be looking for passionate individuals to help grow
               Perceive's voice and share accessible creativity with the world.
             </p>
             <div className="mt-4">
               <ListenButton
                 label="Listen"
-                text="Social Media Team. Opening positions soon. We're expanding! Soon we'll be looking for passionate storytellers to help grow Perceive's voice and share accessible creativity with the world."
+                text="Join our team. Opening positions soon. We're expanding! Soon we'll be looking for passionate individuals to help grow Perceive's voice and share accessible creativity with the world."
               />
             </div>
           </article>
@@ -160,7 +160,7 @@ function TeamPage() {
         <div className="rounded-3xl bg-gradient-to-br from-primary/10 via-secondary/20 to-accent/20 p-8 text-center ring-1 ring-primary/15 sm:p-12">
           <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Want to join the mission?</h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-            We're always looking for kind, creative people who want to make art accessible for everyone.
+            We're always looking for kind, creative people who want to make art accessible for everyone. Team positions opening soon! Follow our social media platforms to stay updated.
           </p>
           <Button asChild className="mt-6 rounded-full" size="lg">
             <Link to="/">Back to the studio</Link>
