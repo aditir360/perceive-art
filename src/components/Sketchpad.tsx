@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { RollingStats } from "@/components/RollingStats";
 import { trackClick, useCanvasClicks } from "@/lib/usage";
 import {
   Volume2,
@@ -330,6 +331,9 @@ export function Sketchpad() {
             <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">C</kbd>
           </Button>
         </div>
+        <div className="mb-4">
+          <RollingStats drawingCount={stats.data} />
+        </div>
         <svg
           ref={svgRef}
           role="img"
@@ -381,24 +385,6 @@ export function Sketchpad() {
       </div>
 
       <aside className="space-y-5">
-        <section aria-labelledby="stats-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
-          <h2 id="stats-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <Sparkles className="h-4 w-4 text-primary" /> Impact
-          </h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Drawings Created</span>
-              <span className="font-semibold text-primary">
-                {stats.data == null ? "—" : stats.data.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">People Reached</span>
-              <span className="font-semibold text-primary">300+</span>
-            </div>
-          </div>
-        </section>
-
         <section aria-labelledby="colors-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
           <h2 id="colors-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
             <Palette className="h-4 w-4 text-primary" /> Palette
