@@ -178,23 +178,7 @@ function Index() {
         </div>
       </section>
 
-      {/* Feedback */}
-      <section className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="rounded-3xl bg-card p-8 text-center shadow-sm ring-1 ring-primary/15 sm:p-10">
-          <p className="text-sm text-muted-foreground">
-            Have recommendations for new features or improvements?{" "}
-            <a
-              href="https://docs.google.com/forms/d/e/1FAIpQLSdG2YExqtuXOD8MGkRUPJpYgdbs3wpZNALVpLXo1SRCWK15Ng/viewform?usp=header"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-primary underline-offset-2 hover:underline"
-            >
-              Submit this form here
-            </a>
-            .
-          </p>
-        </div>
-      </section>
+  
 
       {/* Coming soon */}
       <section className="mx-auto max-w-6xl px-6 pb-20">
@@ -235,6 +219,24 @@ function Index() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+       {/* Feedback */}
+      <section className="mx-auto max-w-6xl px-6 pb-20">
+        <div className="rounded-3xl bg-card p-8 text-center shadow-sm ring-1 ring-primary/15 sm:p-10">
+          <p className="text-sm text-muted-foreground">
+            Have recommendations for new features or improvements?{" "}
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLSdG2YExqtuXOD8MGkRUPJpYgdbs3wpZNALVpLXo1SRCWK15Ng/viewform?usp=header"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Submit this form here
+            </a>
+            .
+          </p>
         </div>
       </section>
 
