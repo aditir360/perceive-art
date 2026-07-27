@@ -132,7 +132,7 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
             </div>
             
             <div className="relative">
-              <div className="text-4xl font-black bg-gradient-to-r from-accent/75 via-secondary/75 to-accent/75 bg-clip-text text-transparent animate-pulse">
+              <div className="text-4xl font-black bg-gradient-to-r from-accent/50 via-secondary/50 to-accent/50 bg-clip-text text-transparent animate-pulse">
                 {displayReach.toLocaleString()}+
               </div>
               <p className="text-xs text-muted-foreground/80 mt-1 font-medium">people impacted</p>
