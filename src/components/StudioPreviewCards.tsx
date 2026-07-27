@@ -96,12 +96,7 @@ const cards = [
 export function StudioPreviewCards() {
   return (
     <section className="mx-auto max-w-5xl px-6 pb-6 pt-10 sm:pt-16">
-      <h2 className="text-center text-3xl font-bold tracking-tight sm:text-4xl">
-        A peek inside the studio
-      </h2>
-      <p className="mx-auto mt-3 max-w-xl text-center text-muted-foreground">
-        Sound becomes shape, and shape becomes something you can hold.
-      </p>
+      
 
       <div className="mt-12 flex flex-wrap items-start justify-center gap-6 sm:mt-16 sm:gap-5">
         {cards.map(({ label, icon: Icon, header, rotate, translate, content }) => (
