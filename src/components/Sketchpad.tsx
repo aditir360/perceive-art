@@ -336,7 +336,7 @@ export function Sketchpad() {
   );
   const [colorIndex, setColorIndex] = useState(0);
   const [guideKey,   setGuideKey]   = useState<string | null>(null);
-  const [guidesPanelOpen, setGuidesPanelOpen] = useState(false);
+  const [guidesPanelOpen, setGuidesPanelOpen] = useState(true);
   const [visualAids, setVisualAids] = useState(true);
 
   const lastCheckpoint = useRef(-1);
