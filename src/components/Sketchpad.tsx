@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { RollingStats } from "@/components/RollingStats";
 import { trackClick, useCanvasClicks } from "@/lib/usage";
 import {
   Volume2,
@@ -330,9 +329,6 @@ export function Sketchpad() {
             <Eraser className="h-4 w-4" /> Clear
             <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">C</kbd>
           </Button>
-        </div>
-        <div className="mb-4">
-          <RollingStats drawingCount={stats.data} />
         </div>
         <svg
           ref={svgRef}
