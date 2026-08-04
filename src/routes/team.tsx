@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { ListenButton } from "@/components/ListenButton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
@@ -163,7 +163,7 @@ function TeamPage() {
             We're currently hiring and have spots open! We're looking for kind, creative people who want to make art accessible for everyone. Apply below to join the mission.
           </p>
           <Button asChild className="mt-6 rounded-full" size="lg">
-            
+            <a
               href="https://docs.google.com/forms/d/e/1FAIpQLSe_ng2dfextv6ry_MOO0tUCb3a7znWzRWCOmI8NOLjEoJ9f0Q/viewform?usp=header"
               target="_blank"
               rel="noopener noreferrer"
@@ -185,14 +185,14 @@ function TeamPage() {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            
+            <a
               href="mailto:contact.perceive.art@gmail.com"
               aria-label="Email Perceive"
               className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
             >
               <Mail className="h-4 w-4" />
             </a>
-            
+            <a
               href="https://www.instagram.com/perceive.art.or"
               target="_blank"
               rel="noopener noreferrer"
@@ -201,7 +201,7 @@ function TeamPage() {
             >
               <Instagram className="h-4 w-4" />
             </a>
-            
+            <a
               href="https://www.linkedin.com/company/perceive-art/"
               target="_blank"
               rel="noopener noreferrer"
