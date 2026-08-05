@@ -40,7 +40,10 @@ const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
 };
 
 type Point = { x: number; y: number };
-type Stroke = { color: string; points: Point[] };
+type Stroke = { color: string; width: number; points: Point[] };
+
+const MIN_PEN_WIDTH = 1;
+const MAX_PEN_WIDTH = 14;
 
 const COLORS = [
   { name: "Rose",     value: "#e88aab", tone: 523.25 },
@@ -335,6 +338,7 @@ export function Sketchpad() {
     "Welcome to Sonic Bear Studio. Press S to start sound, D to toggle drawing, arrow keys to move the brush."
   );
   const [colorIndex, setColorIndex] = useState(0);
+  const [penWidth,  setPenWidth]  = useState(3);
   const [guideKey,   setGuideKey]   = useState<string | null>(null);
   const [guidesPanelOpen, setGuidesPanelOpen] = useState(true);
   const [visualAids, setVisualAids] = useState(true);
@@ -488,7 +492,7 @@ export function Sketchpad() {
 
     if (drawing) {
       setCurrent((c) => {
-        if (!c) return { color, points: [p] };
+        if (!c) return { color, width: penWidth, points: [p] };
         const start = c.points[0];
         const dist  = Math.hypot(p.x - start.x, p.y - start.y);
         if (c.points.length > 6 && dist < 16) {
@@ -497,7 +501,7 @@ export function Sketchpad() {
         return { ...c, points: [...c.points, p] };
       });
     }
-  }, [drawing, color, updateAudio, trackGuide, say]);
+  }, [drawing, color, penWidth, updateAudio, trackGuide, say]);
 
   // ── Drawing toggle ────────────────────────────────────────────────────────
   const toggleDrawing = useCallback(() => {
@@ -505,7 +509,7 @@ export function Sketchpad() {
     setDrawing((d) => {
       const next = !d;
       if (next) {
-        setCurrent({ color, points: [cursor] });
+        setCurrent({ color, width: penWidth, points: [cursor] });
         if (audioRef.current) playSineNote(audioRef.current.ctx, 659, 0.15, 0.12);
         say("Drawing on — move to draw");
       } else {
@@ -518,7 +522,7 @@ export function Sketchpad() {
       }
       return next;
     });
-  }, [color, cursor, say]);
+  }, [color, cursor, penWidth, say]);
 
   // ── Sound toggle ──────────────────────────────────────────────────────────
   const toggleSound = useCallback(() => {
@@ -557,6 +561,22 @@ export function Sketchpad() {
     setColorIndex(COLORS.indexOf(c));
     if (audioRef.current) playSineNote(audioRef.current.ctx, c.tone, 0.2, 0.11, true);
     say(`Color: ${c.name}`);
+    trackClick();
+  }, [say]);
+
+  // ── Pen thickness ─────────────────────────────────────────────────────────
+  const changePenWidth = useCallback((next: number) => {
+    const clamped = Math.max(MIN_PEN_WIDTH, Math.min(MAX_PEN_WIDTH, Math.round(next)));
+    setPenWidth((prev) => {
+      if (clamped === prev) return prev;
+      if (audioRef.current) {
+        // Thicker pen = lower tone, thinner pen = higher tone (both still sine, gentle)
+        const freq = 300 + (MAX_PEN_WIDTH - clamped) * 30;
+        playSineNote(audioRef.current.ctx, freq, 0.12, 0.09);
+      }
+      say(`Pen thickness ${clamped}`);
+      return clamped;
+    });
     trackClick();
   }, [say]);
 
@@ -604,11 +624,13 @@ export function Sketchpad() {
       else if (e.key.toLowerCase() === "g") { e.preventDefault(); setGuidesPanelOpen((o) => !o); say("Guides panel toggled"); }
       else if (e.key.toLowerCase() === "q") { e.preventDefault(); cycleColor(-1); }
       else if (e.key.toLowerCase() === "e") { e.preventDefault(); cycleColor(1); }
+      else if (e.key === "[") { e.preventDefault(); changePenWidth(penWidth - 1); }
+      else if (e.key === "]") { e.preventDefault(); changePenWidth(penWidth + 1); }
       else if (e.key.toLowerCase() === "escape" && guideKey) { e.preventDefault(); stopGuide(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, guideKey, stopGuide, say]);
+  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, penWidth, changePenWidth, guideKey, stopGuide, say]);
 
   // ── Pointer ───────────────────────────────────────────────────────────────
   const pointerDrawing = useRef(false);
@@ -627,7 +649,7 @@ export function Sketchpad() {
     const p = svgPoint(e);
     setCursor(p);
     setDrawing(true);
-    setCurrent({ color, points: [p] });
+    setCurrent({ color, width: penWidth, points: [p] });
     updateAudio(p);
     trackClick();
   };
@@ -638,7 +660,7 @@ export function Sketchpad() {
     updateAudio(p);
     trackGuide(p);
     if (pointerDrawing.current) {
-      setCurrent((c) => c ? { ...c, points: [...c.points, p] } : { color, points: [p] });
+      setCurrent((c) => c ? { ...c, points: [...c.points, p] } : { color, width: penWidth, points: [p] });
     }
   };
 
@@ -661,7 +683,8 @@ export function Sketchpad() {
       const d = s.points.map((p, i) =>
         `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`
       ).join(" ");
-      return `<path d="${d}" fill="none" stroke="${highContrast ? "#000" : s.color}" stroke-width="${highContrast ? 4 : 3}" stroke-linecap="round" stroke-linejoin="round"/>`;
+      const w = highContrast ? Math.max(4, s.width + 1) : s.width;
+      return `<path d="${d}" fill="none" stroke="${highContrast ? "#000" : s.color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
     }).join("");
     return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" width="${WIDTH}" height="${HEIGHT}"><rect width="100%" height="100%" fill="${bg}"/>${paths}</svg>`;
   };
@@ -839,14 +862,14 @@ export function Sketchpad() {
           {strokes.map((s, i) => (
             <polyline key={i}
               points={s.points.map((p) => `${p.x},${p.y}`).join(" ")}
-              fill="none" stroke={s.color} strokeWidth={3}
+              fill="none" stroke={s.color} strokeWidth={s.width}
               strokeLinecap="round" strokeLinejoin="round"
             />
           ))}
           {current && (
             <polyline
               points={current.points.map((p) => `${p.x},${p.y}`).join(" ")}
-              fill="none" stroke={current.color} strokeWidth={3}
+              fill="none" stroke={current.color} strokeWidth={current.width}
               strokeLinecap="round" strokeLinejoin="round"
             />
           )}
@@ -863,11 +886,11 @@ export function Sketchpad() {
 
           {/* Cursor */}
           <circle cx={cursor.x} cy={cursor.y} r={12} fill={color} fillOpacity={0.18} stroke={color} strokeWidth={2} />
-          <circle cx={cursor.x} cy={cursor.y} r={3.5} fill={color} />
+          <circle cx={cursor.x} cy={cursor.y} r={Math.max(2, penWidth / 2)} fill={color} />
         </svg>
 
         <p className="mt-2.5 text-xs text-muted-foreground">
-          Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours
+          Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours · [ ] adjust pen thickness
         </p>
 
         {/* Audio Guides — moved here from the sidebar so this card doesn't sit
@@ -953,6 +976,55 @@ export function Sketchpad() {
           </div>
         </section>
 
+        {/* Pen thickness */}
+        <section aria-labelledby="pen-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
+          <h2 id="pen-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <Pencil className="h-4 w-4 text-primary" /> Pen thickness
+            <span className="ml-auto text-[10px] font-normal text-muted-foreground">[ / ] to adjust</span>
+          </h2>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => changePenWidth(penWidth - 1)}
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 shrink-0 rounded-full"
+              aria-label="Decrease pen thickness"
+            >
+              −
+            </Button>
+            <input
+              type="range"
+              min={MIN_PEN_WIDTH}
+              max={MAX_PEN_WIDTH}
+              step={1}
+              value={penWidth}
+              onChange={(e) => changePenWidth(Number(e.target.value))}
+              aria-label="Pen thickness"
+              aria-valuemin={MIN_PEN_WIDTH}
+              aria-valuemax={MAX_PEN_WIDTH}
+              aria-valuenow={penWidth}
+              className="h-2 flex-1 cursor-pointer appearance-none rounded-full bg-primary/20 accent-primary"
+            />
+            <Button
+              onClick={() => changePenWidth(penWidth + 1)}
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 shrink-0 rounded-full"
+              aria-label="Increase pen thickness"
+            >
+              +
+            </Button>
+          </div>
+          <div className="mt-2 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span
+              aria-hidden
+              className="inline-block rounded-full"
+              style={{ width: Math.max(4, penWidth), height: Math.max(4, penWidth), backgroundColor: color }}
+            />
+            {penWidth}px
+          </div>
+        </section>
+
         {/* Export */}
         <section aria-labelledby="export-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
           <h2 id="export-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
@@ -982,6 +1054,7 @@ export function Sketchpad() {
             <li>S — toggle sound</li>
             <li>C — clear canvas</li>
             <li>Q / E — cycle colour</li>
+            <li>[ / ] — pen thickness</li>
             <li>G — open / close guides</li>
             <li>Esc — stop active guide</li>
             <li>X — toggle visual aids</li>
