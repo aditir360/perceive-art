@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Sketchpad } from "@/components/Sketchpad";
 import { RollingStats } from "@/components/RollingStats";
 import { StudioPreviewCards } from "@/components/StudioPreviewCards";
-import { ListenButton } from "@/components/ListenButton";
+import { HoverListen } from "@/components/ListenButton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useCanvasClicks } from "@/lib/usage";
 import bearPeek from "@/assets/bear-peek-cropped.png";
@@ -100,16 +100,15 @@ function Index() {
             <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
               Creativity shouldn't require sight.
             </h2>
-            <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Art has always been about expression, but most creative tools are designed around vision. Perceive reimagines the canvas by making drawing accessible through hearing, touch, and spatial interaction — empowering blind and low-vision artists while inviting every creator to explore a new way of making art. We believe creativity belongs to everyone, and the ability to create should never depend on how you see the world.
-
-            </p>
-            <div className="mt-5">
-              <ListenButton
-                label="Listen to our mission"
-                text="Our mission. Creativity shouldn't require sight. Most drawing tools assume you can see the canvas. We disagree. Perceive was built so that 3.4 million blind and low-vision people in the US, and millions more worldwide, can express themselves visually through the senses they already trust: hearing and touch. Our goal is a world where making art is a right, not a privilege granted by vision."
-              />
-            </div>
+            <HoverListen
+              text="Our mission. Creativity shouldn't require sight. Most drawing tools assume you can see the canvas. We disagree. Perceive was built so that 3.4 million blind and low-vision people in the US, and millions more worldwide, can express themselves visually through the senses they already trust: hearing and touch. Our goal is a world where making art is a right, not a privilege granted by vision."
+              label="our mission"
+              className="mt-4"
+            >
+              <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
+                Art has always been about expression, but most creative tools are designed around vision. Perceive reimagines the canvas by making drawing accessible through hearing, touch, and spatial interaction — empowering blind and low-vision artists while inviting every creator to explore a new way of making art. We believe creativity belongs to everyone, and the ability to create should never depend on how you see the world.
+              </p>
+            </HoverListen>
           </div>
         </div>
       </section>
@@ -119,15 +118,15 @@ function Index() {
       {/* How it works */}
       <section id="how" className="mx-auto max-w-6xl px-6 pb-16">
         <h2 className="text-center text-3xl font-bold tracking-tight sm:text-4xl">How Perceive works</h2>
-        <p className="mx-auto mt-3 max-w-2xl text-center text-muted-foreground">
-          Three senses, one canvas. Move, listen, and print.
-        </p>
-        <div className="mt-6 flex justify-center">
-          <ListenButton
-            label="Listen to how it works"
-            text="How Perceive works. Three senses, one canvas. Move, listen, and print. First: hear the canvas. Your cursor's horizontal position pans the sound left and right. Vertical position raises or lowers the pitch. You always know where you are. Second: draw with intention. Tap space to start a line and tap again to connect it. A soft chime confirms every choice, and edges buzz gently so you never get lost. Third: hold your art. Export a high-contrast SVG for swell paper, or a ready-to-print STL, and turn what you heard into something you can run your fingers across."
-          />
-        </div>
+        <HoverListen
+          text="How Perceive works. Three senses, one canvas. Move, listen, and print. First: hear the canvas. Your cursor's horizontal position pans the sound left and right. Vertical position raises or lowers the pitch. You always know where you are. Second: draw with intention. Tap space to start a line and tap again to connect it. A soft chime confirms every choice, and edges buzz gently so you never get lost. Third: hold your art. Export a high-contrast SVG for swell paper, or a ready-to-print STL, and turn what you heard into something you can run your fingers across."
+          label="how it works"
+          className="mx-auto mt-3 block max-w-2xl"
+        >
+          <p className="text-center text-muted-foreground">
+            Three senses, one canvas. Move, listen, and print.
+          </p>
+        </HoverListen>
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           {[
             {
@@ -146,15 +145,14 @@ function Index() {
               body: "Export a high-contrast SVG for swell paper — or a ready-to-print STL — and turn what you heard into something you can run your fingers across.",
             },
           ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+            <div key={title} className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
                 <Icon className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
-              <div className="mt-4">
-                <ListenButton label={`Listen`} text={`${title}. ${body}`} />
-              </div>
+              <HoverListen text={`${title}. ${body}`} label={title} className="mt-4 block">
+                <h3 className="text-lg font-semibold">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
+              </HoverListen>
             </div>
           ))}
         </div>
