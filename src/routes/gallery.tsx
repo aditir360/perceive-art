@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/SiteHeader";
-import { getArtworks, getDeviceId, type GalleryArtwork } from "@/routes/index";
+import { getArtworks, getDeviceId, type GalleryArtwork } from "@/lib/gallery-storage";
 import { Globe, Users, User, RefreshCw, Sparkles, Palette } from "lucide-react";
 
 export const Route = createFileRoute("/gallery")({
