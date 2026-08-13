@@ -24,6 +24,8 @@ import {
   Triangle,
   Orbit,
   Home,
+  Globe,
+  Check,
 } from "lucide-react";
 
 // Icon + colour badge per guide, reusing the same swatches from the palette
@@ -325,7 +327,14 @@ function playEdgeBump(ctx: AudioContext): void {
   playSineNote(ctx, 110, 0.18, 0.10);
 }
 
-export function Sketchpad() {
+type SketchpadProps = {
+  /** Called with the finished artwork's colour SVG once the person confirms
+   * they want to make it public. When omitted, the "Post to Gallery" section
+   * is not rendered at all, so Sketchpad stays usable standalone. */
+  onPost?: (artwork: { svg: string }) => void;
+};
+
+export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const audioRef = useRef<ReturnType<typeof buildAudio> | null>(null);
 
   const [strokes,   setStrokes]   = useState<Stroke[]>([]);
@@ -342,6 +351,8 @@ export function Sketchpad() {
   const [guideKey,   setGuideKey]   = useState<string | null>(null);
   const [guidesPanelOpen, setGuidesPanelOpen] = useState(true);
   const [visualAids, setVisualAids] = useState(true);
+  const [postConfirmOpen, setPostConfirmOpen] = useState(false);
+  const [justPosted, setJustPosted] = useState(false);
 
   const lastCheckpoint = useRef(-1);
   const guideOscRef    = useRef<{ osc: OscillatorNode; gain: GainNode } | null>(null);
@@ -612,6 +623,11 @@ export function Sketchpad() {
   // ── Keyboard ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (postConfirmOpen) {
+        if (e.key === "Escape") { e.preventDefault(); cancelPost(); }
+        else if (e.key === "Enter") { e.preventDefault(); confirmPost(); }
+        return;
+      }
       const step = e.shiftKey ? 30 : 10;
       if      (e.key === "ArrowLeft")  { e.preventDefault(); moveTo({ x: cursor.x - step, y: cursor.y }); }
       else if (e.key === "ArrowRight") { e.preventDefault(); moveTo({ x: cursor.x + step, y: cursor.y }); }
@@ -630,7 +646,7 @@ export function Sketchpad() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, penWidth, changePenWidth, guideKey, stopGuide, say]);
+  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, penWidth, changePenWidth, guideKey, stopGuide, say, postConfirmOpen, cancelPost, confirmPost]);
 
   // ── Pointer ───────────────────────────────────────────────────────────────
   const pointerDrawing = useRef(false);
@@ -699,6 +715,35 @@ export function Sketchpad() {
 
   const exportSwell = () => { dl("sonic-bear-swell.svg", buildSvgString(true),  "image/svg+xml"); say("Exported swell paper SVG"); trackClick(); };
   const exportColor = () => { dl("sonic-bear-color.svg", buildSvgString(false), "image/svg+xml"); say("Exported color SVG");       trackClick(); };
+
+  // ── Post to Gallery ──────────────────────────────────────────────────────
+  const hasArtwork = strokes.length > 0 || (!!current && current.points.length > 1);
+
+  const requestPost = useCallback(() => {
+    if (!hasArtwork) {
+      say("Draw something first, then you can post it to the gallery");
+      return;
+    }
+    setPostConfirmOpen(true);
+    trackClick();
+  }, [hasArtwork, say]);
+
+  const cancelPost = useCallback(() => {
+    setPostConfirmOpen(false);
+    say("Post canceled");
+  }, [say]);
+
+  const confirmPost = useCallback(() => {
+    if (!onPost) return;
+    onPost({ svg: buildSvgString(false) });
+    setPostConfirmOpen(false);
+    setJustPosted(true);
+    setTimeout(() => setJustPosted(false), 2200);
+    if (audioRef.current) playCompleteChime(audioRef.current.ctx);
+    say("Posted to the gallery — visible to everyone");
+    trackClick();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onPost, strokes, current, say]);
 
   const exportStl = () => {
     const all = current ? [...strokes, current] : strokes;
@@ -1043,6 +1088,27 @@ export function Sketchpad() {
           </div>
         </section>
 
+        {/* Share */}
+        {onPost && (
+          <section aria-labelledby="share-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
+            <h2 id="share-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <Globe className="h-4 w-4 text-primary" /> Share
+            </h2>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Post your artwork to the public gallery so creators everywhere can see it.
+            </p>
+            <Button
+              onClick={requestPost}
+              disabled={!hasArtwork}
+              variant={justPosted ? "secondary" : "default"}
+              className="w-full justify-center gap-2 rounded-full"
+            >
+              {justPosted ? <Check className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+              {justPosted ? "Posted!" : "Post to Gallery"}
+            </Button>
+          </section>
+        )}
+
         {/* Keyboard reference */}
         <section aria-labelledby="kbd-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20 text-xs text-muted-foreground">
           <h2 id="kbd-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -1063,6 +1129,37 @@ export function Sketchpad() {
       </aside>
 
       <div aria-live="assertive" role="status" className="sr-only">{announce}</div>
+
+      {/* Post-to-gallery confirmation — a deliberate second step before anything goes public */}
+      {postConfirmOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="post-confirm-heading"
+          className="fixed inset-0 z-50 grid place-items-center bg-background/70 p-4 backdrop-blur-sm"
+        >
+          <div className="w-full max-w-sm rounded-3xl bg-card p-6 shadow-xl ring-1 ring-primary/20">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+              <Globe className="h-6 w-6" />
+            </div>
+            <h2 id="post-confirm-heading" className="mt-4 text-lg font-bold text-foreground">
+              Post this to the gallery?
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Your artwork will become public — anyone around the world will be able to see it on the Gallery page.
+            </p>
+            <div className="mt-5 flex gap-2">
+              <Button onClick={cancelPost} variant="outline" className="flex-1 rounded-full">
+                Cancel
+                <kbd className="ml-1.5 rounded bg-background/40 px-1 py-0.5 text-[10px]">Esc</kbd>
+              </Button>
+              <Button onClick={confirmPost} className="flex-1 gap-2 rounded-full">
+                <Globe className="h-4 w-4" /> Yes, post it
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
