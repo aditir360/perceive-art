@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useCallback } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sketchpad } from "@/components/Sketchpad";
 import { RollingStats } from "@/components/RollingStats";
 import { StudioPreviewCards } from "@/components/StudioPreviewCards";
@@ -9,12 +10,83 @@ import bearPeek from "@/assets/bear-peek-cropped.png";
 import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight, Music, Music2, Star, Palette, Headphones, Mail, Instagram, Linkedin, Rocket, Users2, Smartphone, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// ── Gallery storage ──────────────────────────────────────────────────────
+// Lives here next to the Studio (where artwork is actually made) and is
+// imported directly by the /gallery route so both pages read and write the
+// exact same data.
+//
+// NOTE: this is a localStorage-backed store, so posted art currently only
+// persists per-browser/device — it is not yet synced to a real server, so
+// "everyone around the world" seeing it only holds true for people sharing
+// this browser profile. The function names/shapes below are written so they
+// can be swapped for real API calls later without touching gallery.tsx or
+// Sketchpad.tsx.
+
+const GALLERY_STORAGE_KEY = "perceive:gallery-artworks";
+const DEVICE_ID_KEY = "perceive:device-id";
+
+export type GalleryArtwork = {
+  id: string;
+  svg: string;
+  authorId: string;
+  createdAt: number;
+};
+
+function makeId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/** A stable, anonymous per-browser id — no account required. Used only to
+ * tell "posted by me" apart from everyone else's work in the gallery filter. */
+export function getDeviceId(): string {
+  if (typeof window === "undefined") return "server";
+  let id = window.localStorage.getItem(DEVICE_ID_KEY);
+  if (!id) {
+    id = makeId();
+    window.localStorage.setItem(DEVICE_ID_KEY, id);
+  }
+  return id;
+}
+
+/** All posted artwork, newest first. Safe to call during SSR (returns []). */
+export function getArtworks(): GalleryArtwork[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(GALLERY_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as GalleryArtwork[];
+    return Array.isArray(parsed) ? parsed.sort((a, b) => b.createdAt - a.createdAt) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Persists a new piece of artwork and returns the saved record. */
+export function saveArtwork(svg: string): GalleryArtwork {
+  const artwork: GalleryArtwork = {
+    id: makeId(),
+    svg,
+    authorId: getDeviceId(),
+    createdAt: Date.now(),
+  };
+  if (typeof window !== "undefined") {
+    const next = [artwork, ...getArtworks()];
+    window.localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(next));
+  }
+  return artwork;
+}
+
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
 function Index() {
   const stats = useCanvasClicks();
+
+  const handlePost = useCallback(({ svg }: { svg: string }) => {
+    saveArtwork(svg);
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -74,6 +146,9 @@ function Index() {
           </Button>
           <Button asChild size="lg" variant="secondary" className="rounded-full">
             <a href="#mission">Our mission</a>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="rounded-full">
+            <Link to="/gallery">Browse the gallery</Link>
           </Button>
         </div>
       </header>
@@ -172,7 +247,7 @@ function Index() {
           </div>
         </div>
         <div>
-          <Sketchpad />
+          <Sketchpad onPost={handlePost} />
         </div>
       </section>
 
