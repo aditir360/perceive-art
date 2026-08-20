@@ -620,6 +620,60 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     });
   }, [say]);
 
+  // ── Export ────────────────────────────────────────────────────────────────
+  const buildSvgString = (highContrast: boolean) => {
+    const all = current ? [...strokes, current] : strokes;
+    const bg  = highContrast ? "#ffffff" : "#fff5f8";
+    const paths = all.map((s) => {
+      const d = s.points.map((p, i) =>
+        `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`
+      ).join(" ");
+      const w = highContrast ? Math.max(4, s.width + 1) : s.width;
+      return `<path d="${d}" fill="none" stroke="${highContrast ? "#000" : s.color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    }).join("");
+    return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" width="${WIDTH}" height="${HEIGHT}"><rect width="100%" height="100%" fill="${bg}"/>${paths}</svg>`;
+  };
+
+  const dl = (name: string, content: string, type: string) => {
+    const a = Object.assign(document.createElement("a"), {
+      href: URL.createObjectURL(new Blob([content], { type })),
+      download: name,
+    });
+    a.click();
+  };
+
+  const exportSwell = () => { dl("sonic-bear-swell.svg", buildSvgString(true),  "image/svg+xml"); say("Exported swell paper SVG"); trackClick(); };
+  const exportColor = () => { dl("sonic-bear-color.svg", buildSvgString(false), "image/svg+xml"); say("Exported color SVG");       trackClick(); };
+
+  // ── Post to Gallery ──────────────────────────────────────────────────────
+  const hasArtwork = strokes.length > 0 || (!!current && current.points.length > 1);
+
+  const requestPost = useCallback(() => {
+    if (!hasArtwork) {
+      say("Draw something first, then you can post it to the gallery");
+      return;
+    }
+    setPostConfirmOpen(true);
+    trackClick();
+  }, [hasArtwork, say]);
+
+  const cancelPost = useCallback(() => {
+    setPostConfirmOpen(false);
+    say("Post canceled");
+  }, [say]);
+
+  const confirmPost = useCallback(() => {
+    if (!onPost) return;
+    onPost({ svg: buildSvgString(false) });
+    setPostConfirmOpen(false);
+    setJustPosted(true);
+    setTimeout(() => setJustPosted(false), 2200);
+    if (audioRef.current) playCompleteChime(audioRef.current.ctx);
+    say("Posted to the gallery — visible to everyone");
+    trackClick();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onPost, strokes, current, say]);
+
   // ── Keyboard ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -690,60 +744,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     });
     say("Line saved");
   };
-
-  // ── Export ────────────────────────────────────────────────────────────────
-  const buildSvgString = (highContrast: boolean) => {
-    const all = current ? [...strokes, current] : strokes;
-    const bg  = highContrast ? "#ffffff" : "#fff5f8";
-    const paths = all.map((s) => {
-      const d = s.points.map((p, i) =>
-        `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`
-      ).join(" ");
-      const w = highContrast ? Math.max(4, s.width + 1) : s.width;
-      return `<path d="${d}" fill="none" stroke="${highContrast ? "#000" : s.color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
-    }).join("");
-    return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" width="${WIDTH}" height="${HEIGHT}"><rect width="100%" height="100%" fill="${bg}"/>${paths}</svg>`;
-  };
-
-  const dl = (name: string, content: string, type: string) => {
-    const a = Object.assign(document.createElement("a"), {
-      href: URL.createObjectURL(new Blob([content], { type })),
-      download: name,
-    });
-    a.click();
-  };
-
-  const exportSwell = () => { dl("sonic-bear-swell.svg", buildSvgString(true),  "image/svg+xml"); say("Exported swell paper SVG"); trackClick(); };
-  const exportColor = () => { dl("sonic-bear-color.svg", buildSvgString(false), "image/svg+xml"); say("Exported color SVG");       trackClick(); };
-
-  // ── Post to Gallery ──────────────────────────────────────────────────────
-  const hasArtwork = strokes.length > 0 || (!!current && current.points.length > 1);
-
-  const requestPost = useCallback(() => {
-    if (!hasArtwork) {
-      say("Draw something first, then you can post it to the gallery");
-      return;
-    }
-    setPostConfirmOpen(true);
-    trackClick();
-  }, [hasArtwork, say]);
-
-  const cancelPost = useCallback(() => {
-    setPostConfirmOpen(false);
-    say("Post canceled");
-  }, [say]);
-
-  const confirmPost = useCallback(() => {
-    if (!onPost) return;
-    onPost({ svg: buildSvgString(false) });
-    setPostConfirmOpen(false);
-    setJustPosted(true);
-    setTimeout(() => setJustPosted(false), 2200);
-    if (audioRef.current) playCompleteChime(audioRef.current.ctx);
-    say("Posted to the gallery — visible to everyone");
-    trackClick();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onPost, strokes, current, say]);
 
   const exportStl = () => {
     const all = current ? [...strokes, current] : strokes;
