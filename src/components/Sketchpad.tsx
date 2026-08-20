@@ -24,8 +24,6 @@ import {
   Triangle,
   Orbit,
   Home,
-  Globe,
-  Check,
 } from "lucide-react";
 
 // Icon + colour badge per guide, reusing the same swatches from the palette
@@ -42,10 +40,7 @@ const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
 };
 
 type Point = { x: number; y: number };
-type Stroke = { color: string; width: number; points: Point[] };
-
-const MIN_PEN_WIDTH = 1;
-const MAX_PEN_WIDTH = 14;
+type Stroke = { color: string; points: Point[] };
 
 const COLORS = [
   { name: "Rose",     value: "#e88aab", tone: 523.25 },
@@ -327,14 +322,7 @@ function playEdgeBump(ctx: AudioContext): void {
   playSineNote(ctx, 110, 0.18, 0.10);
 }
 
-type SketchpadProps = {
-  /** Called with the finished artwork's colour SVG once the person confirms
-   * they want to make it public. When omitted, the "Post to Gallery" section
-   * is not rendered at all, so Sketchpad stays usable standalone. */
-  onPost?: (artwork: { svg: string }) => void;
-};
-
-export function Sketchpad({ onPost }: SketchpadProps = {}) {
+export function Sketchpad() {
   const audioRef = useRef<ReturnType<typeof buildAudio> | null>(null);
 
   const [strokes,   setStrokes]   = useState<Stroke[]>([]);
@@ -347,12 +335,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     "Welcome to Sonic Bear Studio. Press S to start sound, D to toggle drawing, arrow keys to move the brush."
   );
   const [colorIndex, setColorIndex] = useState(0);
-  const [penWidth,  setPenWidth]  = useState(3);
   const [guideKey,   setGuideKey]   = useState<string | null>(null);
   const [guidesPanelOpen, setGuidesPanelOpen] = useState(true);
   const [visualAids, setVisualAids] = useState(true);
-  const [postConfirmOpen, setPostConfirmOpen] = useState(false);
-  const [justPosted, setJustPosted] = useState(false);
 
   const lastCheckpoint = useRef(-1);
   const guideOscRef    = useRef<{ osc: OscillatorNode; gain: GainNode } | null>(null);
@@ -503,7 +488,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
     if (drawing) {
       setCurrent((c) => {
-        if (!c) return { color, width: penWidth, points: [p] };
+        if (!c) return { color, points: [p] };
         const start = c.points[0];
         const dist  = Math.hypot(p.x - start.x, p.y - start.y);
         if (c.points.length > 6 && dist < 16) {
@@ -512,7 +497,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         return { ...c, points: [...c.points, p] };
       });
     }
-  }, [drawing, color, penWidth, updateAudio, trackGuide, say]);
+  }, [drawing, color, updateAudio, trackGuide, say]);
 
   // ── Drawing toggle ────────────────────────────────────────────────────────
   const toggleDrawing = useCallback(() => {
@@ -520,7 +505,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setDrawing((d) => {
       const next = !d;
       if (next) {
-        setCurrent({ color, width: penWidth, points: [cursor] });
+        setCurrent({ color, points: [cursor] });
         if (audioRef.current) playSineNote(audioRef.current.ctx, 659, 0.15, 0.12);
         say("Drawing on — move to draw");
       } else {
@@ -533,7 +518,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       }
       return next;
     });
-  }, [color, cursor, penWidth, say]);
+  }, [color, cursor, say]);
 
   // ── Sound toggle ──────────────────────────────────────────────────────────
   const toggleSound = useCallback(() => {
@@ -575,22 +560,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     trackClick();
   }, [say]);
 
-  // ── Pen thickness ─────────────────────────────────────────────────────────
-  const changePenWidth = useCallback((next: number) => {
-    const clamped = Math.max(MIN_PEN_WIDTH, Math.min(MAX_PEN_WIDTH, Math.round(next)));
-    setPenWidth((prev) => {
-      if (clamped === prev) return prev;
-      if (audioRef.current) {
-        // Thicker pen = lower tone, thinner pen = higher tone (both still sine, gentle)
-        const freq = 300 + (MAX_PEN_WIDTH - clamped) * 30;
-        playSineNote(audioRef.current.ctx, freq, 0.12, 0.09);
-      }
-      say(`Pen thickness ${clamped}`);
-      return clamped;
-    });
-    trackClick();
-  }, [say]);
-
   // ── Canvas ops ────────────────────────────────────────────────────────────
   const clearCanvas = useCallback(() => {
     setStrokes([]);
@@ -620,68 +589,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     });
   }, [say]);
 
-  // ── Export ────────────────────────────────────────────────────────────────
-  const buildSvgString = (highContrast: boolean) => {
-    const all = current ? [...strokes, current] : strokes;
-    const bg  = highContrast ? "#ffffff" : "#fff5f8";
-    const paths = all.map((s) => {
-      const d = s.points.map((p, i) =>
-        `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`
-      ).join(" ");
-      const w = highContrast ? Math.max(4, s.width + 1) : s.width;
-      return `<path d="${d}" fill="none" stroke="${highContrast ? "#000" : s.color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
-    }).join("");
-    return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" width="${WIDTH}" height="${HEIGHT}"><rect width="100%" height="100%" fill="${bg}"/>${paths}</svg>`;
-  };
-
-  const dl = (name: string, content: string, type: string) => {
-    const a = Object.assign(document.createElement("a"), {
-      href: URL.createObjectURL(new Blob([content], { type })),
-      download: name,
-    });
-    a.click();
-  };
-
-  const exportSwell = () => { dl("sonic-bear-swell.svg", buildSvgString(true),  "image/svg+xml"); say("Exported swell paper SVG"); trackClick(); };
-  const exportColor = () => { dl("sonic-bear-color.svg", buildSvgString(false), "image/svg+xml"); say("Exported color SVG");       trackClick(); };
-
-  // ── Post to Gallery ──────────────────────────────────────────────────────
-  const hasArtwork = strokes.length > 0 || (!!current && current.points.length > 1);
-
-  const requestPost = useCallback(() => {
-    if (!hasArtwork) {
-      say("Draw something first, then you can post it to the gallery");
-      return;
-    }
-    setPostConfirmOpen(true);
-    trackClick();
-  }, [hasArtwork, say]);
-
-  const cancelPost = useCallback(() => {
-    setPostConfirmOpen(false);
-    say("Post canceled");
-  }, [say]);
-
-  const confirmPost = useCallback(() => {
-    if (!onPost) return;
-    onPost({ svg: buildSvgString(false) });
-    setPostConfirmOpen(false);
-    setJustPosted(true);
-    setTimeout(() => setJustPosted(false), 2200);
-    if (audioRef.current) playCompleteChime(audioRef.current.ctx);
-    say("Posted to the gallery — visible to everyone");
-    trackClick();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onPost, strokes, current, say]);
-
   // ── Keyboard ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (postConfirmOpen) {
-        if (e.key === "Escape") { e.preventDefault(); cancelPost(); }
-        else if (e.key === "Enter") { e.preventDefault(); confirmPost(); }
-        return;
-      }
       const step = e.shiftKey ? 30 : 10;
       if      (e.key === "ArrowLeft")  { e.preventDefault(); moveTo({ x: cursor.x - step, y: cursor.y }); }
       else if (e.key === "ArrowRight") { e.preventDefault(); moveTo({ x: cursor.x + step, y: cursor.y }); }
@@ -694,13 +604,11 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       else if (e.key.toLowerCase() === "g") { e.preventDefault(); setGuidesPanelOpen((o) => !o); say("Guides panel toggled"); }
       else if (e.key.toLowerCase() === "q") { e.preventDefault(); cycleColor(-1); }
       else if (e.key.toLowerCase() === "e") { e.preventDefault(); cycleColor(1); }
-      else if (e.key === "[") { e.preventDefault(); changePenWidth(penWidth - 1); }
-      else if (e.key === "]") { e.preventDefault(); changePenWidth(penWidth + 1); }
       else if (e.key.toLowerCase() === "escape" && guideKey) { e.preventDefault(); stopGuide(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, penWidth, changePenWidth, guideKey, stopGuide, say, postConfirmOpen, cancelPost, confirmPost]);
+  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, guideKey, stopGuide, say]);
 
   // ── Pointer ───────────────────────────────────────────────────────────────
   const pointerDrawing = useRef(false);
@@ -719,7 +627,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     const p = svgPoint(e);
     setCursor(p);
     setDrawing(true);
-    setCurrent({ color, width: penWidth, points: [p] });
+    setCurrent({ color, points: [p] });
     updateAudio(p);
     trackClick();
   };
@@ -730,7 +638,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     updateAudio(p);
     trackGuide(p);
     if (pointerDrawing.current) {
-      setCurrent((c) => c ? { ...c, points: [...c.points, p] } : { color, width: penWidth, points: [p] });
+      setCurrent((c) => c ? { ...c, points: [...c.points, p] } : { color, points: [p] });
     }
   };
 
@@ -744,6 +652,30 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     });
     say("Line saved");
   };
+
+  // ── Export ────────────────────────────────────────────────────────────────
+  const buildSvgString = (highContrast: boolean) => {
+    const all = current ? [...strokes, current] : strokes;
+    const bg  = highContrast ? "#ffffff" : "#fff5f8";
+    const paths = all.map((s) => {
+      const d = s.points.map((p, i) =>
+        `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`
+      ).join(" ");
+      return `<path d="${d}" fill="none" stroke="${highContrast ? "#000" : s.color}" stroke-width="${highContrast ? 4 : 3}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    }).join("");
+    return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" width="${WIDTH}" height="${HEIGHT}"><rect width="100%" height="100%" fill="${bg}"/>${paths}</svg>`;
+  };
+
+  const dl = (name: string, content: string, type: string) => {
+    const a = Object.assign(document.createElement("a"), {
+      href: URL.createObjectURL(new Blob([content], { type })),
+      download: name,
+    });
+    a.click();
+  };
+
+  const exportSwell = () => { dl("sonic-bear-swell.svg", buildSvgString(true),  "image/svg+xml"); say("Exported swell paper SVG"); trackClick(); };
+  const exportColor = () => { dl("sonic-bear-color.svg", buildSvgString(false), "image/svg+xml"); say("Exported color SVG");       trackClick(); };
 
   const exportStl = () => {
     const all = current ? [...strokes, current] : strokes;
@@ -907,14 +839,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           {strokes.map((s, i) => (
             <polyline key={i}
               points={s.points.map((p) => `${p.x},${p.y}`).join(" ")}
-              fill="none" stroke={s.color} strokeWidth={s.width}
+              fill="none" stroke={s.color} strokeWidth={3}
               strokeLinecap="round" strokeLinejoin="round"
             />
           ))}
           {current && (
             <polyline
               points={current.points.map((p) => `${p.x},${p.y}`).join(" ")}
-              fill="none" stroke={current.color} strokeWidth={current.width}
+              fill="none" stroke={current.color} strokeWidth={3}
               strokeLinecap="round" strokeLinejoin="round"
             />
           )}
@@ -931,11 +863,11 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
           {/* Cursor */}
           <circle cx={cursor.x} cy={cursor.y} r={12} fill={color} fillOpacity={0.18} stroke={color} strokeWidth={2} />
-          <circle cx={cursor.x} cy={cursor.y} r={Math.max(2, penWidth / 2)} fill={color} />
+          <circle cx={cursor.x} cy={cursor.y} r={3.5} fill={color} />
         </svg>
 
         <p className="mt-2.5 text-xs text-muted-foreground">
-          Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours · [ ] adjust pen thickness
+          Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours
         </p>
 
         {/* Audio Guides — moved here from the sidebar so this card doesn't sit
@@ -1021,55 +953,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           </div>
         </section>
 
-        {/* Pen thickness */}
-        <section aria-labelledby="pen-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
-          <h2 id="pen-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
-            <Pencil className="h-4 w-4 text-primary" /> Pen thickness
-            <span className="ml-auto text-[10px] font-normal text-muted-foreground">[ / ] to adjust</span>
-          </h2>
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => changePenWidth(penWidth - 1)}
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 shrink-0 rounded-full"
-              aria-label="Decrease pen thickness"
-            >
-              −
-            </Button>
-            <input
-              type="range"
-              min={MIN_PEN_WIDTH}
-              max={MAX_PEN_WIDTH}
-              step={1}
-              value={penWidth}
-              onChange={(e) => changePenWidth(Number(e.target.value))}
-              aria-label="Pen thickness"
-              aria-valuemin={MIN_PEN_WIDTH}
-              aria-valuemax={MAX_PEN_WIDTH}
-              aria-valuenow={penWidth}
-              className="h-2 flex-1 cursor-pointer appearance-none rounded-full bg-primary/20 accent-primary"
-            />
-            <Button
-              onClick={() => changePenWidth(penWidth + 1)}
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 shrink-0 rounded-full"
-              aria-label="Increase pen thickness"
-            >
-              +
-            </Button>
-          </div>
-          <div className="mt-2 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <span
-              aria-hidden
-              className="inline-block rounded-full"
-              style={{ width: Math.max(4, penWidth), height: Math.max(4, penWidth), backgroundColor: color }}
-            />
-            {penWidth}px
-          </div>
-        </section>
-
         {/* Export */}
         <section aria-labelledby="export-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
           <h2 id="export-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
@@ -1088,27 +971,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           </div>
         </section>
 
-        {/* Share */}
-        {onPost && (
-          <section aria-labelledby="share-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
-            <h2 id="share-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
-              <Globe className="h-4 w-4 text-primary" /> Share
-            </h2>
-            <p className="mb-3 text-xs text-muted-foreground">
-              Post your artwork to the public gallery so creators everywhere can see it.
-            </p>
-            <Button
-              onClick={requestPost}
-              disabled={!hasArtwork}
-              variant={justPosted ? "secondary" : "default"}
-              className="w-full justify-center gap-2 rounded-full"
-            >
-              {justPosted ? <Check className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-              {justPosted ? "Posted!" : "Post to Gallery"}
-            </Button>
-          </section>
-        )}
-
         {/* Keyboard reference */}
         <section aria-labelledby="kbd-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20 text-xs text-muted-foreground">
           <h2 id="kbd-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -1120,7 +982,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             <li>S — toggle sound</li>
             <li>C — clear canvas</li>
             <li>Q / E — cycle colour</li>
-            <li>[ / ] — pen thickness</li>
             <li>G — open / close guides</li>
             <li>Esc — stop active guide</li>
             <li>X — toggle visual aids</li>
@@ -1129,37 +990,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       </aside>
 
       <div aria-live="assertive" role="status" className="sr-only">{announce}</div>
-
-      {/* Post-to-gallery confirmation — a deliberate second step before anything goes public */}
-      {postConfirmOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="post-confirm-heading"
-          className="fixed inset-0 z-50 grid place-items-center bg-background/70 p-4 backdrop-blur-sm"
-        >
-          <div className="w-full max-w-sm rounded-3xl bg-card p-6 shadow-xl ring-1 ring-primary/20">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
-              <Globe className="h-6 w-6" />
-            </div>
-            <h2 id="post-confirm-heading" className="mt-4 text-lg font-bold text-foreground">
-              Post this to the gallery?
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Your artwork will become public — anyone around the world will be able to see it on the Gallery page.
-            </p>
-            <div className="mt-5 flex gap-2">
-              <Button onClick={cancelPost} variant="outline" className="flex-1 rounded-full">
-                Cancel
-                <kbd className="ml-1.5 rounded bg-background/40 px-1 py-0.5 text-[10px]">Esc</kbd>
-              </Button>
-              <Button onClick={confirmPost} className="flex-1 gap-2 rounded-full">
-                <Globe className="h-4 w-4" /> Yes, post it
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
