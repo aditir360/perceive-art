@@ -22,6 +22,7 @@ function Index() {
     saveArtwork(svg);
   }, []);
 
+/* extra comment */
   return (
     <div className="min-h-screen">
       {/* Soft blush background glows */}
