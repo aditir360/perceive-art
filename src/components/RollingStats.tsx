@@ -65,66 +65,72 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
   return (
     <div
       ref={sectionRef}
-      className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-card to-accent/10 p-6 shadow-sm ring-1 ring-primary/20 sm:p-8"
+      className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-card to-accent/15 p-6 shadow-md ring-1 ring-primary/20 sm:p-8"
     >
       <div className="relative mx-auto grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
         {/* Drawings Created */}
-        <div className="flex flex-col items-center rounded-2xl bg-card p-5 text-center shadow-sm ring-1 ring-primary/15 transition-shadow hover:shadow-md sm:p-6">
-          <div className="flex items-center gap-2">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15">
-              <Sparkles className="h-4 w-4 text-primary" />
+        <div className="group relative flex flex-col items-center overflow-hidden rounded-2xl bg-card p-5 text-center shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-0.5 hover:shadow-lg sm:p-6">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[oklch(0.58_0.19_25)] to-[oklch(0.42_0.12_340)]" />
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/25 to-primary/10 ring-1 ring-primary/20">
+              <Sparkles className="h-4.5 w-4.5 text-primary" />
             </div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
               Drawings
             </span>
           </div>
-          <div className="mt-3">
-            <div className="bg-gradient-to-br from-[oklch(0.42_0.19_25)] to-[oklch(0.34_0.1_340)] bg-clip-text text-4xl font-black leading-none text-transparent sm:text-5xl">
+          <div className="mt-3.5">
+            <div className="bg-gradient-to-br from-[oklch(0.42_0.19_25)] to-[oklch(0.34_0.1_340)] bg-clip-text text-4xl font-black leading-none tracking-tight text-transparent sm:text-5xl">
               {drawingCount === null || drawingCount === undefined ? "—" : displayCount.toLocaleString()}
             </div>
-            <p className="mt-1.5 text-xs font-medium text-muted-foreground">created worldwide</p>
+            <p className="mt-2 text-xs font-medium text-muted-foreground">created worldwide</p>
           </div>
         </div>
 
         {/* People Reached */}
-        <div className="flex flex-col items-center rounded-2xl bg-card p-5 text-center shadow-sm ring-1 ring-accent/40 transition-shadow hover:shadow-md sm:p-6">
-          <div className="flex items-center gap-2">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent/40">
-              <Users className="h-4 w-4 text-accent-foreground" />
+        <div className="group relative flex flex-col items-center overflow-hidden rounded-2xl bg-card p-5 text-center shadow-sm ring-1 ring-accent/40 transition-all hover:-translate-y-0.5 hover:shadow-lg sm:p-6">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[oklch(0.5_0.09_320)] to-[oklch(0.38_0.06_30)]" />
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-accent/50 to-accent/25 ring-1 ring-accent/40">
+              <Users className="h-4.5 w-4.5 text-accent-foreground" />
             </div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
               Reach
             </span>
           </div>
-          <div className="mt-3">
-            <div className="bg-gradient-to-br from-[oklch(0.4_0.08_320)] to-[oklch(0.3_0.05_30)] bg-clip-text text-4xl font-black leading-none text-transparent sm:text-5xl">
+          <div className="mt-3.5">
+            <div className="bg-gradient-to-br from-[oklch(0.4_0.08_320)] to-[oklch(0.3_0.05_30)] bg-clip-text text-4xl font-black leading-none tracking-tight text-transparent sm:text-5xl">
               {displayReach.toLocaleString()}+
             </div>
-            <p className="mt-1.5 text-xs font-medium text-muted-foreground">people impacted</p>
+            <p className="mt-2 text-xs font-medium text-muted-foreground">people impacted</p>
           </div>
         </div>
 
         {/* Social Media Views */}
-        <div className="flex flex-col items-center rounded-2xl bg-card p-5 text-center shadow-sm ring-1 ring-secondary/50 transition-shadow hover:shadow-md sm:p-6">
-          <div className="flex items-center gap-2">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-secondary/50">
-              <Eye className="h-4 w-4 text-secondary-foreground" />
+        <div className="group relative flex flex-col items-center overflow-hidden rounded-2xl bg-card p-5 text-center shadow-sm ring-1 ring-secondary/50 transition-all hover:-translate-y-0.5 hover:shadow-lg sm:p-6">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[oklch(0.62_0.16_35)] to-[oklch(0.46_0.12_10)]" />
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[oklch(0.62_0.16_35)]/25 to-[oklch(0.62_0.16_35)]/10 ring-1 ring-[oklch(0.62_0.16_35)]/30">
+              <Eye className="h-4.5 w-4.5 text-[oklch(0.5_0.14_25)]" />
             </div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
               Views
             </span>
           </div>
-          <div className="mt-3">
-            <div className="bg-gradient-to-br from-[oklch(0.5_0.14_35)] to-[oklch(0.38_0.1_10)] bg-clip-text text-4xl font-black leading-none text-transparent sm:text-5xl">
+          <div className="mt-3.5">
+            <div className="bg-gradient-to-br from-[oklch(0.5_0.14_35)] to-[oklch(0.38_0.1_10)] bg-clip-text text-4xl font-black leading-none tracking-tight text-transparent sm:text-5xl">
               {displayViews.toLocaleString()}+
             </div>
-            <p className="mt-1.5 text-xs font-medium text-muted-foreground">on social media</p>
+            <p className="mt-2 text-xs font-medium text-muted-foreground">on social media</p>
           </div>
         </div>
       </div>
 
       {/* Progress bar */}
-      <div className="relative mx-auto mt-6 flex max-w-2xl items-center gap-3">
+      <div className="relative mx-auto mt-7 flex max-w-2xl items-center gap-3">
+        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          This month
+        </span>
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-primary/15">
           <div
             className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
