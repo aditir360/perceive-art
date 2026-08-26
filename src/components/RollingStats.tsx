@@ -65,7 +65,7 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
   return (
     <div
       ref={sectionRef}
-      className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-card to-accent/15 p-6 shadow-md ring-1 ring-primary/20 sm:p-8"
+      className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-card to-accent/15 p-6 shadow-2xl shadow-primary/20 ring-1 ring-primary/20 backdrop-blur-sm sm:p-8"
     >
       <div className="relative mx-auto grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
         {/* Drawings Created */}
@@ -128,9 +128,6 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
 
       {/* Progress bar */}
       <div className="relative mx-auto mt-7 flex max-w-2xl items-center gap-3">
-        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          This month
-        </span>
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-primary/15">
           <div
             className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
