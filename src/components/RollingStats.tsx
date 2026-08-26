@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Users, Zap } from "lucide-react";
+import { Sparkles, Users, Eye, Zap } from "lucide-react";
 
 interface RollingStatsProps {
   drawingCount: number | null | undefined;
@@ -60,13 +60,14 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
 
   const displayCount = useCountUp(drawingCount, inView, 1500);
   const displayReach = useCountUp(1000, inView, 2000);
+  const displayViews = useCountUp(16000, inView, 2200);
 
   return (
     <div
       ref={sectionRef}
       className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-card to-accent/10 p-6 shadow-sm ring-1 ring-primary/20 sm:p-8"
     >
-      <div className="relative mx-auto grid max-w-xl grid-cols-2 gap-4 sm:gap-6">
+      <div className="relative mx-auto grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
         {/* Drawings Created */}
         <div className="flex flex-col items-center rounded-2xl bg-card p-5 text-center shadow-sm ring-1 ring-primary/15 transition-shadow hover:shadow-md sm:p-6">
           <div className="flex items-center gap-2">
@@ -102,10 +103,28 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
             <p className="mt-1.5 text-xs font-medium text-muted-foreground">people impacted</p>
           </div>
         </div>
+
+        {/* Social Media Views */}
+        <div className="flex flex-col items-center rounded-2xl bg-card p-5 text-center shadow-sm ring-1 ring-secondary/50 transition-shadow hover:shadow-md sm:p-6">
+          <div className="flex items-center gap-2">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-secondary/50">
+              <Eye className="h-4 w-4 text-secondary-foreground" />
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Views
+            </span>
+          </div>
+          <div className="mt-3">
+            <div className="bg-gradient-to-br from-[oklch(0.5_0.14_35)] to-[oklch(0.38_0.1_10)] bg-clip-text text-4xl font-black leading-none text-transparent sm:text-5xl">
+              {displayViews.toLocaleString()}+
+            </div>
+            <p className="mt-1.5 text-xs font-medium text-muted-foreground">on social media</p>
+          </div>
+        </div>
       </div>
 
       {/* Progress bar */}
-      <div className="relative mx-auto mt-6 flex max-w-xl items-center gap-3">
+      <div className="relative mx-auto mt-6 flex max-w-2xl items-center gap-3">
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-primary/15">
           <div
             className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
