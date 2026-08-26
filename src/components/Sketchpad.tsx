@@ -74,6 +74,17 @@ const GRID   = 60;
 // switch from travel directions over to step-by-step drawing checkpoints.
 const ARRIVAL_RADIUS = 45;
 
+// Warm, encouraging call-outs sprinkled in as the user hits checkpoints —
+// gives the guide voice personality instead of just robotic instructions.
+const PRAISE_PHRASES = [
+  "Nice and steady!",
+  "Great job!",
+  "You're doing wonderfully!",
+  "Lovely line!",
+  "Keep it up, you've got this!",
+  "Beautiful — right on track!",
+];
+
 type ShapeGuide = {
   name: string;
   description: string;
@@ -379,6 +390,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const trailRef       = useRef<Point[]>([]);
   const navVoiceRef    = useRef<SpeechSynthesisVoice | null>(null);
   const lastNavZone     = useRef<string | null>(null);
+  const driftWarnedAt   = useRef<number | null>(null);
 
   const stats = useCanvasClicks();
 
@@ -420,11 +432,11 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(msg);
-      // A slightly higher pitch + measured rate reads as a warm, friendly
+      // A higher pitch + slightly quick, bright rate reads as a cute, warm
       // lady-guide voice, layered on top of whichever female system voice
       // we found (falling back gracefully if none is available).
-      utter.rate = 1.0;
-      utter.pitch = 1.15;
+      utter.rate = 1.05;
+      utter.pitch = 1.35;
       if (navVoiceRef.current) utter.voice = navVoiceRef.current;
       window.speechSynthesis.speak(utter);
     }
@@ -521,16 +533,40 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     if (lastCheckpoint.current < 0) {
       lastCheckpoint.current = 0;
       lastNavZone.current = null;
-      say(`You're on the template. ${guide.checkpoints[0].say}`);
+      driftWarnedAt.current = null;
+      say(`You're on the template! ${guide.checkpoints[0].say}`);
       if (audioRef.current) playSineNote(audioRef.current.ctx, 523, 0.2, 0.08);
       return;
     }
+
+    // Already drawing along the path: if the cursor wanders too far off the
+    // line, actively steer it back rather than just going quiet. We nudge
+    // the target toward the nearest point slightly *ahead* on the guide so
+    // the correction also keeps them moving the right way, not backwards.
+    const nearestIdx  = Math.round(progress * (guide.points.length - 1));
+    const aheadIdx    = Math.min(guide.points.length - 1, nearestIdx + 4);
+    const aheadPt     = { x: guide.points[aheadIdx].x * WIDTH, y: guide.points[aheadIdx].y * HEIGHT };
+    const DRIFT_RADIUS = 55;
+    const DRIFT_COOLDOWN_MS = 1600;
+    if (distance > DRIFT_RADIUS) {
+      const now = Date.now();
+      if (!driftWarnedAt.current || now - driftWarnedAt.current > DRIFT_COOLDOWN_MS) {
+        driftWarnedAt.current = now;
+        const dx = aheadPt.x - p.x;
+        const dy = aheadPt.y - p.y;
+        say(`You're drifting off the line — ${directionPhrase(dx, dy)} to get back on track.`);
+      }
+      return;
+    }
+    driftWarnedAt.current = null;
 
     const cps = guide.checkpoints;
     for (let i = cps.length - 1; i >= 0; i--) {
       if (progress >= cps[i].at && i > lastCheckpoint.current) {
         lastCheckpoint.current = i;
-        say(cps[i].say);
+        const praise = PRAISE_PHRASES[i % PRAISE_PHRASES.length];
+        const isLast = i === cps.length - 1;
+        say(isLast ? `${praise} ${cps[i].say}` : `${cps[i].say} ${praise}`);
         // Play a gentle chime note to signal a checkpoint
         if (audioRef.current) {
           const noteFreqs = [523, 587, 659, 698, 784];
@@ -546,6 +582,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setGuideKey(key);
     lastCheckpoint.current = -1;
     lastNavZone.current = null;
+    driftWarnedAt.current = null;
     setGuidesPanelOpen(false);
     startGuideTone();
     const guide = SHAPE_GUIDES[key];
