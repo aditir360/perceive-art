@@ -70,6 +70,10 @@ const WIDTH  = 900;
 const HEIGHT = 560;
 const GRID   = 60;
 
+// Distance (px) inside which we consider the cursor "on" the template and
+// switch from travel directions over to step-by-step drawing checkpoints.
+const ARRIVAL_RADIUS = 45;
+
 type ShapeGuide = {
   name: string;
   description: string;
@@ -226,6 +230,22 @@ const SHAPE_GUIDES: Record<string, ShapeGuide> = {
   },
 };
 
+// Turns a delta between two points into a friendly compass-style direction,
+// e.g. "down and to the left". Used to walk the user's cursor over to the
+// start of a template before they've touched the guide path at all.
+function directionPhrase(dx: number, dy: number): string {
+  const parts: string[] = [];
+  const H_THRESHOLD = 18;
+  const V_THRESHOLD = 18;
+  if (dy > V_THRESHOLD) parts.push("down");
+  else if (dy < -V_THRESHOLD) parts.push("up");
+  if (dx > H_THRESHOLD) parts.push("to the right");
+  else if (dx < -H_THRESHOLD) parts.push("to the left");
+  if (!parts.length) return "you're right at the start";
+  if (parts.length === 1) return `move ${parts[0]}`;
+  return `move ${parts[0]} and ${parts[1]}`;
+}
+
 function nearestOnGuide(p: Point, guide: ShapeGuide): { distance: number; progress: number } {
   const pts = guide.points.map((n) => ({ x: n.x * WIDTH, y: n.y * HEIGHT }));
   let best = Infinity;
@@ -357,8 +377,40 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const lastCheckpoint = useRef(-1);
   const guideOscRef    = useRef<{ osc: OscillatorNode; gain: GainNode } | null>(null);
   const trailRef       = useRef<Point[]>([]);
+  const navVoiceRef    = useRef<SpeechSynthesisVoice | null>(null);
+  const lastNavZone     = useRef<string | null>(null);
 
   const stats = useCanvasClicks();
+
+  // ── Pick a warm, lady-voiced narrator for canvas navigation ──────────────
+  // We prefer a clearly-female English voice (Samantha / Google US English /
+  // Microsoft Zira / Jenny, etc). Voice lists load asynchronously in most
+  // browsers, so we try immediately and again once `voiceschanged` fires.
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    const FEMALE_HINTS = [
+      "female", "samantha", "victoria", "zira", "jenny", "aria", "susan",
+      "karen", "moira", "tessa", "fiona", "google us english", "google uk english female",
+      "hazel", "libby", "sonia", "shelley", "allison",
+    ];
+
+    const pickVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices.length) return;
+      const englishVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith("en"));
+      const pool = englishVoices.length ? englishVoices : voices;
+      const match = pool.find((v) => {
+        const name = v.name.toLowerCase();
+        return FEMALE_HINTS.some((hint) => name.includes(hint));
+      });
+      navVoiceRef.current = match ?? pool[0] ?? null;
+    };
+
+    pickVoice();
+    window.speechSynthesis.addEventListener("voiceschanged", pickVoice);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", pickVoice);
+  }, []);
 
   const say = useCallback((msg: string) => {
     setAnnounce(msg);
@@ -368,8 +420,12 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(msg);
-      utter.rate = 1.02;
-      utter.pitch = 1;
+      // A slightly higher pitch + measured rate reads as a warm, friendly
+      // lady-guide voice, layered on top of whichever female system voice
+      // we found (falling back gracefully if none is available).
+      utter.rate = 1.0;
+      utter.pitch = 1.15;
+      if (navVoiceRef.current) utter.voice = navVoiceRef.current;
       window.speechSynthesis.speak(utter);
     }
   }, []);
@@ -447,6 +503,29 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       g.gain.gain.setTargetAtTime(vol, g.osc.context.currentTime, 0.06);
     }
 
+    // Haven't reached the template yet — narrate the way there instead of
+    // drawing checkpoints. Uses the guide's own starting point as the target.
+    const startPt = { x: guide.points[0].x * WIDTH, y: guide.points[0].y * HEIGHT };
+    if (distance > ARRIVAL_RADIUS && lastCheckpoint.current < 0) {
+      const dx = startPt.x - p.x;
+      const dy = startPt.y - p.y;
+      const zone = `${dx > 18 ? "r" : dx < -18 ? "l" : ""}${dy > 18 ? "d" : dy < -18 ? "u" : ""}`;
+      if (zone !== lastNavZone.current) {
+        lastNavZone.current = zone;
+        say(`Navigating to the ${guide.name.toLowerCase()} template. ${directionPhrase(dx, dy)} to reach the starting point.`);
+      }
+      return;
+    }
+
+    // Arrived — announce it once, then hand off to checkpoint narration.
+    if (lastCheckpoint.current < 0) {
+      lastCheckpoint.current = 0;
+      lastNavZone.current = null;
+      say(`You're on the template. ${guide.checkpoints[0].say}`);
+      if (audioRef.current) playSineNote(audioRef.current.ctx, 523, 0.2, 0.08);
+      return;
+    }
+
     const cps = guide.checkpoints;
     for (let i = cps.length - 1; i >= 0; i--) {
       if (progress >= cps[i].at && i > lastCheckpoint.current) {
@@ -466,13 +545,22 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     stopGuideTone();
     setGuideKey(key);
     lastCheckpoint.current = -1;
+    lastNavZone.current = null;
     setGuidesPanelOpen(false);
     startGuideTone();
     const guide = SHAPE_GUIDES[key];
+    const startPt = { x: guide.points[0].x * WIDTH, y: guide.points[0].y * HEIGHT };
+    const dx = startPt.x - cursor.x;
+    const dy = startPt.y - cursor.y;
     if (audioRef.current) playGuideStart(audioRef.current.ctx, 392);
-    say(`${guide.name} guide started. ${guide.checkpoints[0].say} Move close to the glowing path to hear the guide tone rise.`);
+    if (Math.hypot(dx, dy) > ARRIVAL_RADIUS) {
+      say(`${guide.name} guide started. Navigating to the template. ${directionPhrase(dx, dy)} to reach the starting point.`);
+    } else {
+      lastCheckpoint.current = 0;
+      say(`${guide.name} guide started. You're on the template. ${guide.checkpoints[0].say}`);
+    }
     trackClick();
-  }, [startGuideTone, stopGuideTone, say]);
+  }, [startGuideTone, stopGuideTone, say, cursor]);
 
   const stopGuide = useCallback(() => {
     if (!guideKey) return;
