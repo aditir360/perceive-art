@@ -26,6 +26,8 @@ import {
   Home,
   Globe,
   Check,
+  Highlighter,
+  Paintbrush,
 } from "lucide-react";
 
 // Icon + colour badge per guide, reusing the same swatches from the palette
@@ -42,10 +44,42 @@ const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
 };
 
 type Point = { x: number; y: number };
-type Stroke = { color: string; width: number; points: Point[] };
+type PenTexture = "marker" | "highlighter" | "paintbrush" | "scribbly";
+type Stroke = { color: string; width: number; points: Point[]; texture: PenTexture; opacity: number };
 
 const MIN_PEN_WIDTH = 1;
 const MAX_PEN_WIDTH = 14;
+
+const PEN_TEXTURES: { key: PenTexture; label: string; Icon: typeof Pencil }[] = [
+  { key: "marker",      label: "Marker",      Icon: Pencil },
+  { key: "highlighter", label: "Highlighter", Icon: Highlighter },
+  { key: "paintbrush",  label: "Paintbrush",  Icon: Paintbrush },
+  { key: "scribbly",    label: "Scribbly",    Icon: Waves },
+];
+
+// Deterministic pseudo-random jitter so a given stroke always looks the same
+// across re-renders (no flicker) but still reads as loose/hand-drawn.
+function seededJitter(seed: number): number {
+  const x = Math.sin(seed * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+// Turns a stroke's points into a wobbly "scribbly" path by nudging each
+// point along its perpendicular normal by a small pseudo-random amount.
+function scribblyPoints(points: Point[], strength: number): Point[] {
+  if (points.length < 2) return points;
+  return points.map((p, i) => {
+    const prev = points[Math.max(0, i - 1)];
+    const next = points[Math.min(points.length - 1, i + 1)];
+    const dx = next.x - prev.x;
+    const dy = next.y - prev.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+    const j = (seededJitter(i * 7.31 + p.x * 0.13 + p.y * 0.07) - 0.5) * 2 * strength;
+    return { x: p.x + nx * j, y: p.y + ny * j };
+  });
+}
 
 const COLORS = [
   { name: "Rose",     value: "#e88aab", tone: 523.25 },
@@ -365,6 +399,97 @@ type SketchpadProps = {
   onPost?: (artwork: { svg: string }) => void;
 };
 
+// Renders one stroke as one or more SVG primitives depending on its texture:
+//  - marker:      a single clean round-cap polyline (the original look)
+//  - highlighter: one thick, flat-cap, low-opacity polyline with a multiply
+//                 blend so overlapping strokes darken like real highlighter ink
+//  - paintbrush:  a few softly offset, semi-transparent polylines layered on
+//                 top of each other for a soft bristly, uneven edge
+//  - scribbly:    the path is jittered into a wobbly hand-drawn line
+function StrokeShape({ stroke, keyPrefix }: { stroke: Stroke; keyPrefix: string }) {
+  const { color, width, points, texture, opacity } = stroke;
+  if (points.length === 0) return null;
+  const toStr = (pts: Point[]) => pts.map((p) => `${p.x},${p.y}`).join(" ");
+
+  if (texture === "highlighter") {
+    return (
+      <polyline
+        points={toStr(points)}
+        fill="none"
+        stroke={color}
+        strokeWidth={width * 2.6}
+        strokeLinecap="butt"
+        strokeLinejoin="round"
+        strokeOpacity={opacity * 0.4}
+        style={{ mixBlendMode: "multiply" }}
+      />
+    );
+  }
+
+  if (texture === "paintbrush") {
+    const layers = [
+      { dx: 0,    dy: 0,    w: width * 1.15, o: opacity * 0.55 },
+      { dx: 1.2,  dy: -1,   w: width * 0.9,  o: opacity * 0.35 },
+      { dx: -1.1, dy: 1.2,  w: width * 0.75, o: opacity * 0.3 },
+    ];
+    return (
+      <g>
+        {layers.map((l, i) => (
+          <polyline
+            key={`${keyPrefix}-b${i}`}
+            points={toStr(points.map((p) => ({ x: p.x + l.dx, y: p.y + l.dy })))}
+            fill="none"
+            stroke={color}
+            strokeWidth={l.w}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeOpacity={l.o}
+          />
+        ))}
+      </g>
+    );
+  }
+
+  if (texture === "scribbly") {
+    const wobble = Math.max(1.5, width * 0.6);
+    return (
+      <g>
+        <polyline
+          points={toStr(scribblyPoints(points, wobble))}
+          fill="none"
+          stroke={color}
+          strokeWidth={Math.max(1, width * 0.7)}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeOpacity={opacity}
+        />
+        <polyline
+          points={toStr(scribblyPoints(points, wobble * 1.4))}
+          fill="none"
+          stroke={color}
+          strokeWidth={Math.max(1, width * 0.45)}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeOpacity={opacity * 0.55}
+        />
+      </g>
+    );
+  }
+
+  // marker (default)
+  return (
+    <polyline
+      points={toStr(points)}
+      fill="none"
+      stroke={color}
+      strokeWidth={width}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeOpacity={opacity}
+    />
+  );
+}
+
 export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const audioRef = useRef<ReturnType<typeof buildAudio> | null>(null);
 
@@ -379,6 +504,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   );
   const [colorIndex, setColorIndex] = useState(0);
   const [penWidth,  setPenWidth]  = useState(3);
+  const [penTexture, setPenTexture] = useState<PenTexture>("marker");
+  const [penOpacity, setPenOpacity] = useState(1);
   const [guideKey,   setGuideKey]   = useState<string | null>(null);
   const [guidesPanelOpen, setGuidesPanelOpen] = useState(true);
   const [visualAids, setVisualAids] = useState(true);
@@ -628,7 +755,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
     if (drawing) {
       setCurrent((c) => {
-        if (!c) return { color, width: penWidth, points: [p] };
+        if (!c) return { color, width: penWidth, points: [p], texture: penTexture, opacity: penOpacity };
         const start = c.points[0];
         const dist  = Math.hypot(p.x - start.x, p.y - start.y);
         if (c.points.length > 6 && dist < 16) {
@@ -637,7 +764,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         return { ...c, points: [...c.points, p] };
       });
     }
-  }, [drawing, color, penWidth, updateAudio, trackGuide, say]);
+  }, [drawing, color, penWidth, penTexture, penOpacity, updateAudio, trackGuide, say]);
 
   // ── Drawing toggle ────────────────────────────────────────────────────────
   const toggleDrawing = useCallback(() => {
@@ -645,7 +772,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setDrawing((d) => {
       const next = !d;
       if (next) {
-        setCurrent({ color, width: penWidth, points: [cursor] });
+        setCurrent({ color, width: penWidth, points: [cursor], texture: penTexture, opacity: penOpacity });
         if (audioRef.current) playSineNote(audioRef.current.ctx, 659, 0.15, 0.12);
         say("Drawing on — move to draw");
       } else {
@@ -658,7 +785,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       }
       return next;
     });
-  }, [color, cursor, penWidth, say]);
+  }, [color, cursor, penWidth, penTexture, penOpacity, say]);
 
   // ── Sound toggle ──────────────────────────────────────────────────────────
   const toggleSound = useCallback(() => {
@@ -753,8 +880,41 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       const d = s.points.map((p, i) =>
         `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`
       ).join(" ");
-      const w = highContrast ? Math.max(4, s.width + 1) : s.width;
-      return `<path d="${d}" fill="none" stroke="${highContrast ? "#000" : s.color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+      const strokeColor = highContrast ? "#000" : s.color;
+      const baseW = highContrast ? Math.max(4, s.width + 1) : s.width;
+
+      if (!highContrast && s.texture === "highlighter") {
+        const w = baseW * 2.6;
+        return `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="${w}" stroke-linecap="butt" stroke-linejoin="round" stroke-opacity="${(s.opacity * 0.4).toFixed(2)}" style="mix-blend-mode:multiply"/>`;
+      }
+
+      if (!highContrast && s.texture === "paintbrush") {
+        const layers = [
+          { dx: 0,    dy: 0,    w: baseW * 1.15, o: s.opacity * 0.55 },
+          { dx: 1.2,  dy: -1,   w: baseW * 0.9,  o: s.opacity * 0.35 },
+          { dx: -1.1, dy: 1.2,  w: baseW * 0.75, o: s.opacity * 0.3 },
+        ];
+        return layers.map((l) => {
+          const dl = s.points.map((p, i) =>
+            `${i === 0 ? "M" : "L"}${(p.x + l.dx).toFixed(1)},${(p.y + l.dy).toFixed(1)}`
+          ).join(" ");
+          return `<path d="${dl}" fill="none" stroke="${strokeColor}" stroke-width="${l.w}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${l.o.toFixed(2)}"/>`;
+        }).join("");
+      }
+
+      if (!highContrast && s.texture === "scribbly") {
+        const wobble = Math.max(1.5, baseW * 0.6);
+        const wobblyD = (strength: number) => scribblyPoints(s.points, strength).map((p, i) =>
+          `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`
+        ).join(" ");
+        return (
+          `<path d="${wobblyD(wobble)}" fill="none" stroke="${strokeColor}" stroke-width="${Math.max(1, baseW * 0.7)}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${s.opacity.toFixed(2)}"/>` +
+          `<path d="${wobblyD(wobble * 1.4)}" fill="none" stroke="${strokeColor}" stroke-width="${Math.max(1, baseW * 0.45)}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${(s.opacity * 0.55).toFixed(2)}"/>`
+        );
+      }
+
+      // marker (default), and the fallback used for high-contrast exports
+      return `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="${baseW}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${highContrast ? 1 : s.opacity.toFixed(2)}"/>`;
     }).join("");
     return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" width="${WIDTH}" height="${HEIGHT}"><rect width="100%" height="100%" fill="${bg}"/>${paths}</svg>`;
   };
@@ -844,7 +1004,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     const p = svgPoint(e);
     setCursor(p);
     setDrawing(true);
-    setCurrent({ color, width: penWidth, points: [p] });
+    setCurrent({ color, width: penWidth, points: [p], texture: penTexture, opacity: penOpacity });
     updateAudio(p);
     trackClick();
   };
@@ -855,7 +1015,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     updateAudio(p);
     trackGuide(p);
     if (pointerDrawing.current) {
-      setCurrent((c) => c ? { ...c, points: [...c.points, p] } : { color, width: penWidth, points: [p] });
+      setCurrent((c) => c ? { ...c, points: [...c.points, p] } : { color, width: penWidth, points: [p], texture: penTexture, opacity: penOpacity });
     }
   };
 
@@ -1030,19 +1190,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
           {/* Drawn strokes */}
           {strokes.map((s, i) => (
-            <polyline key={i}
-              points={s.points.map((p) => `${p.x},${p.y}`).join(" ")}
-              fill="none" stroke={s.color} strokeWidth={s.width}
-              strokeLinecap="round" strokeLinejoin="round"
-            />
+            <StrokeShape key={i} stroke={s} keyPrefix={`s${i}`} />
           ))}
-          {current && (
-            <polyline
-              points={current.points.map((p) => `${p.x},${p.y}`).join(" ")}
-              fill="none" stroke={current.color} strokeWidth={current.width}
-              strokeLinecap="round" strokeLinejoin="round"
-            />
-          )}
+          {current && <StrokeShape stroke={current} keyPrefix="cur" />}
 
           {/* Cursor trail */}
           {visualAids && trailRef.current.map((p, i) => (
@@ -1056,7 +1206,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
           {/* Cursor */}
           <circle cx={cursor.x} cy={cursor.y} r={12} fill={color} fillOpacity={0.18} stroke={color} strokeWidth={2} />
-          <circle cx={cursor.x} cy={cursor.y} r={Math.max(2, penWidth / 2)} fill={color} />
+          <circle cx={cursor.x} cy={cursor.y} r={Math.max(2, penWidth / 2)} fill={color} fillOpacity={penOpacity} />
         </svg>
 
         <p className="mt-2.5 text-xs text-muted-foreground">
@@ -1192,6 +1342,59 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               style={{ width: Math.max(4, penWidth), height: Math.max(4, penWidth), backgroundColor: color }}
             />
             {penWidth}px
+          </div>
+
+          {/* Pen texture */}
+          <div className="mt-4">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Texture
+            </h3>
+            <div className="grid grid-cols-4 gap-2">
+              {PEN_TEXTURES.map(({ key, label, Icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => {
+                    setPenTexture(key);
+                    say(`${label} pen selected.`);
+                  }}
+                  aria-pressed={penTexture === key}
+                  aria-label={label}
+                  title={label}
+                  className={`flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium ring-1 transition ${
+                    penTexture === key
+                      ? "bg-primary/15 text-primary ring-primary/40"
+                      : "bg-background/50 text-muted-foreground ring-border hover:bg-primary/8 hover:ring-primary/30"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Pen opacity */}
+          <div className="mt-4">
+            <h3 className="mb-2 flex items-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Opacity
+              <span className="ml-auto font-mono text-[10px] normal-case tracking-normal text-muted-foreground/80">
+                {Math.round(penOpacity * 100)}%
+              </span>
+            </h3>
+            <input
+              type="range"
+              min={10}
+              max={100}
+              step={5}
+              value={Math.round(penOpacity * 100)}
+              onChange={(e) => setPenOpacity(Number(e.target.value) / 100)}
+              aria-label="Pen opacity"
+              aria-valuemin={10}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(penOpacity * 100)}
+              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-primary/20 accent-primary"
+            />
           </div>
         </section>
 
