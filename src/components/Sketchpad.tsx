@@ -28,6 +28,10 @@ import {
   Check,
   Highlighter,
   Paintbrush,
+  Infinity as InfinityIcon,
+  Flower2,
+  Crown,
+  Zap,
 } from "lucide-react";
 
 // Icon + colour badge per guide, reusing the same swatches from the palette
@@ -41,6 +45,10 @@ const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
   wave:     { Icon: Waves,    color: "#4da6ff" }, // Sky
   spiral:   { Icon: Orbit,    color: "#9b72cf" }, // Plum
   house:    { Icon: Home,     color: "#48b376" }, // Mint
+  infinity: { Icon: InfinityIcon, color: "#7c6fd1" }, // Indigo-violet
+  flower:   { Icon: Flower2,  color: "#f4978e" }, // Coral-pink
+  crown:    { Icon: Crown,    color: "#d4af37" }, // Antique gold
+  lightning:{ Icon: Zap,      color: "#ffd166" }, // Bright yellow
 };
 
 type Point = { x: number; y: number };
@@ -271,6 +279,91 @@ const SHAPE_GUIDES: Record<string, ShapeGuide> = {
       { at: 0.7,  say: "Top of the left wall — draw straight down." },
       { at: 0.85, say: "Bottom-left again — draw right to close the base." },
       { at: 0.95, say: "House complete." },
+    ],
+  },
+  infinity: {
+    name: "Infinity",
+    description: "A flowing figure-eight that loops through the center — more advanced, with two crossing points",
+    emoji: "♾️",
+    points: Array.from({ length: 96 }, (_, i) => {
+      const t = (i / 96) * Math.PI * 2;
+      const denom = 1 + Math.sin(t) * Math.sin(t);
+      const x = (0.36 * Math.cos(t)) / denom;
+      const y = (0.22 * Math.sin(t) * Math.cos(t)) / denom;
+      return norm(0.5 + x, 0.5 + y);
+    }),
+    checkpoints: [
+      { at: 0,    say: "Start at the rightmost point of the right loop. Curve up and to the left." },
+      { at: 0.25, say: "Passing through the center crossing point — now head into the left loop." },
+      { at: 0.5,  say: "Leftmost point — the far edge of the left loop." },
+      { at: 0.75, say: "Back through the center crossing a second time — into the right loop." },
+      { at: 0.95, say: "Almost home — close the loop at the rightmost point." },
+    ],
+  },
+  flower: {
+    name: "Flower",
+    description: "Five petals looping out from a shared center — more advanced, with repeating loops",
+    emoji: "🌸",
+    points: Array.from({ length: 100 }, (_, i) => {
+      const t = (i / 99) * Math.PI;
+      const r = 0.34 * Math.cos(5 * t);
+      return norm(0.5 + r * Math.cos(t), 0.5 + r * Math.sin(t));
+    }),
+    checkpoints: [
+      { at: 0,    say: "Start at the tip of the first petal. Curve inward toward the center." },
+      { at: 0.2,  say: "First petal complete — curve out to the next petal tip." },
+      { at: 0.4,  say: "Second petal complete — continue on to the third." },
+      { at: 0.6,  say: "Third petal complete — two more petals to go." },
+      { at: 0.8,  say: "Fourth petal complete — one final petal remains." },
+      { at: 0.95, say: "Final petal — flower complete." },
+    ],
+  },
+  crown: {
+    name: "Crown",
+    description: "Three peaks rising from a wide base — more advanced, with several sharp turns",
+    emoji: "👑",
+    points: [
+      norm(0.18, 0.78),
+      norm(0.18, 0.42),
+      norm(0.32, 0.58),
+      norm(0.5,  0.22),
+      norm(0.68, 0.58),
+      norm(0.82, 0.42),
+      norm(0.82, 0.78),
+      norm(0.18, 0.78),
+    ],
+    checkpoints: [
+      { at: 0,    say: "Start at the bottom-left of the crown. Draw straight up to the left peak." },
+      { at: 0.14, say: "Left peak — dip down and to the right, into the first valley." },
+      { at: 0.28, say: "First valley — rise up to the tall center peak." },
+      { at: 0.42, say: "Center peak, the tallest point — dip down into the second valley." },
+      { at: 0.57, say: "Second valley — rise up to the right peak." },
+      { at: 0.7,  say: "Right peak — draw straight down to the base." },
+      { at: 0.85, say: "Bottom-right — draw straight left along the base to close it." },
+      { at: 0.95, say: "Crown complete." },
+    ],
+  },
+  lightning: {
+    name: "Lightning Bolt",
+    description: "A sharp zigzag with quick direction changes — more advanced, with several tight turns",
+    emoji: "⚡",
+    points: [
+      norm(0.55, 0.08),
+      norm(0.28, 0.52),
+      norm(0.46, 0.52),
+      norm(0.36, 0.92),
+      norm(0.72, 0.42),
+      norm(0.52, 0.42),
+      norm(0.55, 0.08),
+    ],
+    checkpoints: [
+      { at: 0,    say: "Start at the top point. Draw a sharp diagonal down and to the left." },
+      { at: 0.17, say: "Sharp turn — draw a short line across to the right." },
+      { at: 0.33, say: "Another sharp turn — draw diagonally down and left, to the bottom tip." },
+      { at: 0.5,  say: "Bottom tip — now draw a long diagonal up and to the right." },
+      { at: 0.67, say: "Sharp turn — draw a short line across to the left." },
+      { at: 0.85, say: "Final turn — draw diagonally up and to the right, back to the start." },
+      { at: 0.95, say: "Lightning bolt complete." },
     ],
   },
 };
