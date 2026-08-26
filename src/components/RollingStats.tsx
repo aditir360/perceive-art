@@ -78,7 +78,7 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
             </span>
           </div>
           <div className="mt-3">
-            <div className="bg-gradient-to-br from-[oklch(0.42_0.19_10)] to-[oklch(0.32_0.13_340)] bg-clip-text text-4xl font-black leading-none text-transparent sm:text-5xl">
+            <div className="bg-gradient-to-br from-[oklch(0.42_0.19_25)] to-[oklch(0.34_0.1_340)] bg-clip-text text-4xl font-black leading-none text-transparent sm:text-5xl">
               {drawingCount === null || drawingCount === undefined ? "—" : displayCount.toLocaleString()}
             </div>
             <p className="mt-1.5 text-xs font-medium text-muted-foreground">created worldwide</p>
@@ -96,7 +96,7 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
             </span>
           </div>
           <div className="mt-3">
-            <div className="bg-gradient-to-br from-[oklch(0.38_0.12_300)] to-[oklch(0.3_0.1_260)] bg-clip-text text-4xl font-black leading-none text-transparent sm:text-5xl">
+            <div className="bg-gradient-to-br from-[oklch(0.4_0.08_320)] to-[oklch(0.3_0.05_30)] bg-clip-text text-4xl font-black leading-none text-transparent sm:text-5xl">
               {displayReach.toLocaleString()}+
             </div>
             <p className="mt-1.5 text-xs font-medium text-muted-foreground">people impacted</p>
