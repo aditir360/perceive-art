@@ -201,7 +201,7 @@ function Index() {
               <Rocket className="h-3.5 w-3.5" /> Coming soon
             </span>
 
-            <h2 className="mx-auto mt-5 max-w-xl bg-gradient-to-br from-[oklch(0.42_0.19_10)] to-[oklch(0.32_0.13_340)] bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-4xl">
+            <h2 className="mx-auto mt-5 max-w-xl bg-gradient-to-br from-[oklch(0.42_0.19_25)] to-[oklch(0.34_0.09_320)] bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-4xl">
               More features coming soon
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground sm:text-base">
