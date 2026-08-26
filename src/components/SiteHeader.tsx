@@ -14,7 +14,7 @@ export function SiteHeader() {
       <div className="flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <img
-            src="/bear-logo.jpeg"
+            src="/bear-logo-new.png"
             alt="Perceive logo"
             className="h-14 w-14 rounded-full bg-card object-cover shadow-md ring-2 ring-primary/40 sm:h-16 sm:w-16"
           />
