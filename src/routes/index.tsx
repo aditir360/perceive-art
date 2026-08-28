@@ -8,7 +8,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { useCanvasClicks } from "@/lib/usage";
 import { saveArtwork } from "@/lib/gallery-storage";
 import bearPeek from "@/assets/bear-peek-cropped.png";
-import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight, Music, Music2, Star, Palette, Headphones, Mail, Instagram, Linkedin, Rocket, Users2, Smartphone, Wand2 } from "lucide-react";
+import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight, Music, Music2, Star, Palette, Headphones, Mail, Instagram, Linkedin, Rocket, Users2, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -102,7 +102,7 @@ function Index() {
             aria-hidden="true"
             className="pointer-events-none absolute left-1/2 top-0 z-10 h-56 w-56 -translate-x-1/2 -translate-y-8 select-none object-contain object-bottom drop-shadow-xl sm:h-72 sm:w-72 sm:-translate-y-10"
           />
-          <div className="rounded-3xl bg-card px-8 pb-8 pt-10 shadow-sm ring-1 ring-primary/15 sm:px-12 sm:pb-12 sm:pt-12">
+          <div className="rounded-3xl bg-card px-8 pb-8 pt-10 shadow-xl shadow-primary/10 ring-1 ring-primary/15 sm:px-12 sm:pb-12 sm:pt-12">
             <div className="flex items-center gap-3">
               <Heart className="h-5 w-5 text-primary" />
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">Our mission</span>
@@ -155,7 +155,7 @@ function Index() {
               body: "Export a high-contrast SVG for swell paper — or a ready-to-print STL — and turn what you heard into something you can run your fingers across.",
             },
           ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+            <div key={title} className="rounded-3xl bg-card p-6 shadow-lg shadow-primary/10 ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-xl">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
                 <Icon className="h-6 w-6" />
               </div>
@@ -190,7 +190,7 @@ function Index() {
 
       {/* Coming soon */}
       <section className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-card to-accent/15 p-10 text-center shadow-sm ring-1 ring-primary/20 sm:p-14">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-card to-accent/15 p-10 text-center shadow-xl shadow-primary/15 ring-1 ring-primary/20 sm:p-14">
           <div aria-hidden className="pointer-events-none absolute inset-0 -z-0">
             <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
             <div className="absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-accent/25 blur-3xl" />
@@ -212,11 +212,11 @@ function Index() {
               {[
                 { icon: Users2, title: "Collaborative canvas", body: "Draw together with someone else in real time." },
                 { icon: Smartphone, title: "Mobile studio", body: "The full sonic canvas, right in your pocket." },
-                { icon: Wand2, title: "More audio guides", body: "New shapes, patterns, and freeform templates." },
+                { icon: Ear, title: "Two pathways, one studio", body: "A guided path for sighted and low-vision artists, and a fully autonomous, sound-first system built for blind creators." },
               ].map(({ icon: Icon, title, body }) => (
                 <div
                   key={title}
-                  className="rounded-2xl bg-card/70 p-5 text-left shadow-sm ring-1 ring-primary/15 backdrop-blur-sm transition-transform hover:-translate-y-1"
+                  className="rounded-2xl bg-card/70 p-5 text-left shadow-md ring-1 ring-primary/15 backdrop-blur-sm transition-all hover:-translate-y-1 hover:shadow-lg"
                 >
                   <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15">
                     <Icon className="h-5 w-5 text-primary" />
@@ -232,7 +232,7 @@ function Index() {
 
        {/* Feedback */}
       <section className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="rounded-3xl bg-card p-8 text-center shadow-sm ring-1 ring-primary/15 sm:p-10">
+        <div className="rounded-3xl bg-card p-8 text-center shadow-xl shadow-primary/10 ring-1 ring-primary/15 sm:p-10">
           <p className="text-sm text-muted-foreground">
             Have recommendations for new features or improvements?{" "}
             <a
