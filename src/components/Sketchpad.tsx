@@ -26,12 +26,7 @@ import {
   Home,
   Globe,
   Check,
-  Highlighter,
-  Paintbrush,
-  Infinity as InfinityIcon,
-  Flower2,
-  Crown,
-  Zap,
+  Droplet,
 } from "lucide-react";
 
 // Icon + colour badge per guide, reusing the same swatches from the palette
@@ -45,49 +40,16 @@ const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
   wave:     { Icon: Waves,    color: "#4da6ff" }, // Sky
   spiral:   { Icon: Orbit,    color: "#9b72cf" }, // Plum
   house:    { Icon: Home,     color: "#48b376" }, // Mint
-  infinity: { Icon: InfinityIcon, color: "#7c6fd1" }, // Indigo-violet
-  flower:   { Icon: Flower2,  color: "#f4978e" }, // Coral-pink
-  crown:    { Icon: Crown,    color: "#d4af37" }, // Antique gold
-  lightning:{ Icon: Zap,      color: "#ffd166" }, // Bright yellow
 };
 
 type Point = { x: number; y: number };
-type PenTexture = "marker" | "highlighter" | "paintbrush" | "scribbly";
-type Stroke = { color: string; width: number; points: Point[]; texture: PenTexture; opacity: number };
+type Stroke = { color: string; width: number; opacity: number; points: Point[] };
 
 const MIN_PEN_WIDTH = 1;
 const MAX_PEN_WIDTH = 14;
-
-const PEN_TEXTURES: { key: PenTexture; label: string; Icon: typeof Pencil }[] = [
-  { key: "marker",      label: "Marker",      Icon: Pencil },
-  { key: "highlighter", label: "Highlighter", Icon: Highlighter },
-  { key: "paintbrush",  label: "Paintbrush",  Icon: Paintbrush },
-  { key: "scribbly",    label: "Scribbly",    Icon: Waves },
-];
-
-// Deterministic pseudo-random jitter so a given stroke always looks the same
-// across re-renders (no flicker) but still reads as loose/hand-drawn.
-function seededJitter(seed: number): number {
-  const x = Math.sin(seed * 12.9898) * 43758.5453;
-  return x - Math.floor(x);
-}
-
-// Turns a stroke's points into a wobbly "scribbly" path by nudging each
-// point along its perpendicular normal by a small pseudo-random amount.
-function scribblyPoints(points: Point[], strength: number): Point[] {
-  if (points.length < 2) return points;
-  return points.map((p, i) => {
-    const prev = points[Math.max(0, i - 1)];
-    const next = points[Math.min(points.length - 1, i + 1)];
-    const dx = next.x - prev.x;
-    const dy = next.y - prev.y;
-    const len = Math.hypot(dx, dy) || 1;
-    const nx = -dy / len;
-    const ny = dx / len;
-    const j = (seededJitter(i * 7.31 + p.x * 0.13 + p.y * 0.07) - 0.5) * 2 * strength;
-    return { x: p.x + nx * j, y: p.y + ny * j };
-  });
-}
+const MIN_PEN_OPACITY = 0.1;
+const MAX_PEN_OPACITY = 1;
+const OPACITY_STEP = 0.1;
 
 const COLORS = [
   { name: "Rose",     value: "#e88aab", tone: 523.25 },
@@ -111,21 +73,6 @@ const COLORS = [
 const WIDTH  = 900;
 const HEIGHT = 560;
 const GRID   = 60;
-
-// Distance (px) inside which we consider the cursor "on" the template and
-// switch from travel directions over to step-by-step drawing checkpoints.
-const ARRIVAL_RADIUS = 45;
-
-// Warm, encouraging call-outs sprinkled in as the user hits checkpoints —
-// gives the guide voice personality instead of just robotic instructions.
-const PRAISE_PHRASES = [
-  "Nice and steady!",
-  "Great job!",
-  "You're doing wonderfully!",
-  "Lovely line!",
-  "Keep it up, you've got this!",
-  "Beautiful — right on track!",
-];
 
 type ShapeGuide = {
   name: string;
@@ -281,108 +228,7 @@ const SHAPE_GUIDES: Record<string, ShapeGuide> = {
       { at: 0.95, say: "House complete." },
     ],
   },
-  infinity: {
-    name: "Infinity",
-    description: "A flowing figure-eight that loops through the center — more advanced, with two crossing points",
-    emoji: "♾️",
-    points: Array.from({ length: 96 }, (_, i) => {
-      const t = (i / 96) * Math.PI * 2;
-      const denom = 1 + Math.sin(t) * Math.sin(t);
-      const x = (0.36 * Math.cos(t)) / denom;
-      const y = (0.22 * Math.sin(t) * Math.cos(t)) / denom;
-      return norm(0.5 + x, 0.5 + y);
-    }),
-    checkpoints: [
-      { at: 0,    say: "Start at the rightmost point of the right loop. Curve up and to the left." },
-      { at: 0.25, say: "Passing through the center crossing point — now head into the left loop." },
-      { at: 0.5,  say: "Leftmost point — the far edge of the left loop." },
-      { at: 0.75, say: "Back through the center crossing a second time — into the right loop." },
-      { at: 0.95, say: "Almost home — close the loop at the rightmost point." },
-    ],
-  },
-  flower: {
-    name: "Flower",
-    description: "Five petals looping out from a shared center — more advanced, with repeating loops",
-    emoji: "🌸",
-    points: Array.from({ length: 100 }, (_, i) => {
-      const t = (i / 99) * Math.PI;
-      const r = 0.34 * Math.cos(5 * t);
-      return norm(0.5 + r * Math.cos(t), 0.5 + r * Math.sin(t));
-    }),
-    checkpoints: [
-      { at: 0,    say: "Start at the tip of the first petal. Curve inward toward the center." },
-      { at: 0.2,  say: "First petal complete — curve out to the next petal tip." },
-      { at: 0.4,  say: "Second petal complete — continue on to the third." },
-      { at: 0.6,  say: "Third petal complete — two more petals to go." },
-      { at: 0.8,  say: "Fourth petal complete — one final petal remains." },
-      { at: 0.95, say: "Final petal — flower complete." },
-    ],
-  },
-  crown: {
-    name: "Crown",
-    description: "Three peaks rising from a wide base — more advanced, with several sharp turns",
-    emoji: "👑",
-    points: [
-      norm(0.18, 0.78),
-      norm(0.18, 0.42),
-      norm(0.32, 0.58),
-      norm(0.5,  0.22),
-      norm(0.68, 0.58),
-      norm(0.82, 0.42),
-      norm(0.82, 0.78),
-      norm(0.18, 0.78),
-    ],
-    checkpoints: [
-      { at: 0,    say: "Start at the bottom-left of the crown. Draw straight up to the left peak." },
-      { at: 0.14, say: "Left peak — dip down and to the right, into the first valley." },
-      { at: 0.28, say: "First valley — rise up to the tall center peak." },
-      { at: 0.42, say: "Center peak, the tallest point — dip down into the second valley." },
-      { at: 0.57, say: "Second valley — rise up to the right peak." },
-      { at: 0.7,  say: "Right peak — draw straight down to the base." },
-      { at: 0.85, say: "Bottom-right — draw straight left along the base to close it." },
-      { at: 0.95, say: "Crown complete." },
-    ],
-  },
-  lightning: {
-    name: "Lightning Bolt",
-    description: "A sharp zigzag with quick direction changes — more advanced, with several tight turns",
-    emoji: "⚡",
-    points: [
-      norm(0.55, 0.08),
-      norm(0.28, 0.52),
-      norm(0.46, 0.52),
-      norm(0.36, 0.92),
-      norm(0.72, 0.42),
-      norm(0.52, 0.42),
-      norm(0.55, 0.08),
-    ],
-    checkpoints: [
-      { at: 0,    say: "Start at the top point. Draw a sharp diagonal down and to the left." },
-      { at: 0.17, say: "Sharp turn — draw a short line across to the right." },
-      { at: 0.33, say: "Another sharp turn — draw diagonally down and left, to the bottom tip." },
-      { at: 0.5,  say: "Bottom tip — now draw a long diagonal up and to the right." },
-      { at: 0.67, say: "Sharp turn — draw a short line across to the left." },
-      { at: 0.85, say: "Final turn — draw diagonally up and to the right, back to the start." },
-      { at: 0.95, say: "Lightning bolt complete." },
-    ],
-  },
 };
-
-// Turns a delta between two points into a friendly compass-style direction,
-// e.g. "down and to the left". Used to walk the user's cursor over to the
-// start of a template before they've touched the guide path at all.
-function directionPhrase(dx: number, dy: number): string {
-  const parts: string[] = [];
-  const H_THRESHOLD = 18;
-  const V_THRESHOLD = 18;
-  if (dy > V_THRESHOLD) parts.push("down");
-  else if (dy < -V_THRESHOLD) parts.push("up");
-  if (dx > H_THRESHOLD) parts.push("to the right");
-  else if (dx < -H_THRESHOLD) parts.push("to the left");
-  if (!parts.length) return "you're right at the start";
-  if (parts.length === 1) return `move ${parts[0]}`;
-  return `move ${parts[0]} and ${parts[1]}`;
-}
 
 function nearestOnGuide(p: Point, guide: ShapeGuide): { distance: number; progress: number } {
   const pts = guide.points.map((n) => ({ x: n.x * WIDTH, y: n.y * HEIGHT }));
@@ -492,97 +338,6 @@ type SketchpadProps = {
   onPost?: (artwork: { svg: string }) => void;
 };
 
-// Renders one stroke as one or more SVG primitives depending on its texture:
-//  - marker:      a single clean round-cap polyline (the original look)
-//  - highlighter: one thick, flat-cap, low-opacity polyline with a multiply
-//                 blend so overlapping strokes darken like real highlighter ink
-//  - paintbrush:  a few softly offset, semi-transparent polylines layered on
-//                 top of each other for a soft bristly, uneven edge
-//  - scribbly:    the path is jittered into a wobbly hand-drawn line
-function StrokeShape({ stroke, keyPrefix }: { stroke: Stroke; keyPrefix: string }) {
-  const { color, width, points, texture, opacity } = stroke;
-  if (points.length === 0) return null;
-  const toStr = (pts: Point[]) => pts.map((p) => `${p.x},${p.y}`).join(" ");
-
-  if (texture === "highlighter") {
-    return (
-      <polyline
-        points={toStr(points)}
-        fill="none"
-        stroke={color}
-        strokeWidth={width * 2.6}
-        strokeLinecap="butt"
-        strokeLinejoin="round"
-        strokeOpacity={opacity * 0.4}
-        style={{ mixBlendMode: "multiply" }}
-      />
-    );
-  }
-
-  if (texture === "paintbrush") {
-    const layers = [
-      { dx: 0,    dy: 0,    w: width * 1.15, o: opacity * 0.55 },
-      { dx: 1.2,  dy: -1,   w: width * 0.9,  o: opacity * 0.35 },
-      { dx: -1.1, dy: 1.2,  w: width * 0.75, o: opacity * 0.3 },
-    ];
-    return (
-      <g>
-        {layers.map((l, i) => (
-          <polyline
-            key={`${keyPrefix}-b${i}`}
-            points={toStr(points.map((p) => ({ x: p.x + l.dx, y: p.y + l.dy })))}
-            fill="none"
-            stroke={color}
-            strokeWidth={l.w}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeOpacity={l.o}
-          />
-        ))}
-      </g>
-    );
-  }
-
-  if (texture === "scribbly") {
-    const wobble = Math.max(1.5, width * 0.6);
-    return (
-      <g>
-        <polyline
-          points={toStr(scribblyPoints(points, wobble))}
-          fill="none"
-          stroke={color}
-          strokeWidth={Math.max(1, width * 0.7)}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeOpacity={opacity}
-        />
-        <polyline
-          points={toStr(scribblyPoints(points, wobble * 1.4))}
-          fill="none"
-          stroke={color}
-          strokeWidth={Math.max(1, width * 0.45)}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeOpacity={opacity * 0.55}
-        />
-      </g>
-    );
-  }
-
-  // marker (default)
-  return (
-    <polyline
-      points={toStr(points)}
-      fill="none"
-      stroke={color}
-      strokeWidth={width}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeOpacity={opacity}
-    />
-  );
-}
-
 export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const audioRef = useRef<ReturnType<typeof buildAudio> | null>(null);
 
@@ -597,7 +352,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   );
   const [colorIndex, setColorIndex] = useState(0);
   const [penWidth,  setPenWidth]  = useState(3);
-  const [penTexture, setPenTexture] = useState<PenTexture>("marker");
   const [penOpacity, setPenOpacity] = useState(1);
   const [guideKey,   setGuideKey]   = useState<string | null>(null);
   const [guidesPanelOpen, setGuidesPanelOpen] = useState(true);
@@ -608,41 +362,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const lastCheckpoint = useRef(-1);
   const guideOscRef    = useRef<{ osc: OscillatorNode; gain: GainNode } | null>(null);
   const trailRef       = useRef<Point[]>([]);
-  const navVoiceRef    = useRef<SpeechSynthesisVoice | null>(null);
-  const lastNavZone     = useRef<string | null>(null);
-  const driftWarnedAt   = useRef<number | null>(null);
 
   const stats = useCanvasClicks();
-
-  // ── Pick a warm, lady-voiced narrator for canvas navigation ──────────────
-  // We prefer a clearly-female English voice (Samantha / Google US English /
-  // Microsoft Zira / Jenny, etc). Voice lists load asynchronously in most
-  // browsers, so we try immediately and again once `voiceschanged` fires.
-  useEffect(() => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-
-    const FEMALE_HINTS = [
-      "female", "samantha", "victoria", "zira", "jenny", "aria", "susan",
-      "karen", "moira", "tessa", "fiona", "google us english", "google uk english female",
-      "hazel", "libby", "sonia", "shelley", "allison",
-    ];
-
-    const pickVoice = () => {
-      const voices = window.speechSynthesis.getVoices();
-      if (!voices.length) return;
-      const englishVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith("en"));
-      const pool = englishVoices.length ? englishVoices : voices;
-      const match = pool.find((v) => {
-        const name = v.name.toLowerCase();
-        return FEMALE_HINTS.some((hint) => name.includes(hint));
-      });
-      navVoiceRef.current = match ?? pool[0] ?? null;
-    };
-
-    pickVoice();
-    window.speechSynthesis.addEventListener("voiceschanged", pickVoice);
-    return () => window.speechSynthesis.removeEventListener("voiceschanged", pickVoice);
-  }, []);
 
   const say = useCallback((msg: string) => {
     setAnnounce(msg);
@@ -652,12 +373,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(msg);
-      // A higher pitch + slightly quick, bright rate reads as a cute, warm
-      // lady-guide voice, layered on top of whichever female system voice
-      // we found (falling back gracefully if none is available).
-      utter.rate = 1.05;
-      utter.pitch = 1.35;
-      if (navVoiceRef.current) utter.voice = navVoiceRef.current;
+      utter.rate = 1.02;
+      utter.pitch = 1;
       window.speechSynthesis.speak(utter);
     }
   }, []);
@@ -735,58 +452,11 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       g.gain.gain.setTargetAtTime(vol, g.osc.context.currentTime, 0.06);
     }
 
-    // Haven't reached the template yet — narrate the way there instead of
-    // drawing checkpoints. Uses the guide's own starting point as the target.
-    const startPt = { x: guide.points[0].x * WIDTH, y: guide.points[0].y * HEIGHT };
-    if (distance > ARRIVAL_RADIUS && lastCheckpoint.current < 0) {
-      const dx = startPt.x - p.x;
-      const dy = startPt.y - p.y;
-      const zone = `${dx > 18 ? "r" : dx < -18 ? "l" : ""}${dy > 18 ? "d" : dy < -18 ? "u" : ""}`;
-      if (zone !== lastNavZone.current) {
-        lastNavZone.current = zone;
-        say(`Navigating to the ${guide.name.toLowerCase()} template. ${directionPhrase(dx, dy)} to reach the starting point.`);
-      }
-      return;
-    }
-
-    // Arrived — announce it once, then hand off to checkpoint narration.
-    if (lastCheckpoint.current < 0) {
-      lastCheckpoint.current = 0;
-      lastNavZone.current = null;
-      driftWarnedAt.current = null;
-      say(`You're on the template! ${guide.checkpoints[0].say}`);
-      if (audioRef.current) playSineNote(audioRef.current.ctx, 523, 0.2, 0.08);
-      return;
-    }
-
-    // Already drawing along the path: if the cursor wanders too far off the
-    // line, actively steer it back rather than just going quiet. We nudge
-    // the target toward the nearest point slightly *ahead* on the guide so
-    // the correction also keeps them moving the right way, not backwards.
-    const nearestIdx  = Math.round(progress * (guide.points.length - 1));
-    const aheadIdx    = Math.min(guide.points.length - 1, nearestIdx + 4);
-    const aheadPt     = { x: guide.points[aheadIdx].x * WIDTH, y: guide.points[aheadIdx].y * HEIGHT };
-    const DRIFT_RADIUS = 55;
-    const DRIFT_COOLDOWN_MS = 1600;
-    if (distance > DRIFT_RADIUS) {
-      const now = Date.now();
-      if (!driftWarnedAt.current || now - driftWarnedAt.current > DRIFT_COOLDOWN_MS) {
-        driftWarnedAt.current = now;
-        const dx = aheadPt.x - p.x;
-        const dy = aheadPt.y - p.y;
-        say(`You're drifting off the line — ${directionPhrase(dx, dy)} to get back on track.`);
-      }
-      return;
-    }
-    driftWarnedAt.current = null;
-
     const cps = guide.checkpoints;
     for (let i = cps.length - 1; i >= 0; i--) {
       if (progress >= cps[i].at && i > lastCheckpoint.current) {
         lastCheckpoint.current = i;
-        const praise = PRAISE_PHRASES[i % PRAISE_PHRASES.length];
-        const isLast = i === cps.length - 1;
-        say(isLast ? `${praise} ${cps[i].say}` : `${cps[i].say} ${praise}`);
+        say(cps[i].say);
         // Play a gentle chime note to signal a checkpoint
         if (audioRef.current) {
           const noteFreqs = [523, 587, 659, 698, 784];
@@ -801,23 +471,13 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     stopGuideTone();
     setGuideKey(key);
     lastCheckpoint.current = -1;
-    lastNavZone.current = null;
-    driftWarnedAt.current = null;
     setGuidesPanelOpen(false);
     startGuideTone();
     const guide = SHAPE_GUIDES[key];
-    const startPt = { x: guide.points[0].x * WIDTH, y: guide.points[0].y * HEIGHT };
-    const dx = startPt.x - cursor.x;
-    const dy = startPt.y - cursor.y;
     if (audioRef.current) playGuideStart(audioRef.current.ctx, 392);
-    if (Math.hypot(dx, dy) > ARRIVAL_RADIUS) {
-      say(`${guide.name} guide started. Navigating to the template. ${directionPhrase(dx, dy)} to reach the starting point.`);
-    } else {
-      lastCheckpoint.current = 0;
-      say(`${guide.name} guide started. You're on the template. ${guide.checkpoints[0].say}`);
-    }
+    say(`${guide.name} guide started. ${guide.checkpoints[0].say} Move close to the glowing path to hear the guide tone rise.`);
     trackClick();
-  }, [startGuideTone, stopGuideTone, say, cursor]);
+  }, [startGuideTone, stopGuideTone, say]);
 
   const stopGuide = useCallback(() => {
     if (!guideKey) return;
@@ -848,7 +508,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
     if (drawing) {
       setCurrent((c) => {
-        if (!c) return { color, width: penWidth, points: [p], texture: penTexture, opacity: penOpacity };
+        if (!c) return { color, width: penWidth, opacity: penOpacity, points: [p] };
         const start = c.points[0];
         const dist  = Math.hypot(p.x - start.x, p.y - start.y);
         if (c.points.length > 6 && dist < 16) {
@@ -857,7 +517,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         return { ...c, points: [...c.points, p] };
       });
     }
-  }, [drawing, color, penWidth, penTexture, penOpacity, updateAudio, trackGuide, say]);
+  }, [drawing, color, penWidth, penOpacity, updateAudio, trackGuide, say]);
 
   // ── Drawing toggle ────────────────────────────────────────────────────────
   const toggleDrawing = useCallback(() => {
@@ -865,7 +525,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setDrawing((d) => {
       const next = !d;
       if (next) {
-        setCurrent({ color, width: penWidth, points: [cursor], texture: penTexture, opacity: penOpacity });
+        setCurrent({ color, width: penWidth, opacity: penOpacity, points: [cursor] });
         if (audioRef.current) playSineNote(audioRef.current.ctx, 659, 0.15, 0.12);
         say("Drawing on — move to draw");
       } else {
@@ -878,7 +538,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       }
       return next;
     });
-  }, [color, cursor, penWidth, penTexture, penOpacity, say]);
+  }, [color, cursor, penWidth, penOpacity, say]);
 
   // ── Sound toggle ──────────────────────────────────────────────────────────
   const toggleSound = useCallback(() => {
@@ -936,6 +596,23 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     trackClick();
   }, [say]);
 
+  // ── Pen opacity ───────────────────────────────────────────────────────────
+  const changePenOpacity = useCallback((next: number) => {
+    // Round to the nearest step to avoid floating-point drift (e.g. 0.30000000000000004)
+    const stepped = Math.round(next / OPACITY_STEP) * OPACITY_STEP;
+    const clamped = Math.round(Math.max(MIN_PEN_OPACITY, Math.min(MAX_PEN_OPACITY, stepped)) * 100) / 100;
+    setPenOpacity((prev) => {
+      if (clamped === prev) return prev;
+      if (audioRef.current) {
+        // Softer/more transparent = quieter cue, fully opaque = fuller volume — mirrors the visual
+        playSineNote(audioRef.current.ctx, 500, 0.12, 0.04 + clamped * 0.08);
+      }
+      say(`Pen opacity ${Math.round(clamped * 100)} percent`);
+      return clamped;
+    });
+    trackClick();
+  }, [say]);
+
   // ── Canvas ops ────────────────────────────────────────────────────────────
   const clearCanvas = useCallback(() => {
     setStrokes([]);
@@ -973,41 +650,12 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       const d = s.points.map((p, i) =>
         `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`
       ).join(" ");
-      const strokeColor = highContrast ? "#000" : s.color;
-      const baseW = highContrast ? Math.max(4, s.width + 1) : s.width;
-
-      if (!highContrast && s.texture === "highlighter") {
-        const w = baseW * 2.6;
-        return `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="${w}" stroke-linecap="butt" stroke-linejoin="round" stroke-opacity="${(s.opacity * 0.4).toFixed(2)}" style="mix-blend-mode:multiply"/>`;
-      }
-
-      if (!highContrast && s.texture === "paintbrush") {
-        const layers = [
-          { dx: 0,    dy: 0,    w: baseW * 1.15, o: s.opacity * 0.55 },
-          { dx: 1.2,  dy: -1,   w: baseW * 0.9,  o: s.opacity * 0.35 },
-          { dx: -1.1, dy: 1.2,  w: baseW * 0.75, o: s.opacity * 0.3 },
-        ];
-        return layers.map((l) => {
-          const dl = s.points.map((p, i) =>
-            `${i === 0 ? "M" : "L"}${(p.x + l.dx).toFixed(1)},${(p.y + l.dy).toFixed(1)}`
-          ).join(" ");
-          return `<path d="${dl}" fill="none" stroke="${strokeColor}" stroke-width="${l.w}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${l.o.toFixed(2)}"/>`;
-        }).join("");
-      }
-
-      if (!highContrast && s.texture === "scribbly") {
-        const wobble = Math.max(1.5, baseW * 0.6);
-        const wobblyD = (strength: number) => scribblyPoints(s.points, strength).map((p, i) =>
-          `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`
-        ).join(" ");
-        return (
-          `<path d="${wobblyD(wobble)}" fill="none" stroke="${strokeColor}" stroke-width="${Math.max(1, baseW * 0.7)}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${s.opacity.toFixed(2)}"/>` +
-          `<path d="${wobblyD(wobble * 1.4)}" fill="none" stroke="${strokeColor}" stroke-width="${Math.max(1, baseW * 0.45)}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${(s.opacity * 0.55).toFixed(2)}"/>`
-        );
-      }
-
-      // marker (default), and the fallback used for high-contrast exports
-      return `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="${baseW}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${highContrast ? 1 : s.opacity.toFixed(2)}"/>`;
+      const w = highContrast ? Math.max(4, s.width + 1) : s.width;
+      // Swell paper is a raised/not-raised tactile surface, so transparency
+      // isn't meaningful there — always emboss at full strength regardless
+      // of the on-screen opacity setting.
+      const op = highContrast ? 1 : s.opacity;
+      return `<path d="${d}" fill="none" stroke="${highContrast ? "#000" : s.color}" stroke-width="${w}" stroke-opacity="${op}" stroke-linecap="round" stroke-linejoin="round"/>`;
     }).join("");
     return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" width="${WIDTH}" height="${HEIGHT}"><rect width="100%" height="100%" fill="${bg}"/>${paths}</svg>`;
   };
@@ -1074,11 +722,13 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       else if (e.key.toLowerCase() === "e") { e.preventDefault(); cycleColor(1); }
       else if (e.key === "[") { e.preventDefault(); changePenWidth(penWidth - 1); }
       else if (e.key === "]") { e.preventDefault(); changePenWidth(penWidth + 1); }
+      else if (e.key === ",") { e.preventDefault(); changePenOpacity(penOpacity - OPACITY_STEP); }
+      else if (e.key === ".") { e.preventDefault(); changePenOpacity(penOpacity + OPACITY_STEP); }
       else if (e.key.toLowerCase() === "escape" && guideKey) { e.preventDefault(); stopGuide(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, penWidth, changePenWidth, guideKey, stopGuide, say, postConfirmOpen, cancelPost, confirmPost]);
+  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, penWidth, changePenWidth, penOpacity, changePenOpacity, guideKey, stopGuide, say, postConfirmOpen, cancelPost, confirmPost]);
 
   // ── Pointer ───────────────────────────────────────────────────────────────
   const pointerDrawing = useRef(false);
@@ -1097,7 +747,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     const p = svgPoint(e);
     setCursor(p);
     setDrawing(true);
-    setCurrent({ color, width: penWidth, points: [p], texture: penTexture, opacity: penOpacity });
+    setCurrent({ color, width: penWidth, opacity: penOpacity, points: [p] });
     updateAudio(p);
     trackClick();
   };
@@ -1108,7 +758,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     updateAudio(p);
     trackGuide(p);
     if (pointerDrawing.current) {
-      setCurrent((c) => c ? { ...c, points: [...c.points, p] } : { color, width: penWidth, points: [p], texture: penTexture, opacity: penOpacity });
+      setCurrent((c) => c ? { ...c, points: [...c.points, p] } : { color, width: penWidth, opacity: penOpacity, points: [p] });
     }
   };
 
@@ -1283,9 +933,19 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
           {/* Drawn strokes */}
           {strokes.map((s, i) => (
-            <StrokeShape key={i} stroke={s} keyPrefix={`s${i}`} />
+            <polyline key={i}
+              points={s.points.map((p) => `${p.x},${p.y}`).join(" ")}
+              fill="none" stroke={s.color} strokeWidth={s.width} strokeOpacity={s.opacity}
+              strokeLinecap="round" strokeLinejoin="round"
+            />
           ))}
-          {current && <StrokeShape stroke={current} keyPrefix="cur" />}
+          {current && (
+            <polyline
+              points={current.points.map((p) => `${p.x},${p.y}`).join(" ")}
+              fill="none" stroke={current.color} strokeWidth={current.width} strokeOpacity={current.opacity}
+              strokeLinecap="round" strokeLinejoin="round"
+            />
+          )}
 
           {/* Cursor trail */}
           {visualAids && trailRef.current.map((p, i) => (
@@ -1303,7 +963,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         </svg>
 
         <p className="mt-2.5 text-xs text-muted-foreground">
-          Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours · [ ] adjust pen thickness
+          Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours · [ ] adjust pen thickness · , . adjust pen opacity
         </p>
 
         {/* Audio Guides — moved here from the sidebar so this card doesn't sit
@@ -1436,58 +1096,54 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             />
             {penWidth}px
           </div>
+        </section>
 
-          {/* Pen texture */}
-          <div className="mt-4">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Texture
-            </h3>
-            <div className="grid grid-cols-4 gap-2">
-              {PEN_TEXTURES.map(({ key, label, Icon }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => {
-                    setPenTexture(key);
-                    say(`${label} pen selected.`);
-                  }}
-                  aria-pressed={penTexture === key}
-                  aria-label={label}
-                  title={label}
-                  className={`flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium ring-1 transition ${
-                    penTexture === key
-                      ? "bg-primary/15 text-primary ring-primary/40"
-                      : "bg-background/50 text-muted-foreground ring-border hover:bg-primary/8 hover:ring-primary/30"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Pen opacity */}
-          <div className="mt-4">
-            <h3 className="mb-2 flex items-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Opacity
-              <span className="ml-auto font-mono text-[10px] normal-case tracking-normal text-muted-foreground/80">
-                {Math.round(penOpacity * 100)}%
-              </span>
-            </h3>
+        {/* Pen opacity */}
+        <section aria-labelledby="opacity-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
+          <h2 id="opacity-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <Droplet className="h-4 w-4 text-primary" /> Pen opacity
+            <span className="ml-auto text-[10px] font-normal text-muted-foreground">, / . to adjust</span>
+          </h2>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => changePenOpacity(penOpacity - OPACITY_STEP)}
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 shrink-0 rounded-full"
+              aria-label="Decrease pen opacity"
+            >
+              −
+            </Button>
             <input
               type="range"
-              min={10}
-              max={100}
-              step={5}
-              value={Math.round(penOpacity * 100)}
-              onChange={(e) => setPenOpacity(Number(e.target.value) / 100)}
+              min={MIN_PEN_OPACITY}
+              max={MAX_PEN_OPACITY}
+              step={OPACITY_STEP}
+              value={penOpacity}
+              onChange={(e) => changePenOpacity(Number(e.target.value))}
               aria-label="Pen opacity"
-              aria-valuemin={10}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(penOpacity * 100)}
-              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-primary/20 accent-primary"
+              aria-valuemin={MIN_PEN_OPACITY}
+              aria-valuemax={MAX_PEN_OPACITY}
+              aria-valuenow={penOpacity}
+              className="h-2 flex-1 cursor-pointer appearance-none rounded-full bg-primary/20 accent-primary"
             />
+            <Button
+              onClick={() => changePenOpacity(penOpacity + OPACITY_STEP)}
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 shrink-0 rounded-full"
+              aria-label="Increase pen opacity"
+            >
+              +
+            </Button>
+          </div>
+          <div className="mt-2 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span
+              aria-hidden
+              className="inline-block h-3.5 w-3.5 rounded-full"
+              style={{ backgroundColor: color, opacity: penOpacity }}
+            />
+            {Math.round(penOpacity * 100)}%
           </div>
         </section>
 
@@ -1542,6 +1198,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             <li>C — clear canvas</li>
             <li>Q / E — cycle colour</li>
             <li>[ / ] — pen thickness</li>
+            <li>, / . — pen opacity</li>
             <li>G — open / close guides</li>
             <li>Esc — stop active guide</li>
             <li>X — toggle visual aids</li>
