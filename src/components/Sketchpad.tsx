@@ -74,6 +74,13 @@ const WIDTH  = 900;
 const HEIGHT = 560;
 const GRID   = 60;
 
+// Hysteresis for the "off course" guide warning: enter the warned state once
+// you're this far from the path, and don't clear it again until you're back
+// within the (smaller) exit distance. The gap between the two stops the
+// warning from firing repeatedly if you're drawing right at the boundary.
+const OFF_COURSE_ENTER = 70;
+const OFF_COURSE_EXIT  = 45;
+
 type ShapeGuide = {
   name: string;
   description: string;
@@ -362,6 +369,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const lastCheckpoint = useRef(-1);
   const guideOscRef    = useRef<{ osc: OscillatorNode; gain: GainNode } | null>(null);
   const trailRef       = useRef<Point[]>([]);
+  const offCourseRef   = useRef(false);
 
   const stats = useCanvasClicks();
 
@@ -439,6 +447,20 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     if (!guideKey || !soundOn) return;
     const guide = SHAPE_GUIDES[guideKey];
     const { distance, progress } = nearestOnGuide(p, guide);
+
+    // "You've moved off course" — spoken warning, edge-triggered so it says
+    // this once when you stray too far, then stays quiet until you've
+    // actually made it back close to the path (hysteresis; see thresholds
+    // above) rather than repeating on every frame near the boundary.
+    if (!offCourseRef.current && distance > OFF_COURSE_ENTER) {
+      offCourseRef.current = true;
+      say(`You've moved off the ${guide.name} path. Head back toward the glowing line.`);
+      if (audioRef.current) playEdgeBump(audioRef.current.ctx);
+    } else if (offCourseRef.current && distance < OFF_COURSE_EXIT) {
+      offCourseRef.current = false;
+      say("Back on track.");
+    }
+
     const g = guideOscRef.current;
     if (g) {
       // 0 px away = 880 Hz (beautiful high sine); 120 px = 330 Hz (low, "move closer")
@@ -471,6 +493,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     stopGuideTone();
     setGuideKey(key);
     lastCheckpoint.current = -1;
+    offCourseRef.current = false;
     setGuidesPanelOpen(false);
     startGuideTone();
     const guide = SHAPE_GUIDES[key];
@@ -482,6 +505,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const stopGuide = useCallback(() => {
     if (!guideKey) return;
     stopGuideTone();
+    offCourseRef.current = false;
     say("Guide stopped.");
     setGuideKey(null);
     trackClick();
