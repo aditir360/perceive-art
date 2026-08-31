@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ListenButton } from "@/components/ListenButton";
+import { createFileRoute } from "@tanstack/react-router";
+import { HoverListen } from "@/components/ListenButton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Heart, Sparkles, Music, Music2, Star, Headphones, Palette, Lightbulb, Mail, Instagram, Linkedin, Brush, PenLine, Handshake, TrendingUp } from "lucide-react";
@@ -61,184 +61,175 @@ function TeamPage() {
         <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl">
           Meet the <span className="text-primary">team</span>
         </h1>
-        <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
-          Perceive is built by students who believe creativity belongs to everyone.
-          We combine art, sound, and advocacy to open new doors for blind and low-vision creators.
-        </p>
-        <div className="mt-6 flex justify-center">
-          <ListenButton
-            label="Listen to our team story"
-            text="Meet the team behind Perceive. Perceive is built by students who believe creativity belongs to everyone. We combine art, sound, and advocacy to open new doors for blind and low-vision creators. Our founder and executive director is Aditi Ranjan. She leads our vision and uses art for social good. Our director of outreach and partnerships is Haasini Arunachalam. She leads our social media platforms and collaborates with other organizations for partnerships toward our mission. We are also opening social media positions soon, so we can expand and share our mission with even more people."
-          />
-        </div>
+        <HoverListen
+          text="Meet the team behind Perceive. Perceive is built by students who believe creativity belongs to everyone. We combine art, sound, and advocacy to open new doors for blind and low-vision creators. Our founder and executive director is Aditi Ranjan. She leads our vision and uses art for social good. Our director of outreach and partnerships is Haasini Arunachalam. She leads our social media platforms and collaborates with other organizations for partnerships toward our mission. We are also opening social media positions soon, so we can expand and share our mission with even more people."
+          label="our team story"
+          className="mx-auto mt-5 block max-w-2xl"
+        >
+          <p className="text-base text-muted-foreground sm:text-lg">
+            Perceive is built by students who believe creativity belongs to everyone.
+            We combine art, sound, and advocacy to open new doors for blind and low-vision creators.
+          </p>
+        </HoverListen>
       </header>
 
-      {/* Team grid */}
-      <section className="mx-auto max-w-6xl px-6 py-8">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {/* Leadership */}
+      <section className="mx-auto max-w-6xl px-6 pt-8">
+        <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-primary">Leadership</p>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {/* Aditi Ranjan */}
-          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
               <Sparkles className="h-7 w-7" />
             </div>
             <h2 className="mt-5 text-xl font-bold text-foreground">Aditi Ranjan</h2>
             <p className="mt-1 text-sm font-semibold text-primary">Founder & Executive Director</p>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Aditi leads Perceive's vision and mission. She believes in using art for social good,
-              building tools by leveraging technology, that let blind and sighted creators express themselves together.
-            </p>
-            <div className="mt-4">
-              <ListenButton
-                label="Listen"
-                text="Aditi Ranjan, Founder and Executive Director. Aditi leads Perceive's vision and mission. She believes in using art for social good, building tools by leveraging technology, that let blind and sighted creators express themselves together."
-              />
-            </div>
+            <HoverListen
+              text="Aditi Ranjan, Founder and Executive Director. Aditi leads Perceive's vision and mission. She believes in using art for social good, building tools by leveraging technology, that let blind and sighted creators express themselves together."
+              label="Aditi Ranjan"
+              className="mt-3 block"
+            >
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Aditi leads Perceive's vision and mission. She believes in using art for social good,
+                building tools by leveraging technology, that let blind and sighted creators express themselves together.
+              </p>
+            </HoverListen>
           </article>
 
           {/* Haasini Arunachalam */}
-          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
               <Heart className="h-7 w-7" />
             </div>
             <h2 className="mt-5 text-xl font-bold text-foreground">Haasini Arunachalam</h2>
             <p className="mt-1 text-sm font-semibold text-primary">Director of Outreach & Partnerships</p>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Haasini leads our social media platforms and collaborates with other organizations
-              for partnerships that push our mission forward.
-            </p>
-            <div className="mt-4">
-              <ListenButton
-                label="Listen"
-                text="Haasini Arunachalam, Director of Outreach and Partnerships. Haasini leads our social media platforms and collaborates with other organizations for partnerships that push our mission forward."
-              />
-            </div>
+            <HoverListen
+              text="Haasini Arunachalam, Director of Outreach and Partnerships. Haasini leads our social media platforms and collaborates with other organizations for partnerships that push our mission forward."
+              label="Haasini Arunachalam"
+              className="mt-3 block"
+            >
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Haasini leads our social media platforms and collaborates with other organizations
+                for partnerships that push our mission forward.
+              </p>
+            </HoverListen>
           </article>
 
           {/* Chelsea Hung */}
-          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
               <Lightbulb className="h-7 w-7" />
             </div>
             <h2 className="mt-5 text-xl font-bold text-foreground">Chelsea Hung</h2>
             <p className="mt-1 text-sm font-semibold text-primary">Director of Product Development</p>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Chelsea helps shape the Perceive experience by turning ideas into
-              accessible, thoughtfully designed features that make sonic-tactile creation
-              feel intuitive for every user.
-            </p>
-            <div className="mt-4">
-              <ListenButton
-                label="Listen"
-                text="Chelsea Hung, Director of Product Development. Chelsea helps shape the Perceive experience by turning ideas into accessible, thoughtfully designed features that make sonic-tactile creation feel intuitive for every user."
-              />
-            </div>
+            <HoverListen
+              text="Chelsea Hung, Director of Product Development. Chelsea helps shape the Perceive experience by turning ideas into accessible, thoughtfully designed features that make sonic-tactile creation feel intuitive for every user."
+              label="Chelsea Hung"
+              className="mt-3 block"
+            >
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Chelsea helps shape the Perceive experience by turning ideas into
+                accessible, thoughtfully designed features that make sonic-tactile creation
+                feel intuitive for every user.
+              </p>
+            </HoverListen>
           </article>
+        </div>
+      </section>
 
-          {/* Melody — Lead Graphic Designer */}
-          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+      {/* Rest of the team */}
+      <section className="mx-auto max-w-6xl px-6 pb-8 pt-10">
+        <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-primary">The Team</p>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {/* Melody J. — Lead Graphic Designer */}
+          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
               <Palette className="h-7 w-7" />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-foreground">Melody J.</h2>
-            <p className="mt-1 text-sm font-semibold text-primary">Lead Graphic Designer</p>
-            <div className="mt-4">
-              <ListenButton label="Listen" text="Melody J., Lead Graphic Designer." />
-            </div>
+            <HoverListen text="Melody J., Lead Graphic Designer." label="Melody J." className="mt-5 block">
+              <h2 className="text-xl font-bold text-foreground">Melody J.</h2>
+              <p className="mt-1 text-sm font-semibold text-primary">Lead Graphic Designer</p>
+            </HoverListen>
           </article>
 
-          {/* Aswathy — Graphic Designer */}
-          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+          {/* Aswathy MK. — Graphic Designer */}
+          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
               <Brush className="h-7 w-7" />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-foreground">Aswathy MK.</h2>
-            <p className="mt-1 text-sm font-semibold text-primary">Graphic Designer</p>
-            <div className="mt-4">
-              <ListenButton label="Listen" text="Aswathy MK., Graphic Designer." />
-            </div>
+            <HoverListen text="Aswathy MK., Graphic Designer." label="Aswathy MK." className="mt-5 block">
+              <h2 className="text-xl font-bold text-foreground">Aswathy MK.</h2>
+              <p className="mt-1 text-sm font-semibold text-primary">Graphic Designer</p>
+            </HoverListen>
           </article>
 
-          {/* Sarah — Content Writer */}
-          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+          {/* Sarah P. — Content Writer */}
+          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
               <PenLine className="h-7 w-7" />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-foreground">Sarah P.</h2>
-            <p className="mt-1 text-sm font-semibold text-primary">Content Writer</p>
-            <div className="mt-4">
-              <ListenButton label="Listen" text="Sarah P., Content Writer." />
-            </div>
+            <HoverListen text="Sarah P., Content Writer." label="Sarah P." className="mt-5 block">
+              <h2 className="text-xl font-bold text-foreground">Sarah P.</h2>
+              <p className="mt-1 text-sm font-semibold text-primary">Content Writer</p>
+            </HoverListen>
           </article>
 
-          {/* Sahana — Partnerships Lead */}
-          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+          {/* Sahana K. — Partnerships Lead */}
+          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
               <Handshake className="h-7 w-7" />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-foreground">Sahana K.</h2>
-            <p className="mt-1 text-sm font-semibold text-primary">Partnerships Lead</p>
-            <div className="mt-4">
-              <ListenButton label="Listen" text="Sahana K., Partnerships Lead." />
-            </div>
-          </article>
-
-          {/* Rakin — Partnerships Lead */}
-          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
-              <Handshake className="h-7 w-7" />
-            </div>
-            <h2 className="mt-5 text-xl font-bold text-foreground">Rakin K.</h2>
-            <p className="mt-1 text-sm font-semibold text-primary">Partnerships Lead</p>
-            <div className="mt-4">
-              <ListenButton label="Listen" text="Rakin K., Partnerships Lead." />
-            </div>
+            <HoverListen text="Sahana K., Partnerships Lead." label="Sahana K." className="mt-5 block">
+              <h2 className="text-xl font-bold text-foreground">Sahana K.</h2>
+              <p className="mt-1 text-sm font-semibold text-primary">Partnerships Lead</p>
+            </HoverListen>
           </article>
 
           {/* Growth Interns */}
-          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md md:col-span-2 lg:col-span-4">
+          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md md:col-span-2 lg:col-span-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
               <TrendingUp className="h-7 w-7" />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-foreground">Growth Interns</h2>
-            <p className="mt-1 text-sm font-semibold text-primary">Growing Perceive's reach, one campaign at a time</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {[
-                "Akshita C.", "Samhita C.", "Aashi R.", "Vasinya R.", "Tanvir H.", "Mahlet K.",
-                "Urwa W.", "Khuslen", "Himani K.", "Nichollas F.", "Gelila M.", "Keith R.", "Jarika T.", "Juwel H.",
-              ].map((name) => (
-                <span
-                  key={name}
-                  className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary ring-1 ring-primary/20"
-                >
-                  {name}
-                </span>
-              ))}
-            </div>
-            <div className="mt-4">
-              <ListenButton
-                label="Listen"
-                text="Growth Interns. Growing Perceive's reach, one campaign at a time. Our growth interns are: Akshita C., Samhita C., Aashi R., Vasinya R., Tanvir H., Mahlet K., Urwa W., Khuslen, Himani K., Nichollas F., Gelila M., Keith R., Jarika T., and Juwel H."
-              />
-            </div>
+            <HoverListen
+              text="Growth Interns. Growing Perceive's reach, one campaign at a time. Our growth interns are: Akshita C., Samhita C., Aashi R., Vasinya R., Tanvir H., Mahlet K., Urwa W., Khuslen, Himani K., Gelila M., and Juwel H."
+              label="Growth Interns"
+              className="mt-5 block"
+            >
+              <h2 className="text-xl font-bold text-foreground">Growth Interns</h2>
+              <p className="mt-1 text-sm font-semibold text-primary">Growing Perceive's reach, one campaign at a time</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {[
+                  "Akshita C.", "Samhita C.", "Aashi R.", "Vasinya R.", "Tanvir H.", "Mahlet K.",
+                  "Urwa W.", "Khuslen", "Himani K.", "Gelila M.", "Juwel H.",
+                ].map((name) => (
+                  <span
+                    key={name}
+                    className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary ring-1 ring-primary/20"
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
+            </HoverListen>
           </article>
 
-          {/* Social media positions coming soon */}
-          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+          {/* Now hiring */}
+          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
               <Music className="h-7 w-7" />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-foreground">Join our team!</h2>
-            <p className="mt-1 text-sm font-semibold text-primary">We're currently hiring</p>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              We're expanding and have spots open right now! Join us in growing
-              Perceive's voice and sharing accessible creativity with the world.
-            </p>
-            <div className="mt-4">
-              <ListenButton
-                label="Listen"
-                text="Join our team. We're currently hiring. We're expanding and have spots open right now! Join us in growing Perceive's voice and sharing accessible creativity with the world."
-              />
-            </div>
+            <HoverListen
+              text="Join our team. We're currently hiring. We're expanding and have spots open right now! Join us in growing Perceive's voice and sharing accessible creativity with the world."
+              label="Join our team"
+              className="mt-5 block"
+            >
+              <h2 className="text-xl font-bold text-foreground">Join our team!</h2>
+              <p className="mt-1 text-sm font-semibold text-primary">We're currently hiring</p>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                We're expanding and have spots open right now! Join us in growing
+                Perceive's voice and sharing accessible creativity with the world.
+              </p>
+            </HoverListen>
           </article>
         </div>
       </section>
