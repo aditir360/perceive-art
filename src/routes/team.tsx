@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ListenButton } from "@/components/ListenButton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
-import { Heart, Sparkles, Music, Music2, Star, Headphones, Palette, Lightbulb, Mail, Instagram, Linkedin } from "lucide-react";
+import { Heart, Sparkles, Music, Music2, Star, Headphones, Palette, Lightbulb, Mail, Instagram, Linkedin, Brush, PenLine, Handshake, TrendingUp } from "lucide-react";
 
 export const Route = createFileRoute("/team")({
   head: () => ({
@@ -134,7 +134,95 @@ function TeamPage() {
             </div>
           </article>
 
-          {/* Now hiring */}
+          {/* Melody — Lead Graphic Designer */}
+          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+              <Palette className="h-7 w-7" />
+            </div>
+            <h2 className="mt-5 text-xl font-bold text-foreground">Melody J.</h2>
+            <p className="mt-1 text-sm font-semibold text-primary">Lead Graphic Designer</p>
+            <div className="mt-4">
+              <ListenButton label="Listen" text="Melody J., Lead Graphic Designer." />
+            </div>
+          </article>
+
+          {/* Aswathy — Graphic Designer */}
+          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+              <Brush className="h-7 w-7" />
+            </div>
+            <h2 className="mt-5 text-xl font-bold text-foreground">Aswathy MK.</h2>
+            <p className="mt-1 text-sm font-semibold text-primary">Graphic Designer</p>
+            <div className="mt-4">
+              <ListenButton label="Listen" text="Aswathy MK., Graphic Designer." />
+            </div>
+          </article>
+
+          {/* Sarah — Content Writer */}
+          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+              <PenLine className="h-7 w-7" />
+            </div>
+            <h2 className="mt-5 text-xl font-bold text-foreground">Sarah P.</h2>
+            <p className="mt-1 text-sm font-semibold text-primary">Content Writer</p>
+            <div className="mt-4">
+              <ListenButton label="Listen" text="Sarah P., Content Writer." />
+            </div>
+          </article>
+
+          {/* Sahana — Partnerships Lead */}
+          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+              <Handshake className="h-7 w-7" />
+            </div>
+            <h2 className="mt-5 text-xl font-bold text-foreground">Sahana K.</h2>
+            <p className="mt-1 text-sm font-semibold text-primary">Partnerships Lead</p>
+            <div className="mt-4">
+              <ListenButton label="Listen" text="Sahana K., Partnerships Lead." />
+            </div>
+          </article>
+
+          {/* Rakin — Partnerships Lead */}
+          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+              <Handshake className="h-7 w-7" />
+            </div>
+            <h2 className="mt-5 text-xl font-bold text-foreground">Rakin K.</h2>
+            <p className="mt-1 text-sm font-semibold text-primary">Partnerships Lead</p>
+            <div className="mt-4">
+              <ListenButton label="Listen" text="Rakin K., Partnerships Lead." />
+            </div>
+          </article>
+
+          {/* Growth Interns */}
+          <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md md:col-span-2 lg:col-span-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+              <TrendingUp className="h-7 w-7" />
+            </div>
+            <h2 className="mt-5 text-xl font-bold text-foreground">Growth Interns</h2>
+            <p className="mt-1 text-sm font-semibold text-primary">Growing Perceive's reach, one campaign at a time</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {[
+                "Akshita C.", "Samhita C.", "Aashi R.", "Vasinya R.", "Tanvir H.", "Mahlet K.",
+                "Urwa W.", "Khuslen", "Himani K.", "Nichollas F.", "Gelila M.", "Keith R.", "Jarika T.", "Juwel H.",
+              ].map((name) => (
+                <span
+                  key={name}
+                  className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary ring-1 ring-primary/20"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+            <div className="mt-4">
+              <ListenButton
+                label="Listen"
+                text="Growth Interns. Growing Perceive's reach, one campaign at a time. Our growth interns are: Akshita C., Samhita C., Aashi R., Vasinya R., Tanvir H., Mahlet K., Urwa W., Khuslen, Himani K., Nichollas F., Gelila M., Keith R., Jarika T., and Juwel H."
+              />
+            </div>
+          </article>
+
+          {/* Social media positions coming soon */}
           <article className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
               <Music className="h-7 w-7" />
