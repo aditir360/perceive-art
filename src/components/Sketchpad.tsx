@@ -728,7 +728,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     // Swell paper is a raised/not-raised tactile surface, so texture effects
     // (blend modes, grainy edges) and transparency aren't meaningful there —
     // every stroke embosses the same way regardless of on-screen settings.
-    const defsExtra = highContrast ? "" : `<defs><filter id="pencilTexture" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>`;
+    const defsExtra = highContrast ? "" : `<defs><filter id="pencilTexture" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4" seed="7" result="grain"/><feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.33 0.33 0.33 0 0" result="grainAlpha"/><feComponentTransfer in="grainAlpha" result="grainMask"><feFuncA type="discrete" tableValues="0 0 0.15 0.35 0.55 0.7 0.82 0.92 1 1"/></feComponentTransfer><feComposite in="SourceGraphic" in2="grainMask" operator="in" result="speckled"/><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="edgeNoise"/><feDisplacementMap in="speckled" in2="edgeNoise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>`;
     const paths = all.map((s) => {
       const d = s.points.map((p, i) =>
         `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`
@@ -966,10 +966,21 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               <feGaussianBlur stdDeviation="3" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
-            {/* Grainy displacement for the pencil texture — roughens the stroke edge into a hand-drawn wobble */}
+            {/* Graphite grain for the pencil texture: fine noise is thresholded into
+                a speckled alpha mask and punched into the stroke (like paper tooth
+                showing through graphite), then the whole thing gets a slight rough
+                displacement so the edge wobbles like a real hand-drawn line. */}
             <filter id="pencilTexture" x="-20%" y="-20%" width="140%" height="140%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="noise" />
-              <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G" />
+              <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4" seed="7" result="grain" />
+              <feColorMatrix in="grain" type="matrix"
+                values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.33 0.33 0.33 0 0"
+                result="grainAlpha" />
+              <feComponentTransfer in="grainAlpha" result="grainMask">
+                <feFuncA type="discrete" tableValues="0 0 0.15 0.35 0.55 0.7 0.82 0.92 1 1" />
+              </feComponentTransfer>
+              <feComposite in="SourceGraphic" in2="grainMask" operator="in" result="speckled" />
+              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="edgeNoise" />
+              <feDisplacementMap in="speckled" in2="edgeNoise" scale="1.5" xChannelSelector="R" yChannelSelector="G" />
             </filter>
           </defs>
 
