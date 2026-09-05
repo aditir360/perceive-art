@@ -43,13 +43,27 @@ const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
 };
 
 type Point = { x: number; y: number };
-type Stroke = { color: string; width: number; opacity: number; points: Point[] };
+type Texture = "pen" | "pencil" | "highlighter";
+type Stroke = { color: string; width: number; opacity: number; texture: Texture; points: Point[] };
 
+// Shared thickness/opacity range across all three textures — one set of
+// sliders, applied to whichever texture is currently selected (each texture
+// remembers its own width/opacity independently; see textureSettings below).
 const MIN_PEN_WIDTH = 1;
-const MAX_PEN_WIDTH = 14;
+const MAX_PEN_WIDTH = 40; // wide enough for a genuinely boxy highlighter stroke
 const MIN_PEN_OPACITY = 0.1;
 const MAX_PEN_OPACITY = 1;
 const OPACITY_STEP = 0.1;
+
+const TEXTURE_ORDER: Texture[] = ["pen", "pencil", "highlighter"];
+const TEXTURE_LABELS: Record<Texture, string> = { pen: "Pen", pencil: "Pencil", highlighter: "Highlighter" };
+const TEXTURE_TONES: Record<Texture, number> = { pen: 440, pencil: 349.23, highlighter: 622.25 };
+
+const DEFAULT_TEXTURE_SETTINGS: Record<Texture, { width: number; opacity: number }> = {
+  pen: { width: 3, opacity: 1 },
+  pencil: { width: 2, opacity: 0.85 },
+  highlighter: { width: 18, opacity: 0.35 },
+};
 
 const COLORS = [
   { name: "Rose",     value: "#e88aab", tone: 523.25 },
@@ -248,6 +262,25 @@ function nearestOnGuide(p: Point, guide: ShapeGuide): { distance: number; progre
   return { distance: best, progress: bestIdx / (pts.length - 1) };
 }
 
+// Per-texture rendering: highlighter gets boxy caps/joins plus a multiply
+// blend so overlapping strokes darken like a real marker; pencil gets a
+// grainy displacement filter for a rough, hand-drawn edge; pen stays plain.
+function textureVisualProps(texture: Texture): {
+  strokeLinecap: "round" | "square";
+  strokeLinejoin: "round" | "miter";
+  filter?: string;
+  style?: React.CSSProperties;
+} {
+  switch (texture) {
+    case "highlighter":
+      return { strokeLinecap: "square", strokeLinejoin: "miter", style: { mixBlendMode: "multiply" } };
+    case "pencil":
+      return { strokeLinecap: "round", strokeLinejoin: "round", filter: "url(#pencilTexture)" };
+    default:
+      return { strokeLinecap: "round", strokeLinejoin: "round" };
+  }
+}
+
 // ── Pleasant audio helpers ────────────────────────────────────────────────────
 // All synthesis uses sine waves + light attack/release envelopes.
 // No sawtooth or harsh timbres anywhere in the UI.
@@ -358,8 +391,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     "Welcome to Sonic Bear Studio. Press S to start sound, D to toggle drawing, arrow keys to move the brush."
   );
   const [colorIndex, setColorIndex] = useState(0);
-  const [penWidth,  setPenWidth]  = useState(3);
-  const [penOpacity, setPenOpacity] = useState(1);
+  const [texture, setTexture] = useState<Texture>("pen");
+  const [textureSettings, setTextureSettings] = useState(DEFAULT_TEXTURE_SETTINGS);
+  // Derived, not stored directly: always reflects whichever texture is
+  // currently selected, so every existing thickness/opacity usage below
+  // (sliders, stroke creation, cursor preview) automatically applies to the
+  // active texture without needing to know textures exist.
+  const penWidth = textureSettings[texture].width;
+  const penOpacity = textureSettings[texture].opacity;
   const [guideKey,   setGuideKey]   = useState<string | null>(null);
   const [guidesPanelOpen, setGuidesPanelOpen] = useState(true);
   const [visualAids, setVisualAids] = useState(true);
@@ -532,7 +571,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
     if (drawing) {
       setCurrent((c) => {
-        if (!c) return { color, width: penWidth, opacity: penOpacity, points: [p] };
+        if (!c) return { color, width: penWidth, opacity: penOpacity, texture, points: [p] };
         const start = c.points[0];
         const dist  = Math.hypot(p.x - start.x, p.y - start.y);
         if (c.points.length > 6 && dist < 16) {
@@ -541,7 +580,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         return { ...c, points: [...c.points, p] };
       });
     }
-  }, [drawing, color, penWidth, penOpacity, updateAudio, trackGuide, say]);
+  }, [drawing, color, penWidth, penOpacity, texture, updateAudio, trackGuide, say]);
 
   // ── Drawing toggle ────────────────────────────────────────────────────────
   const toggleDrawing = useCallback(() => {
@@ -549,7 +588,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setDrawing((d) => {
       const next = !d;
       if (next) {
-        setCurrent({ color, width: penWidth, opacity: penOpacity, points: [cursor] });
+        setCurrent({ color, width: penWidth, opacity: penOpacity, texture, points: [cursor] });
         if (audioRef.current) playSineNote(audioRef.current.ctx, 659, 0.15, 0.12);
         say("Drawing on — move to draw");
       } else {
@@ -562,7 +601,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       }
       return next;
     });
-  }, [color, cursor, penWidth, penOpacity, say]);
+  }, [color, cursor, penWidth, penOpacity, texture, say]);
 
   // ── Sound toggle ──────────────────────────────────────────────────────────
   const toggleSound = useCallback(() => {
@@ -604,38 +643,54 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     trackClick();
   }, [say]);
 
-  // ── Pen thickness ─────────────────────────────────────────────────────────
+  // ── Pen thickness (applies to whichever texture is active) ─────────────────
   const changePenWidth = useCallback((next: number) => {
     const clamped = Math.max(MIN_PEN_WIDTH, Math.min(MAX_PEN_WIDTH, Math.round(next)));
-    setPenWidth((prev) => {
-      if (clamped === prev) return prev;
+    setTextureSettings((prev) => {
+      if (clamped === prev[texture].width) return prev;
       if (audioRef.current) {
-        // Thicker pen = lower tone, thinner pen = higher tone (both still sine, gentle)
-        const freq = 300 + (MAX_PEN_WIDTH - clamped) * 30;
+        // Thicker = lower tone, thinner = higher tone (both still sine, gentle)
+        const freq = 300 + (MAX_PEN_WIDTH - clamped) * 6;
         playSineNote(audioRef.current.ctx, freq, 0.12, 0.09);
       }
-      say(`Pen thickness ${clamped}`);
-      return clamped;
+      say(`${TEXTURE_LABELS[texture]} thickness ${clamped}`);
+      return { ...prev, [texture]: { ...prev[texture], width: clamped } };
     });
     trackClick();
-  }, [say]);
+  }, [texture, say]);
 
-  // ── Pen opacity ───────────────────────────────────────────────────────────
+  // ── Pen opacity (applies to whichever texture is active) ───────────────────
   const changePenOpacity = useCallback((next: number) => {
     // Round to the nearest step to avoid floating-point drift (e.g. 0.30000000000000004)
     const stepped = Math.round(next / OPACITY_STEP) * OPACITY_STEP;
     const clamped = Math.round(Math.max(MIN_PEN_OPACITY, Math.min(MAX_PEN_OPACITY, stepped)) * 100) / 100;
-    setPenOpacity((prev) => {
-      if (clamped === prev) return prev;
+    setTextureSettings((prev) => {
+      if (clamped === prev[texture].opacity) return prev;
       if (audioRef.current) {
         // Softer/more transparent = quieter cue, fully opaque = fuller volume — mirrors the visual
         playSineNote(audioRef.current.ctx, 500, 0.12, 0.04 + clamped * 0.08);
       }
-      say(`Pen opacity ${Math.round(clamped * 100)} percent`);
-      return clamped;
+      say(`${TEXTURE_LABELS[texture]} opacity ${Math.round(clamped * 100)} percent`);
+      return { ...prev, [texture]: { ...prev[texture], opacity: clamped } };
+    });
+    trackClick();
+  }, [texture, say]);
+
+  // ── Texture ──────────────────────────────────────────────────────────────
+  const changeTexture = useCallback((next: Texture) => {
+    setTexture((prev) => {
+      if (prev === next) return prev;
+      if (audioRef.current) playSineNote(audioRef.current.ctx, TEXTURE_TONES[next], 0.16, 0.11, true);
+      say(`${TEXTURE_LABELS[next]} selected`);
+      return next;
     });
     trackClick();
   }, [say]);
+
+  const cycleTexture = useCallback(() => {
+    const i = TEXTURE_ORDER.indexOf(texture);
+    changeTexture(TEXTURE_ORDER[(i + 1) % TEXTURE_ORDER.length]);
+  }, [texture, changeTexture]);
 
   // ── Canvas ops ────────────────────────────────────────────────────────────
   const clearCanvas = useCallback(() => {
@@ -670,18 +725,23 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const buildSvgString = (highContrast: boolean) => {
     const all = current ? [...strokes, current] : strokes;
     const bg  = highContrast ? "#ffffff" : "#fff5f8";
+    // Swell paper is a raised/not-raised tactile surface, so texture effects
+    // (blend modes, grainy edges) and transparency aren't meaningful there —
+    // every stroke embosses the same way regardless of on-screen settings.
+    const defsExtra = highContrast ? "" : `<defs><filter id="pencilTexture" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>`;
     const paths = all.map((s) => {
       const d = s.points.map((p, i) =>
         `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`
       ).join(" ");
       const w = highContrast ? Math.max(4, s.width + 1) : s.width;
-      // Swell paper is a raised/not-raised tactile surface, so transparency
-      // isn't meaningful there — always emboss at full strength regardless
-      // of the on-screen opacity setting.
       const op = highContrast ? 1 : s.opacity;
-      return `<path d="${d}" fill="none" stroke="${highContrast ? "#000" : s.color}" stroke-width="${w}" stroke-opacity="${op}" stroke-linecap="round" stroke-linejoin="round"/>`;
+      const cap = !highContrast && s.texture === "highlighter" ? "square" : "round";
+      const join = !highContrast && s.texture === "highlighter" ? "miter" : "round";
+      const filterAttr = !highContrast && s.texture === "pencil" ? ` filter="url(#pencilTexture)"` : "";
+      const blendStyle = !highContrast && s.texture === "highlighter" ? ` style="mix-blend-mode:multiply"` : "";
+      return `<path d="${d}" fill="none" stroke="${highContrast ? "#000" : s.color}" stroke-width="${w}" stroke-opacity="${op}" stroke-linecap="${cap}" stroke-linejoin="${join}"${filterAttr}${blendStyle}/>`;
     }).join("");
-    return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" width="${WIDTH}" height="${HEIGHT}"><rect width="100%" height="100%" fill="${bg}"/>${paths}</svg>`;
+    return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" width="${WIDTH}" height="${HEIGHT}">${defsExtra}<rect width="100%" height="100%" fill="${bg}"/>${paths}</svg>`;
   };
 
   const dl = (name: string, content: string, type: string) => {
@@ -748,11 +808,12 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       else if (e.key === "]") { e.preventDefault(); changePenWidth(penWidth + 1); }
       else if (e.key === ",") { e.preventDefault(); changePenOpacity(penOpacity - OPACITY_STEP); }
       else if (e.key === ".") { e.preventDefault(); changePenOpacity(penOpacity + OPACITY_STEP); }
+      else if (e.key.toLowerCase() === "t") { e.preventDefault(); cycleTexture(); }
       else if (e.key.toLowerCase() === "escape" && guideKey) { e.preventDefault(); stopGuide(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, penWidth, changePenWidth, penOpacity, changePenOpacity, guideKey, stopGuide, say, postConfirmOpen, cancelPost, confirmPost]);
+  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, penWidth, changePenWidth, penOpacity, changePenOpacity, cycleTexture, guideKey, stopGuide, say, postConfirmOpen, cancelPost, confirmPost]);
 
   // ── Pointer ───────────────────────────────────────────────────────────────
   const pointerDrawing = useRef(false);
@@ -771,7 +832,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     const p = svgPoint(e);
     setCursor(p);
     setDrawing(true);
-    setCurrent({ color, width: penWidth, opacity: penOpacity, points: [p] });
+    setCurrent({ color, width: penWidth, opacity: penOpacity, texture, points: [p] });
     updateAudio(p);
     trackClick();
   };
@@ -782,7 +843,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     updateAudio(p);
     trackGuide(p);
     if (pointerDrawing.current) {
-      setCurrent((c) => c ? { ...c, points: [...c.points, p] } : { color, width: penWidth, opacity: penOpacity, points: [p] });
+      setCurrent((c) => c ? { ...c, points: [...c.points, p] } : { color, width: penWidth, opacity: penOpacity, texture, points: [p] });
     }
   };
 
@@ -905,6 +966,11 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               <feGaussianBlur stdDeviation="3" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
+            {/* Grainy displacement for the pencil texture — roughens the stroke edge into a hand-drawn wobble */}
+            <filter id="pencilTexture" x="-20%" y="-20%" width="140%" height="140%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="noise" />
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
           </defs>
 
           <rect width="100%" height="100%" fill="url(#grid)" />
@@ -960,14 +1026,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             <polyline key={i}
               points={s.points.map((p) => `${p.x},${p.y}`).join(" ")}
               fill="none" stroke={s.color} strokeWidth={s.width} strokeOpacity={s.opacity}
-              strokeLinecap="round" strokeLinejoin="round"
+              {...textureVisualProps(s.texture)}
             />
           ))}
           {current && (
             <polyline
               points={current.points.map((p) => `${p.x},${p.y}`).join(" ")}
               fill="none" stroke={current.color} strokeWidth={current.width} strokeOpacity={current.opacity}
-              strokeLinecap="round" strokeLinejoin="round"
+              {...textureVisualProps(current.texture)}
             />
           )}
 
@@ -987,7 +1053,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         </svg>
 
         <p className="mt-2.5 text-xs text-muted-foreground">
-          Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours · [ ] adjust pen thickness · , . adjust pen opacity
+          Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours · [ ] adjust thickness · , . adjust opacity · T cycles texture
         </p>
 
         {/* Audio Guides — moved here from the sidebar so this card doesn't sit
@@ -1073,10 +1139,32 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           </div>
         </section>
 
-        {/* Pen thickness */}
+        {/* Texture */}
+        <section aria-labelledby="texture-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
+          <h2 id="texture-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <Pencil className="h-4 w-4 text-primary" /> Texture
+            <span className="ml-auto text-[10px] font-normal text-muted-foreground">T to cycle</span>
+          </h2>
+          <div className="grid grid-cols-3 gap-2">
+            {TEXTURE_ORDER.map((t) => (
+              <Button
+                key={t}
+                onClick={() => changeTexture(t)}
+                variant={texture === t ? "default" : "outline"}
+                aria-pressed={texture === t}
+                size="sm"
+                className="rounded-full"
+              >
+                {TEXTURE_LABELS[t]}
+              </Button>
+            ))}
+          </div>
+        </section>
+
+        {/* Thickness (per active texture) */}
         <section aria-labelledby="pen-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
           <h2 id="pen-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
-            <Pencil className="h-4 w-4 text-primary" /> Pen thickness
+            <Pencil className="h-4 w-4 text-primary" /> {TEXTURE_LABELS[texture]} thickness
             <span className="ml-auto text-[10px] font-normal text-muted-foreground">[ / ] to adjust</span>
           </h2>
           <div className="flex items-center gap-3">
@@ -1085,7 +1173,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               variant="outline"
               size="icon"
               className="h-8 w-8 shrink-0 rounded-full"
-              aria-label="Decrease pen thickness"
+              aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}
             >
               −
             </Button>
@@ -1096,7 +1184,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               step={1}
               value={penWidth}
               onChange={(e) => changePenWidth(Number(e.target.value))}
-              aria-label="Pen thickness"
+              aria-label={`${TEXTURE_LABELS[texture]} thickness`}
               aria-valuemin={MIN_PEN_WIDTH}
               aria-valuemax={MAX_PEN_WIDTH}
               aria-valuenow={penWidth}
@@ -1107,7 +1195,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               variant="outline"
               size="icon"
               className="h-8 w-8 shrink-0 rounded-full"
-              aria-label="Increase pen thickness"
+              aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}
             >
               +
             </Button>
@@ -1122,10 +1210,10 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           </div>
         </section>
 
-        {/* Pen opacity */}
+        {/* Opacity (per active texture) */}
         <section aria-labelledby="opacity-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
           <h2 id="opacity-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
-            <Droplet className="h-4 w-4 text-primary" /> Pen opacity
+            <Droplet className="h-4 w-4 text-primary" /> {TEXTURE_LABELS[texture]} opacity
             <span className="ml-auto text-[10px] font-normal text-muted-foreground">, / . to adjust</span>
           </h2>
           <div className="flex items-center gap-3">
@@ -1134,7 +1222,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               variant="outline"
               size="icon"
               className="h-8 w-8 shrink-0 rounded-full"
-              aria-label="Decrease pen opacity"
+              aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}
             >
               −
             </Button>
@@ -1145,7 +1233,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               step={OPACITY_STEP}
               value={penOpacity}
               onChange={(e) => changePenOpacity(Number(e.target.value))}
-              aria-label="Pen opacity"
+              aria-label={`${TEXTURE_LABELS[texture]} opacity`}
               aria-valuemin={MIN_PEN_OPACITY}
               aria-valuemax={MAX_PEN_OPACITY}
               aria-valuenow={penOpacity}
@@ -1156,7 +1244,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               variant="outline"
               size="icon"
               className="h-8 w-8 shrink-0 rounded-full"
-              aria-label="Increase pen opacity"
+              aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}
             >
               +
             </Button>
@@ -1221,8 +1309,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             <li>S — toggle sound</li>
             <li>C — clear canvas</li>
             <li>Q / E — cycle colour</li>
-            <li>[ / ] — pen thickness</li>
-            <li>, / . — pen opacity</li>
+            <li>[ / ] — thickness</li>
+            <li>, / . — opacity</li>
+            <li>T — cycle texture</li>
             <li>G — open / close guides</li>
             <li>Esc — stop active guide</li>
             <li>X — toggle visual aids</li>
