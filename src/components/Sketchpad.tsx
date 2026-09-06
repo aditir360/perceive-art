@@ -43,26 +43,41 @@ const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
 };
 
 type Point = { x: number; y: number };
-type Texture = "pen" | "pencil" | "highlighter";
+type Texture = "pen" | "pencil" | "highlighter" | "paintbrush";
 type Stroke = { color: string; width: number; opacity: number; texture: Texture; points: Point[] };
 
-// Shared thickness/opacity range across all three textures — one set of
-// sliders, applied to whichever texture is currently selected (each texture
-// remembers its own width/opacity independently; see textureSettings below).
+// Shared thickness range across all four textures — one slider, applied to
+// whichever texture is currently selected (each texture remembers its own
+// width/opacity independently; see textureSettings below).
 const MIN_PEN_WIDTH = 1;
 const MAX_PEN_WIDTH = 40; // wide enough for a genuinely boxy highlighter stroke
-const MIN_PEN_OPACITY = 0.1;
-const MAX_PEN_OPACITY = 1;
 const OPACITY_STEP = 0.1;
 
-const TEXTURE_ORDER: Texture[] = ["pen", "pencil", "highlighter"];
-const TEXTURE_LABELS: Record<Texture, string> = { pen: "Pen", pencil: "Pencil", highlighter: "Highlighter" };
-const TEXTURE_TONES: Record<Texture, number> = { pen: 440, pencil: 349.23, highlighter: 622.25 };
+// Opacity range is per-texture: pen/highlighter/paintbrush can go all the way
+// down to faint, but graphite realistically never looks that washed out, so
+// pencil's floor (and this ceiling, already the max possible) sit higher —
+// its whole slider stays in a darker band.
+const MIN_PEN_OPACITY = 0.1;
+const MAX_PEN_OPACITY = 1;
+const MIN_PENCIL_OPACITY = 0.55;
+const MAX_PENCIL_OPACITY = 1;
+
+const OPACITY_RANGE: Record<Texture, { min: number; max: number }> = {
+  pen: { min: MIN_PEN_OPACITY, max: MAX_PEN_OPACITY },
+  pencil: { min: MIN_PENCIL_OPACITY, max: MAX_PENCIL_OPACITY },
+  highlighter: { min: MIN_PEN_OPACITY, max: MAX_PEN_OPACITY },
+  paintbrush: { min: MIN_PEN_OPACITY, max: MAX_PEN_OPACITY },
+};
+
+const TEXTURE_ORDER: Texture[] = ["pen", "pencil", "highlighter", "paintbrush"];
+const TEXTURE_LABELS: Record<Texture, string> = { pen: "Pen", pencil: "Pencil", highlighter: "Highlighter", paintbrush: "Paintbrush" };
+const TEXTURE_TONES: Record<Texture, number> = { pen: 440, pencil: 349.23, highlighter: 622.25, paintbrush: 523.25 };
 
 const DEFAULT_TEXTURE_SETTINGS: Record<Texture, { width: number; opacity: number }> = {
   pen: { width: 3, opacity: 1 },
-  pencil: { width: 2, opacity: 1 },
+  pencil: { width: 2, opacity: 0.85 },
   highlighter: { width: 18, opacity: 0.35 },
+  paintbrush: { width: 8, opacity: 0.9 },
 };
 
 const COLORS = [
@@ -276,9 +291,40 @@ function textureVisualProps(texture: Texture): {
       return { strokeLinecap: "square", strokeLinejoin: "miter", style: { mixBlendMode: "multiply" } };
     case "pencil":
       return { strokeLinecap: "round", strokeLinejoin: "round", filter: "url(#pencilTexture)" };
+    case "paintbrush":
+      return { strokeLinecap: "round", strokeLinejoin: "round", filter: "url(#brushSoften)" };
     default:
       return { strokeLinecap: "round", strokeLinejoin: "round" };
   }
+}
+
+type BrushDab = { cx: number; cy: number; rx: number; ry: number; rotation: number };
+
+// Real brush strokes blot slightly wider where the bristles first touch down
+// and lift off, tapering elsewhere. This computes 1–2 soft, elongated dabs
+// (oriented along the direction of travel) to overlay at a paintbrush
+// stroke's start and end points — the line body itself is drawn normally.
+function getBrushDabs(s: Stroke): BrushDab[] {
+  if (s.texture !== "paintbrush" || s.points.length === 0) return [];
+  const angleDeg = (a: Point, b: Point) => (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+  const rx = Math.max(1.2, s.width * 0.75);
+  const ry = Math.max(1, s.width * 0.5);
+
+  if (s.points.length === 1) {
+    const p = s.points[0];
+    const r = Math.max(1, s.width * 0.6);
+    return [{ cx: p.x, cy: p.y, rx: r, ry: r, rotation: 0 }];
+  }
+
+  const start = s.points[0];
+  const startNext = s.points[1];
+  const end = s.points[s.points.length - 1];
+  const endPrev = s.points[s.points.length - 2];
+
+  return [
+    { cx: start.x, cy: start.y, rx, ry, rotation: angleDeg(start, startNext) },
+    { cx: end.x, cy: end.y, rx, ry, rotation: angleDeg(endPrev, end) },
+  ];
 }
 
 // ── Pleasant audio helpers ────────────────────────────────────────────────────
@@ -661,9 +707,10 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
   // ── Pen opacity (applies to whichever texture is active) ───────────────────
   const changePenOpacity = useCallback((next: number) => {
+    const { min, max } = OPACITY_RANGE[texture];
     // Round to the nearest step to avoid floating-point drift (e.g. 0.30000000000000004)
     const stepped = Math.round(next / OPACITY_STEP) * OPACITY_STEP;
-    const clamped = Math.round(Math.max(MIN_PEN_OPACITY, Math.min(MAX_PEN_OPACITY, stepped)) * 100) / 100;
+    const clamped = Math.round(Math.max(min, Math.min(max, stepped)) * 100) / 100;
     setTextureSettings((prev) => {
       if (clamped === prev[texture].opacity) return prev;
       if (audioRef.current) {
@@ -725,10 +772,12 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const buildSvgString = (highContrast: boolean) => {
     const all = current ? [...strokes, current] : strokes;
     const bg  = highContrast ? "#ffffff" : "#fff5f8";
-    // Swell paper is a raised/not-raised tactile surface, so texture effects
-    // (blend modes, grainy edges) and transparency aren't meaningful there —
-    // every stroke embosses the same way regardless of on-screen settings.
-    const defsExtra = highContrast ? "" : `<defs><filter id="pencilTexture" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.4" numOctaves="3" seed="7" result="grain"/><feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.33 0.33 0.33 0 0" result="grainAlpha"/><feComponentTransfer in="grainAlpha" result="grainMask"><feFuncA type="discrete" tableValues="0 0 0.15 0.35 0.55 0.7 0.82 0.92 1 1"/></feComponentTransfer><feComposite in="SourceGraphic" in2="grainMask" operator="in" result="speckled"/><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="edgeNoise"/><feDisplacementMap in="speckled" in2="edgeNoise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>`;
+    // Swell paper is a raised/not-raised tactile surface, so blend modes,
+    // grainy edges, and blur aren't meaningful there — every stroke's line
+    // embosses the same plain way regardless of on-screen settings. The
+    // brush dab *shapes* still appear in both modes, though — they're real
+    // stroke geometry, not just a visual filter.
+    const defsExtra = highContrast ? "" : `<defs><filter id="pencilTexture" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.4" numOctaves="3" seed="7" result="grain"/><feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.33 0.33 0.33 0 0" result="grainAlpha"/><feComponentTransfer in="grainAlpha" result="grainMask"><feFuncA type="discrete" tableValues="0 0 0.15 0.35 0.55 0.7 0.82 0.92 1 1"/></feComponentTransfer><feComposite in="SourceGraphic" in2="grainMask" operator="in" result="speckled"/><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="edgeNoise"/><feDisplacementMap in="speckled" in2="edgeNoise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/></filter><filter id="brushSoften" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0.6"/></filter></defs>`;
     const paths = all.map((s) => {
       const d = s.points.map((p, i) =>
         `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`
@@ -737,9 +786,16 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       const op = highContrast ? 1 : s.opacity;
       const cap = !highContrast && s.texture === "highlighter" ? "square" : "round";
       const join = !highContrast && s.texture === "highlighter" ? "miter" : "round";
-      const filterAttr = !highContrast && s.texture === "pencil" ? ` filter="url(#pencilTexture)"` : "";
+      const filterAttr = !highContrast && (s.texture === "pencil" || s.texture === "paintbrush")
+        ? ` filter="url(#${s.texture === "pencil" ? "pencilTexture" : "brushSoften"})"`
+        : "";
       const blendStyle = !highContrast && s.texture === "highlighter" ? ` style="mix-blend-mode:multiply"` : "";
-      return `<path d="${d}" fill="none" stroke="${highContrast ? "#000" : s.color}" stroke-width="${w}" stroke-opacity="${op}" stroke-linecap="${cap}" stroke-linejoin="${join}"${filterAttr}${blendStyle}/>`;
+      const pathStr = `<path d="${d}" fill="none" stroke="${highContrast ? "#000" : s.color}" stroke-width="${w}" stroke-opacity="${op}" stroke-linecap="${cap}" stroke-linejoin="${join}"${filterAttr}${blendStyle}/>`;
+      const dabsStr = getBrushDabs(s).map((dab) => {
+        const dabFilter = highContrast ? "" : ` filter="url(#brushSoften)"`;
+        return `<ellipse cx="${dab.cx.toFixed(1)}" cy="${dab.cy.toFixed(1)}" rx="${dab.rx.toFixed(1)}" ry="${dab.ry.toFixed(1)}" transform="rotate(${dab.rotation.toFixed(1)} ${dab.cx.toFixed(1)} ${dab.cy.toFixed(1)})" fill="${highContrast ? "#000" : s.color}" fill-opacity="${op}"${dabFilter}/>`;
+      }).join("");
+      return pathStr + dabsStr;
     }).join("");
     return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" width="${WIDTH}" height="${HEIGHT}">${defsExtra}<rect width="100%" height="100%" fill="${bg}"/>${paths}</svg>`;
   };
@@ -982,6 +1038,11 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="edgeNoise" />
               <feDisplacementMap in="speckled" in2="edgeNoise" scale="1.5" xChannelSelector="R" yChannelSelector="G" />
             </filter>
+            {/* Gentle blur for the paintbrush texture's line and end dabs — a soft,
+                painterly edge instead of a crisp digital line. */}
+            <filter id="brushSoften" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="0.6" />
+            </filter>
           </defs>
 
           <rect width="100%" height="100%" fill="url(#grid)" />
@@ -1040,6 +1101,17 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               {...textureVisualProps(s.texture)}
             />
           ))}
+          {strokes.flatMap((s, i) =>
+            getBrushDabs(s).map((d, j) => (
+              <ellipse
+                key={`dab-${i}-${j}`}
+                cx={d.cx} cy={d.cy} rx={d.rx} ry={d.ry}
+                transform={`rotate(${d.rotation} ${d.cx} ${d.cy})`}
+                fill={s.color} fillOpacity={s.opacity}
+                filter="url(#brushSoften)"
+              />
+            ))
+          )}
           {current && (
             <polyline
               points={current.points.map((p) => `${p.x},${p.y}`).join(" ")}
@@ -1047,6 +1119,15 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               {...textureVisualProps(current.texture)}
             />
           )}
+          {current && getBrushDabs(current).map((d, j) => (
+            <ellipse
+              key={`current-dab-${j}`}
+              cx={d.cx} cy={d.cy} rx={d.rx} ry={d.ry}
+              transform={`rotate(${d.rotation} ${d.cx} ${d.cy})`}
+              fill={current.color} fillOpacity={current.opacity}
+              filter="url(#brushSoften)"
+            />
+          ))}
 
           {/* Cursor trail */}
           {visualAids && trailRef.current.map((p, i) => (
@@ -1156,7 +1237,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             <Pencil className="h-4 w-4 text-primary" /> Texture
             <span className="ml-auto text-[10px] font-normal text-muted-foreground">T to cycle</span>
           </h2>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {TEXTURE_ORDER.map((t) => (
               <Button
                 key={t}
@@ -1239,14 +1320,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             </Button>
             <input
               type="range"
-              min={MIN_PEN_OPACITY}
-              max={MAX_PEN_OPACITY}
+              min={OPACITY_RANGE[texture].min}
+              max={OPACITY_RANGE[texture].max}
               step={OPACITY_STEP}
               value={penOpacity}
               onChange={(e) => changePenOpacity(Number(e.target.value))}
               aria-label={`${TEXTURE_LABELS[texture]} opacity`}
-              aria-valuemin={MIN_PEN_OPACITY}
-              aria-valuemax={MAX_PEN_OPACITY}
+              aria-valuemin={OPACITY_RANGE[texture].min}
+              aria-valuemax={OPACITY_RANGE[texture].max}
               aria-valuenow={penOpacity}
               className="h-2 flex-1 cursor-pointer appearance-none rounded-full bg-primary/20 accent-primary"
             />
