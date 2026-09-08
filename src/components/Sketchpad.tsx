@@ -28,6 +28,7 @@ import {
   Home,
   Globe,
   Check,
+  Droplet,
   PenLine,
   Highlighter,
   Paintbrush,
@@ -696,7 +697,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const penOpacity = textureSettings[texture].opacity;
   const [guideKey,   setGuideKey]   = useState<string | null>(null);
   const [guidesPanelOpen, setGuidesPanelOpen] = useState(true);
-  const [keyboardPanelOpen, setKeyboardPanelOpen] = useState(false);
   const [visualAids, setVisualAids] = useState(true);
   const [postConfirmOpen, setPostConfirmOpen] = useState(false);
   const [justPosted, setJustPosted] = useState(false);
@@ -1651,22 +1651,16 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           </div>
         </section>
 
-        {/* Thickness + Opacity (per active texture) — merged into one card;
-            two sliders under one header take noticeably less vertical
-            space than two separate cards each with their own header/ring. */}
+        {/* Thickness (per active texture) */}
         <section aria-labelledby="pen-heading" className="rounded-3xl bg-gradient-to-br from-card to-card/70 p-4 shadow-md ring-1 ring-primary/15">
           <h2 id="pen-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
               <Pencil className="h-3.5 w-3.5" />
             </span>
-            {TEXTURE_LABELS[texture]} settings
+            {TEXTURE_LABELS[texture]} thickness
+            <span className="ml-auto rounded-full bg-background/60 px-2 py-0.5 text-[10px] font-normal text-muted-foreground">[ / ] to adjust</span>
           </h2>
-
-          <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-            <span>Thickness</span>
-            <span className="rounded-full bg-background/60 px-2 py-0.5 text-[10px]">[ / ] to adjust</span>
-          </div>
-          <div className="mt-1.5 flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <Button
               onClick={() => changePenWidth(penWidth - 1)}
               variant="outline"
@@ -1701,14 +1695,27 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             >
               <Plus className="h-3.5 w-3.5" />
             </Button>
-            <span className="w-11 shrink-0 text-right text-xs font-medium text-muted-foreground">{penWidth}px</span>
           </div>
+          <div className="mt-2.5 flex items-center justify-center gap-2 rounded-full bg-background/50 py-1.5 text-xs font-medium text-muted-foreground">
+            <span
+              aria-hidden
+              className="inline-block rounded-full ring-2 ring-card"
+              style={{ width: Math.max(4, penWidth), height: Math.max(4, penWidth), backgroundColor: color }}
+            />
+            {penWidth}px
+          </div>
+        </section>
 
-          <div className="mt-4 flex items-center justify-between text-xs font-medium text-muted-foreground">
-            <span>Opacity</span>
-            <span className="rounded-full bg-background/60 px-2 py-0.5 text-[10px]">, / . to adjust</span>
-          </div>
-          <div className="mt-1.5 flex items-center gap-3">
+        {/* Opacity (per active texture) */}
+        <section aria-labelledby="opacity-heading" className="rounded-3xl bg-gradient-to-br from-card to-card/70 p-4 shadow-md ring-1 ring-primary/15">
+          <h2 id="opacity-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
+              <Droplet className="h-3.5 w-3.5" />
+            </span>
+            {TEXTURE_LABELS[texture]} opacity
+            <span className="ml-auto rounded-full bg-background/60 px-2 py-0.5 text-[10px] font-normal text-muted-foreground">, / . to adjust</span>
+          </h2>
+          <div className="flex items-center gap-3">
             <Button
               onClick={() => changePenOpacity(penOpacity - OPACITY_STEP)}
               variant="outline"
@@ -1743,7 +1750,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             >
               <Plus className="h-3.5 w-3.5" />
             </Button>
-            <span className="w-11 shrink-0 text-right text-xs font-medium text-muted-foreground">{Math.round(penOpacity * 100)}%</span>
+          </div>
+          <div className="mt-2.5 flex items-center justify-center gap-2 rounded-full bg-background/50 py-1.5 text-xs font-medium text-muted-foreground">
+            <span
+              aria-hidden
+              className="inline-block h-3.5 w-3.5 rounded-full ring-2 ring-card"
+              style={{ backgroundColor: color, opacity: penOpacity }}
+            />
+            {Math.round(penOpacity * 100)}%
           </div>
         </section>
 
@@ -1812,7 +1826,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           </div>
         </section>
 
-        {/* Export & Share — merged into one card */}
+        {/* Export */}
         <section aria-labelledby="export-heading" className="rounded-3xl bg-gradient-to-br from-card to-card/70 p-4 shadow-md ring-1 ring-primary/15">
           <h2 id="export-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
@@ -1821,81 +1835,66 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             Export
           </h2>
           <div className="grid gap-2">
-            <Button onClick={exportSwell} className="justify-start gap-3 rounded-2xl py-4 shadow-md">
+            <Button onClick={exportSwell} className="justify-start gap-3 rounded-2xl py-5 shadow-md">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-foreground/20">
                 <Waves className="h-4 w-4" />
               </span>
               Swell Paper SVG
             </Button>
-            <Button onClick={exportColor} variant="secondary" className="justify-start gap-3 rounded-2xl py-4 shadow-sm">
+            <Button onClick={exportColor} variant="secondary" className="justify-start gap-3 rounded-2xl py-5 shadow-sm">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground/10">
                 <Palette className="h-4 w-4" />
               </span>
               Colour SVG
             </Button>
-            <Button onClick={exportStl} variant="outline" className="justify-start gap-3 rounded-2xl bg-background/60 py-4 shadow-sm ring-1 ring-primary/15">
+            <Button onClick={exportStl} variant="outline" className="justify-start gap-3 rounded-2xl bg-background/60 py-5 shadow-sm ring-1 ring-primary/15">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
                 <Box className="h-4 w-4" />
               </span>
               3D Print (STL)
             </Button>
           </div>
-
-          {onPost && (
-            <>
-              <div className="my-4 border-t border-primary/10" />
-              <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
-                  <Globe className="h-3.5 w-3.5" />
-                </span>
-                Share
-              </h2>
-              <p className="mb-3 text-xs text-muted-foreground">
-                Post your artwork to the public gallery so creators everywhere can see it.
-              </p>
-              <Button
-                onClick={requestPost}
-                disabled={!hasArtwork}
-                variant={justPosted ? "secondary" : "default"}
-                className="w-full justify-center gap-2 rounded-full"
-              >
-                {justPosted ? <Check className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-                {justPosted ? "Posted!" : "Post to Gallery"}
-              </Button>
-            </>
-          )}
         </section>
 
-        {/* Keyboard reference — collapsed by default; it's the single
-            tallest block in this sidebar and most people don't need it
-            open all the time, so tucking it away keeps the whole sidebar
-            closer in height to the canvas next to it. */}
+        {/* Share */}
+        {onPost && (
+          <section aria-labelledby="share-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
+            <h2 id="share-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <Globe className="h-4 w-4 text-primary" /> Share
+            </h2>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Post your artwork to the public gallery so creators everywhere can see it.
+            </p>
+            <Button
+              onClick={requestPost}
+              disabled={!hasArtwork}
+              variant={justPosted ? "secondary" : "default"}
+              className="w-full justify-center gap-2 rounded-full"
+            >
+              {justPosted ? <Check className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+              {justPosted ? "Posted!" : "Post to Gallery"}
+            </Button>
+          </section>
+        )}
+
+        {/* Keyboard reference */}
         <section aria-labelledby="kbd-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20 text-xs text-muted-foreground">
-          <button
-            type="button"
-            onClick={() => setKeyboardPanelOpen((o) => !o)}
-            aria-expanded={keyboardPanelOpen}
-            aria-controls="kbd-list"
-            className="flex w-full items-center gap-2 text-sm font-semibold text-foreground"
-          >
-            <Keyboard className="h-4 w-4 text-primary" /> Keyboard shortcuts
-            <ChevronRight className={`ml-auto h-4 w-4 text-primary transition-transform ${keyboardPanelOpen ? "rotate-90" : ""}`} />
-          </button>
-          {keyboardPanelOpen && (
-            <ul id="kbd-list" className="mt-3 space-y-1">
-              <li>Arrows — move brush (Shift = ×3)</li>
-              <li>Space / D — toggle drawing</li>
-              <li>S — toggle sound</li>
-              <li>C — clear canvas</li>
-              <li>Q / E — cycle colour</li>
-              <li>[ / ] — thickness</li>
-              <li>, / . — opacity</li>
-              <li>T — cycle texture</li>
-              <li>G — open / close guides</li>
-              <li>Esc — stop active guide</li>
-              <li>X — toggle visual aids</li>
-            </ul>
-          )}
+          <h2 id="kbd-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Keyboard className="h-4 w-4 text-primary" /> Keyboard
+          </h2>
+          <ul className="space-y-1">
+            <li>Arrows — move brush (Shift = ×3)</li>
+            <li>Space / D — toggle drawing</li>
+            <li>S — toggle sound</li>
+            <li>C — clear canvas</li>
+            <li>Q / E — cycle colour</li>
+            <li>[ / ] — thickness</li>
+            <li>, / . — opacity</li>
+            <li>T — cycle texture</li>
+            <li>G — open / close guides</li>
+            <li>Esc — stop active guide</li>
+            <li>X — toggle visual aids</li>
+          </ul>
         </section>
       </aside>
 
