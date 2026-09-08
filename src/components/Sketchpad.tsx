@@ -425,21 +425,21 @@ function describeDistance(px: number): string {
 // broken record when the same event (off-course, back on track, checkpoint
 // praise) fires over and over during a single drawing session.
 const OFF_COURSE_INTROS = [
-  "You've drifted off the path.",
-  "You're off the line now.",
-  "Strayed off course a bit.",
+  "Whoops, you've wandered off the path.",
+  "Hang on, you're off the line.",
+  "Uh-oh, you've drifted a bit.",
 ];
 const BACK_ON_TRACK_LINES = [
-  "Nice, you're back on track.",
-  "There you go, right on the line.",
-  "Good — back on the path.",
+  "Yes! Right back on track.",
+  "There you go — nailed it.",
+  "Perfect, found it again.",
 ];
 const CHECKPOINT_PRAISE = [
-  "Nice work.",
-  "Great job.",
-  "You're doing great.",
-  "Looking good.",
-  "Keep it up.",
+  "Nice work!",
+  "You're doing great!",
+  "Love it!",
+  "Keep going, you've got this!",
+  "Beautiful!",
 ];
 
 function pickVaried(pool: string[], avoid: string): string {
@@ -725,7 +725,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       lastOffCourseIntro.current = intro;
       const dir = describeDirection(p, nearestPt);
       const far = describeDistance(distance);
-      say(`${intro} Move ${dir}, ${far}, to get back to the ${guide.name.toLowerCase()} line.`);
+      say(`${intro} Move ${dir}, ${far}, and you'll be right back on the ${guide.name.toLowerCase()} line.`);
       if (audioRef.current) playEdgeBump(audioRef.current.ctx);
     } else if (offCourseRef.current && distance < OFF_COURSE_EXIT) {
       offCourseRef.current = false;
@@ -738,7 +738,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       lastOffCourseSayAt.current = now;
       const dir = describeDirection(p, nearestPt);
       const far = describeDistance(distance);
-      say(`Still off course — head ${dir}, ${far}.`);
+      say(`I'm still with you — head ${dir}, ${far}.`);
     }
 
     const g = guideOscRef.current;
@@ -780,7 +780,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     // still close enough to the line to count as actually finishing it.
     if (!guideCompletedRef.current && progress >= 0.97 && distance < OFF_COURSE_EXIT) {
       guideCompletedRef.current = true;
-      say(`Great job — you completed the ${guide.name.toLowerCase()}! Press stop guide, or keep going to trace it again.`);
+      say(`You did it! That's a perfect ${guide.name.toLowerCase()}. Press stop guide, or trace it again with me.`);
       if (audioRef.current) playCompleteChime(audioRef.current.ctx);
     }
   }, [guideKey, soundOn, say]);
@@ -799,7 +799,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     startGuideTone();
     const guide = SHAPE_GUIDES[key];
     if (audioRef.current) playGuideStart(audioRef.current.ctx, 392);
-    say(`${guide.name} guide started. ${guide.checkpoints[0].say} Move close to the glowing path to hear the guide tone rise.`);
+    say(`Let's trace a ${guide.name.toLowerCase()} together! ${guide.checkpoints[0].say} Get close to the glowing line and I'll hum louder the closer you get.`);
     trackClick();
   }, [startGuideTone, stopGuideTone, say]);
 
@@ -807,7 +807,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     if (!guideKey) return;
     stopGuideTone();
     offCourseRef.current = false;
-    say("Guide stopped.");
+    say("Guide stopped — nice tracing!");
     setGuideKey(null);
     trackClick();
   }, [guideKey, stopGuideTone, say]);
@@ -828,7 +828,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
     if (hitBorder) {
       if (audioRef.current) playEdgeBump(audioRef.current.ctx);
-      say("Edge of canvas");
+      say("Whoa, that's the edge!");
     }
 
     if (drawing) {
@@ -852,14 +852,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       if (next) {
         setCurrent({ color, width: penWidth, opacity: penOpacity, texture, points: [cursor] });
         if (audioRef.current) playSineNote(audioRef.current.ctx, 659, 0.15, 0.12);
-        say("Drawing on — move to draw");
+        say("Drawing on — go ahead, I'm right here with you.");
       } else {
         setCurrent((c) => {
           if (c && c.points.length > 1) setStrokes((s) => [...s, c]);
           return null;
         });
         if (audioRef.current) playSineNote(audioRef.current.ctx, 392, 0.18, 0.10);
-        say("Line saved");
+        say("Nice line! Saved it.");
       }
       return next;
     });
@@ -874,11 +874,11 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         const a = ensureAudio();
         if (a.ctx.state === "suspended") a.ctx.resume();
         playSineNote(a.ctx, 440, 0.2, 0.1, true);
-        say("Sound on. Move the brush to explore pitch and left-right panning.");
+        say("Sound on! Move around and I'll turn it into music.");
       } else {
         const a = audioRef.current;
         if (a) a.gain.gain.setTargetAtTime(0, a.ctx.currentTime, 0.05);
-        say("Sound off");
+        say("Sound's off.");
       }
       return next;
     });
@@ -964,21 +964,21 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       playSineNote(audioRef.current.ctx, 262, 0.2, 0.08);
       setTimeout(() => audioRef.current && playSineNote(audioRef.current.ctx, 196, 0.25, 0.06), 120);
     }
-    say("Canvas cleared");
+    say("All clear! Ready for a fresh drawing.");
     trackClick();
   }, [say]);
 
   const undo = useCallback(() => {
     setStrokes((s) => s.slice(0, -1));
     if (audioRef.current) playSineNote(audioRef.current.ctx, 330, 0.18, 0.09);
-    say("Last line removed");
+    say("Oops, undone! Let's try that again.");
     trackClick();
   }, [say]);
 
   const toggleVisualAids = useCallback(() => {
     setVisualAids((v) => {
       const next = !v;
-      say(next ? "Visual aids on" : "Visual aids off");
+      say(next ? "Visual aids are on! I've got you." : "Visual aids off — I'll guide you by sound.");
       trackClick();
       return next;
     });
@@ -1024,15 +1024,15 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     a.click();
   };
 
-  const exportSwell = () => { dl("sonic-bear-swell.svg", buildSvgString(true),  "image/svg+xml"); say("Exported swell paper SVG"); trackClick(); };
-  const exportColor = () => { dl("sonic-bear-color.svg", buildSvgString(false), "image/svg+xml"); say("Exported color SVG");       trackClick(); };
+  const exportSwell = () => { dl("sonic-bear-swell.svg", buildSvgString(true),  "image/svg+xml"); say("There you go — your swell paper SVG is downloading."); trackClick(); };
+  const exportColor = () => { dl("sonic-bear-color.svg", buildSvgString(false), "image/svg+xml"); say("Nice! Your color SVG is downloading.");       trackClick(); };
 
   // ── Post to Gallery ──────────────────────────────────────────────────────
   const hasArtwork = strokes.length > 0 || (!!current && current.points.length > 1);
 
   const requestPost = useCallback(() => {
     if (!hasArtwork) {
-      say("Draw something first, then you can post it to the gallery");
+      say("Let's draw something first — then I can post it for you!");
       return;
     }
     setPostConfirmOpen(true);
@@ -1041,7 +1041,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
   const cancelPost = useCallback(() => {
     setPostConfirmOpen(false);
-    say("Post canceled");
+    say("No worries — I kept it just for you.");
   }, [say]);
 
   const confirmPost = useCallback(() => {
@@ -1051,7 +1051,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setJustPosted(true);
     setTimeout(() => setJustPosted(false), 2200);
     if (audioRef.current) playCompleteChime(audioRef.current.ctx);
-    say("Posted to the gallery — visible to everyone");
+    say("Yay! Posted to the gallery for everyone to see.");
     trackClick();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onPost, strokes, current, say]);
@@ -1073,7 +1073,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       else if (e.key.toLowerCase() === "s") { e.preventDefault(); toggleSound(); }
       else if (e.key.toLowerCase() === "c") { e.preventDefault(); clearCanvas(); }
       else if (e.key.toLowerCase() === "x") { e.preventDefault(); toggleVisualAids(); }
-      else if (e.key.toLowerCase() === "g") { e.preventDefault(); setGuidesPanelOpen((o) => !o); say("Guides panel toggled"); }
+      else if (e.key.toLowerCase() === "g") {
+        e.preventDefault();
+        setGuidesPanelOpen((o) => {
+          const next = !o;
+          say(next ? "Here are the audio guides — pick one and I'll walk you through it." : "Closing the guides panel.");
+          return next;
+        });
+      }
       else if (e.key.toLowerCase() === "q") { e.preventDefault(); cycleColor(-1); }
       else if (e.key.toLowerCase() === "e") { e.preventDefault(); cycleColor(1); }
       else if (e.key === "[") { e.preventDefault(); changePenWidth(penWidth - 1); }
@@ -1127,7 +1134,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       if (c && c.points.length > 1) setStrokes((s) => [...s, c]);
       return null;
     });
-    say("Line saved");
+    say("Nice line! Saved it.");
   };
 
   const exportStl = () => {
@@ -1151,7 +1158,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       for (let i = 1; i < s.points.length; i++)
         box(s.points[i-1].x*scale,(HEIGHT-s.points[i-1].y)*scale,s.points[i].x*scale,(HEIGHT-s.points[i].y)*scale);
     dl("sonic-bear.stl", `solid sb\n${facets.join("\n")}\nendsolid sb`, "model/stl");
-    say("Exported 3D print file");
+    say("Your 3D file is ready — happy printing!");
     trackClick();
   };
 
