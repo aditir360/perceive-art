@@ -999,12 +999,12 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         </div>
 
         {/* SVG Canvas + bear companion */}
-        <div className="relative mt-14">
+        <div className="relative mt-24">
           <img
             src={drawing ? bearDrawing : bearSleeping}
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute -top-16 left-1/2 z-10 h-24 w-24 -translate-x-1/2 select-none object-contain drop-shadow-lg sm:-top-20 sm:h-28 sm:w-28"
+            className="pointer-events-none absolute -top-24 left-1/2 z-10 h-24 w-24 -translate-x-1/2 select-none object-contain drop-shadow-lg sm:-top-28 sm:h-28 sm:w-28"
           />
           <svg
             role="img"
