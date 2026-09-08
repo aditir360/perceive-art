@@ -1154,7 +1154,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             src={drawing ? bearDrawing : bearSleeping}
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute top-3 left-1/2 z-10 h-16 w-16 -translate-x-1/2 select-none object-contain drop-shadow-lg sm:top-4 sm:h-20 sm:w-20"
+            className="pointer-events-none absolute top-1 left-1/2 z-10 h-20 w-20 -translate-x-1/2 -translate-y-1/3 select-none object-contain drop-shadow-lg sm:top-2 sm:h-24 sm:w-24"
           />
         </div>
 
