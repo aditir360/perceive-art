@@ -38,7 +38,25 @@ import {
   Zap,
   Flower2,
   TrendingUp,
+  Bell,
+  Music2,
+  Wind,
 } from "lucide-react";
+
+type SoundStyle = "sine" | "pad" | "chime" | "marimba";
+const SOUND_STYLE_ORDER: SoundStyle[] = ["sine", "pad", "chime", "marimba"];
+const SOUND_STYLE_LABELS: Record<SoundStyle, string> = {
+  sine: "Warm Tone",
+  pad: "Soft Pad",
+  chime: "Wind Chime",
+  marimba: "Marimba",
+};
+const SOUND_STYLE_ICONS: Record<SoundStyle, typeof Bell> = {
+  sine: Waves,
+  pad: Wind,
+  chime: Bell,
+  marimba: Music2,
+};
 
 const TEXTURE_ICONS: Record<Texture, typeof PenLine> = {
   pen: PenLine,
@@ -498,8 +516,10 @@ function getBrushDabs(s: Stroke): BrushDab[] {
 }
 
 // ── Pleasant audio helpers ────────────────────────────────────────────────────
-// All synthesis uses sine waves + light attack/release envelopes.
-// No sawtooth or harsh timbres anywhere in the UI.
+// All synthesis uses sine/triangle waves + light attack/release envelopes and
+// a lowpass filter to take the edge off — no raw sawtooth/square anywhere,
+// and no unfiltered high-frequency sine either (that's what reads as
+// "irritating": a bright, buzzy, unchanging drone).
 
 function buildAudio() {
   const Ctor: typeof AudioContext =
@@ -507,33 +527,85 @@ function buildAudio() {
     (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   const ctx = new Ctor();
 
-  // Main draw voice: sine + gentle reverb via a small feedback delay
-  const osc   = ctx.createOscillator();
-  const gain  = ctx.createGain();
-  const pan   = ctx.createStereoPanner();
-  const delay = ctx.createDelay(0.3);
-  const fb    = ctx.createGain();
-  const wet   = ctx.createGain();
+  // Main draw voice: two gently detuned sines (a soft chorus, for warmth)
+  // through a lowpass filter, then a short, filtered slapback echo instead
+  // of a raw feedback comb — the old version let the delay's feedback ring
+  // on itself with no filtering, which is what made it sound metallic.
+  const osc    = ctx.createOscillator();
+  const osc2   = ctx.createOscillator();
+  const mix    = ctx.createGain();
+  const gain   = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+  const pan    = ctx.createStereoPanner();
+  const delay  = ctx.createDelay(0.3);
+  const fbFilt = ctx.createBiquadFilter();
+  const fb     = ctx.createGain();
+  const wet    = ctx.createGain();
 
-  osc.type = "sine";
-  osc.frequency.value = 440;
+  osc.type  = "sine";
+  osc2.type = "sine";
+  osc.frequency.value  = 440;
+  osc2.frequency.value = 440;
+  osc2.detune.value    = 6; // cents — subtle chorus, not a beating warble
+  mix.gain.value  = 0.5;
   gain.gain.value = 0;
-  delay.delayTime.value = 0.18;
-  fb.gain.value = 0.28;
-  wet.gain.value = 0.22;
+  filter.type = "lowpass";
+  filter.frequency.value = 1800;
+  filter.Q.value = 0.4;
+  delay.delayTime.value = 0.16;
+  fbFilt.type = "lowpass";
+  fbFilt.frequency.value = 1200; // keeps the echo from building up brightness/ringing
+  fb.gain.value  = 0.16;
+  wet.gain.value = 0.14;
 
-  osc.connect(gain);
-  gain.connect(pan);
+  osc.connect(mix);
+  osc2.connect(mix);
+  mix.connect(gain);
+  gain.connect(filter);
+  filter.connect(pan);
   pan.connect(ctx.destination);
-  // Reverb tail
-  gain.connect(delay);
-  delay.connect(fb);
+  // Soft, filtered slapback tail
+  filter.connect(delay);
+  delay.connect(fbFilt);
+  fbFilt.connect(fb);
   fb.connect(delay);
   delay.connect(wet);
   wet.connect(ctx.destination);
 
   osc.start();
-  return { ctx, osc, gain, pan };
+  osc2.start();
+  return { ctx, osc, osc2, gain, pan, filter };
+}
+
+// Plucked/chime-style note for the percussive canvas-sound styles: a short
+// decaying tone with its own panner, so rapid notes can overlap cleanly
+// instead of fighting over one continuously-sliding oscillator.
+function pluckNote(ctx: AudioContext, freq: number, panVal: number, style: "chime" | "marimba", volume: number) {
+  const osc    = ctx.createOscillator();
+  const gain   = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+  const panner = ctx.createStereoPanner();
+  const isMarimba = style === "marimba";
+
+  osc.type = isMarimba ? "triangle" : "sine";
+  osc.frequency.value = freq;
+  filter.type = "lowpass";
+  filter.frequency.value = isMarimba ? 2200 : 3400;
+  panner.pan.value = Math.max(-1, Math.min(1, panVal));
+
+  const now  = ctx.currentTime;
+  const peak = Math.max(0.001, volume * (isMarimba ? 0.22 : 0.16));
+  const tail = isMarimba ? 0.32 : 0.65;
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(peak, now + 0.006);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + tail);
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(panner);
+  panner.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + tail + 0.05);
 }
 
 // Play a short melodic cue (sine, smooth attack/release, optional vibrato)
@@ -603,6 +675,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const [color,     setColor]     = useState(COLORS[0].value);
   const [cursor,    setCursor]    = useState<Point>({ x: WIDTH / 2, y: HEIGHT / 2 });
   const [soundOn,   setSoundOn]   = useState(false);
+  const [soundStyle, setSoundStyle] = useState<SoundStyle>("sine");
+  const [soundVolume, setSoundVolume] = useState(0.7);
+  const soundStyleRef  = useRef(soundStyle);
+  const soundVolumeRef = useRef(soundVolume);
+  useEffect(() => { soundStyleRef.current = soundStyle; }, [soundStyle]);
+  useEffect(() => { soundVolumeRef.current = soundVolume; }, [soundVolume]);
+  const lastPluckAt  = useRef(0);
+  const lastPluckPos = useRef<Point | null>(null);
   const [announce,  setAnnounce]  = useState(
     "Hey, Bennett here! Press S for sound, Space to start drawing, and the arrow keys to move me around the canvas."
   );
@@ -636,6 +716,31 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
   const stats = useCanvasClicks();
 
+  // Try to find a more youthful/cheerful system voice for Bennett. Voice
+  // lists load asynchronously in most browsers, so we grab them once now
+  // and again on the voiceschanged event, then cache the pick in a ref.
+  const bennettVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const pickVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices.length) return;
+      // Prefer anything explicitly child/kid-like, then a light/cheerful-
+      // sounding named voice, then just fall back to the first English voice
+      // — pitch/rate below do most of the "cute bear" work regardless.
+      const byName = (re: RegExp) => voices.find((v) => re.test(v.name));
+      const pick =
+        byName(/child|kid|junior/i) ||
+        byName(/samantha|karen|moira|tessa|fiona|veena/i) ||
+        voices.find((v) => v.lang.startsWith("en")) ||
+        voices[0];
+      bennettVoiceRef.current = pick ?? null;
+    };
+    pickVoice();
+    window.speechSynthesis.addEventListener("voiceschanged", pickVoice);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", pickVoice);
+  }, []);
+
   const say = useCallback((msg: string) => {
     setAnnounce(msg);
     // Real spoken narration — independent of the Sound On/Off toggle (that
@@ -644,8 +749,11 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(msg);
-      utter.rate = 1.02;
-      utter.pitch = 1;
+      if (bennettVoiceRef.current) utter.voice = bennettVoiceRef.current;
+      // Higher pitch + a touch more pace: this is what actually reads as
+      // "small, cheerful bear cub" rather than a neutral system announcer.
+      utter.rate  = 1.08;
+      utter.pitch = 1.65;
       window.speechSynthesis.speak(utter);
     }
   }, []);
@@ -677,10 +785,34 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     const normed   = (rawPitch / base) / Math.pow(2, octave);
     const closest  = penta.reduce((b, r) => Math.abs(r - normed) < Math.abs(b - normed) ? r : b);
     const pitch    = base * closest * Math.pow(2, octave);
+    const vol      = soundVolumeRef.current;
+    const style    = soundStyleRef.current;
 
+    if (style === "chime" || style === "marimba") {
+      // Percussive styles: keep the continuous oscillator silent and instead
+      // trigger short, decaying notes as the brush actually moves — this is
+      // what makes them feel like a wind chime / marimba instead of a drone.
+      a.gain.gain.setTargetAtTime(0, a.ctx.currentTime, 0.05);
+      const now = performance.now();
+      const moved = lastPluckPos.current ? Math.hypot(p.x - lastPluckPos.current.x, p.y - lastPluckPos.current.y) : Infinity;
+      const minGapMs = style === "marimba" ? 90 : 140;
+      const minMovePx = style === "marimba" ? 10 : 16;
+      if (drawing && moved > minMovePx && now - lastPluckAt.current > minGapMs) {
+        lastPluckAt.current = now;
+        lastPluckPos.current = p;
+        pluckNote(a.ctx, pitch, panVal, style, vol);
+      }
+      return;
+    }
+
+    // Continuous styles (warm tone / soft pad): softer filter cutoff and a
+    // slower glide for "pad" so pitch changes drift instead of snapping.
+    const glide = style === "pad" ? 0.12 : 0.05;
+    a.filter.frequency.setTargetAtTime(style === "pad" ? 1100 : 2000, a.ctx.currentTime, 0.1);
     a.pan.pan.setTargetAtTime(panVal, a.ctx.currentTime, 0.03);
-    a.osc.frequency.setTargetAtTime(pitch, a.ctx.currentTime, 0.04);
-    a.gain.gain.setTargetAtTime(drawing ? 0.15 : 0.05, a.ctx.currentTime, 0.04);
+    a.osc.frequency.setTargetAtTime(pitch, a.ctx.currentTime, glide);
+    a.osc2.frequency.setTargetAtTime(pitch, a.ctx.currentTime, glide);
+    a.gain.gain.setTargetAtTime((drawing ? 0.15 : 0.05) * vol, a.ctx.currentTime, 0.04);
   }, [drawing, soundOn]);
 
   // ── Guide proximity tone ─────────────────────────────────────────────────
@@ -749,7 +881,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       const freqs = [330, 370, 415, 494, 554, 660, 740, 880];
       const idx   = Math.round(closeness * (freqs.length - 1));
       const freq  = freqs[idx];
-      const vol   = 0.02 + closeness * 0.13;
+      const vol   = (0.02 + closeness * 0.13) * soundVolumeRef.current;
       g.osc.frequency.setTargetAtTime(freq, g.osc.context.currentTime, 0.06);
       g.gain.gain.setTargetAtTime(vol, g.osc.context.currentTime, 0.06);
     }
@@ -1624,6 +1756,71 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               style={{ backgroundColor: color, opacity: penOpacity }}
             />
             {Math.round(penOpacity * 100)}%
+          </div>
+        </section>
+
+        {/* Canvas Sound */}
+        <section aria-labelledby="canvas-sound-heading" className="rounded-3xl bg-gradient-to-br from-card to-card/70 p-4 shadow-md ring-1 ring-primary/15">
+          <h2 id="canvas-sound-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
+              <Volume2 className="h-3.5 w-3.5" />
+            </span>
+            Canvas sound
+          </h2>
+          <div className="grid grid-cols-2 gap-2">
+            {SOUND_STYLE_ORDER.map((s) => {
+              const StyleIcon = SOUND_STYLE_ICONS[s];
+              const active = soundStyle === s;
+              return (
+                <button
+                  key={s}
+                  onClick={() => { setSoundStyle(s); say(`${SOUND_STYLE_LABELS[s]} sound.`); trackClick(); }}
+                  aria-pressed={active}
+                  className={`flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-medium shadow-sm transition-all ${
+                    active
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "bg-background/60 text-foreground ring-1 ring-primary/15 hover:bg-primary/10"
+                  }`}
+                >
+                  <StyleIcon className="h-4 w-4" />
+                  {SOUND_STYLE_LABELS[s]}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-3 flex items-center gap-3">
+            <Button
+              onClick={() => setSoundVolume((v) => Math.max(0, +(v - 0.1).toFixed(2)))}
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 shrink-0 rounded-full bg-background/60 ring-1 ring-primary/15"
+              aria-label="Decrease canvas sound volume"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </Button>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={soundVolume}
+              onChange={(e) => setSoundVolume(Number(e.target.value))}
+              aria-label="Canvas sound volume"
+              className="h-2 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"
+              style={{ background: `linear-gradient(to right, oklch(0.58 0.15 20) ${soundVolume * 100}%, oklch(0.58 0.15 20 / 0.18) ${soundVolume * 100}%)` }}
+            />
+            <Button
+              onClick={() => setSoundVolume((v) => Math.min(1, +(v + 0.1).toFixed(2)))}
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 shrink-0 rounded-full bg-background/60 ring-1 ring-primary/15"
+              aria-label="Increase canvas sound volume"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <div className="mt-2.5 rounded-full bg-background/50 py-1.5 text-center text-xs font-medium text-muted-foreground">
+            {Math.round(soundVolume * 100)}% volume
           </div>
         </section>
 
