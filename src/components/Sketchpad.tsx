@@ -29,7 +29,19 @@ import {
   Globe,
   Check,
   Droplet,
+  PenLine,
+  Highlighter,
+  Paintbrush,
+  Minus,
+  Plus,
 } from "lucide-react";
+
+const TEXTURE_ICONS: Record<Texture, typeof PenLine> = {
+  pen: PenLine,
+  pencil: Pencil,
+  highlighter: Highlighter,
+  paintbrush: Paintbrush,
+};
 
 // Icon + colour badge per guide, reusing the same swatches from the palette
 // below (Rose, Gold, Sky, etc.) instead of introducing new colours or emoji.
@@ -1330,67 +1342,90 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       </div>
 
       {/* ── Sidebar ── */}
-      <aside className="space-y-5">
+      <aside className="space-y-4">
 
         {/* Palette */}
-        <section aria-labelledby="colors-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
-          <h2 id="colors-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
-            <Palette className="h-4 w-4 text-primary" /> Palette
-            <span className="ml-auto text-[10px] font-normal text-muted-foreground">Q / E to cycle</span>
+        <section aria-labelledby="colors-heading" className="rounded-3xl bg-gradient-to-br from-card to-card/70 p-4 shadow-md ring-1 ring-primary/15">
+          <h2 id="colors-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
+              <Palette className="h-3.5 w-3.5" />
+            </span>
+            Palette
+            <span className="ml-auto rounded-full bg-background/60 px-2 py-0.5 text-[10px] font-normal text-muted-foreground">Q / E to cycle</span>
           </h2>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5">
             {COLORS.map((c) => (
               <button
                 key={c.value}
                 onClick={() => pickColor(c)}
                 aria-label={`Color ${c.name}`}
                 aria-pressed={color === c.value}
-                className={`h-9 w-9 rounded-full ring-2 transition ${
+                className={`relative h-9 w-9 rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
                   color === c.value ? "scale-110 ring-foreground" : "ring-transparent"
                 }`}
                 style={{ backgroundColor: c.value }}
-              />
+              >
+                {color === c.value && (
+                  <Check
+                    className="absolute inset-0 m-auto h-4 w-4 drop-shadow"
+                    style={{ color: ["#f5a623", "#e0b04f", "#f9a8a8"].includes(c.value) ? "#3a1f2b" : "#fff" }}
+                  />
+                )}
+              </button>
             ))}
           </div>
         </section>
 
         {/* Texture */}
-        <section aria-labelledby="texture-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
-          <h2 id="texture-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
-            <Pencil className="h-4 w-4 text-primary" /> Texture
-            <span className="ml-auto text-[10px] font-normal text-muted-foreground">T to cycle</span>
+        <section aria-labelledby="texture-heading" className="rounded-3xl bg-gradient-to-br from-card to-card/70 p-4 shadow-md ring-1 ring-primary/15">
+          <h2 id="texture-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
+              <Pencil className="h-3.5 w-3.5" />
+            </span>
+            Texture
+            <span className="ml-auto rounded-full bg-background/60 px-2 py-0.5 text-[10px] font-normal text-muted-foreground">T to cycle</span>
           </h2>
           <div className="grid grid-cols-2 gap-2">
-            {TEXTURE_ORDER.map((t) => (
-              <Button
-                key={t}
-                onClick={() => changeTexture(t)}
-                variant={texture === t ? "default" : "outline"}
-                aria-pressed={texture === t}
-                size="sm"
-                className="rounded-full"
-              >
-                {TEXTURE_LABELS[t]}
-              </Button>
-            ))}
+            {TEXTURE_ORDER.map((t) => {
+              const TextureIcon = TEXTURE_ICONS[t];
+              const active = texture === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => changeTexture(t)}
+                  aria-pressed={active}
+                  className={`flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-medium shadow-sm transition-all ${
+                    active
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "bg-background/60 text-foreground ring-1 ring-primary/15 hover:bg-primary/10"
+                  }`}
+                >
+                  <TextureIcon className="h-4 w-4" />
+                  {TEXTURE_LABELS[t]}
+                </button>
+              );
+            })}
           </div>
         </section>
 
         {/* Thickness (per active texture) */}
-        <section aria-labelledby="pen-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
-          <h2 id="pen-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
-            <Pencil className="h-4 w-4 text-primary" /> {TEXTURE_LABELS[texture]} thickness
-            <span className="ml-auto text-[10px] font-normal text-muted-foreground">[ / ] to adjust</span>
+        <section aria-labelledby="pen-heading" className="rounded-3xl bg-gradient-to-br from-card to-card/70 p-4 shadow-md ring-1 ring-primary/15">
+          <h2 id="pen-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
+              <Pencil className="h-3.5 w-3.5" />
+            </span>
+            {TEXTURE_LABELS[texture]} thickness
+            <span className="ml-auto rounded-full bg-background/60 px-2 py-0.5 text-[10px] font-normal text-muted-foreground">[ / ] to adjust</span>
           </h2>
           <div className="flex items-center gap-3">
             <Button
               onClick={() => changePenWidth(penWidth - 1)}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full"
+              className="h-8 w-8 shrink-0 rounded-full bg-background/60 ring-1 ring-primary/15"
               aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}
             >
-              −
+              <Minus className="h-3.5 w-3.5" />
             </Button>
             <input
               type="range"
@@ -1403,22 +1438,25 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               aria-valuemin={MIN_PEN_WIDTH}
               aria-valuemax={MAX_PEN_WIDTH}
               aria-valuenow={penWidth}
-              className="h-2 flex-1 cursor-pointer appearance-none rounded-full bg-primary/20 accent-primary"
+              className="h-2 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"
+              style={{
+                background: `linear-gradient(to right, oklch(0.58 0.15 20) ${((penWidth - MIN_PEN_WIDTH) / (MAX_PEN_WIDTH - MIN_PEN_WIDTH)) * 100}%, oklch(0.58 0.15 20 / 0.18) ${((penWidth - MIN_PEN_WIDTH) / (MAX_PEN_WIDTH - MIN_PEN_WIDTH)) * 100}%)`,
+              }}
             />
             <Button
               onClick={() => changePenWidth(penWidth + 1)}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full"
+              className="h-8 w-8 shrink-0 rounded-full bg-background/60 ring-1 ring-primary/15"
               aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}
             >
-              +
+              <Plus className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <div className="mt-2 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <div className="mt-2.5 flex items-center justify-center gap-2 rounded-full bg-background/50 py-1.5 text-xs font-medium text-muted-foreground">
             <span
               aria-hidden
-              className="inline-block rounded-full"
+              className="inline-block rounded-full ring-2 ring-card"
               style={{ width: Math.max(4, penWidth), height: Math.max(4, penWidth), backgroundColor: color }}
             />
             {penWidth}px
@@ -1426,20 +1464,23 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         </section>
 
         {/* Opacity (per active texture) */}
-        <section aria-labelledby="opacity-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
-          <h2 id="opacity-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
-            <Droplet className="h-4 w-4 text-primary" /> {TEXTURE_LABELS[texture]} opacity
-            <span className="ml-auto text-[10px] font-normal text-muted-foreground">, / . to adjust</span>
+        <section aria-labelledby="opacity-heading" className="rounded-3xl bg-gradient-to-br from-card to-card/70 p-4 shadow-md ring-1 ring-primary/15">
+          <h2 id="opacity-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
+              <Droplet className="h-3.5 w-3.5" />
+            </span>
+            {TEXTURE_LABELS[texture]} opacity
+            <span className="ml-auto rounded-full bg-background/60 px-2 py-0.5 text-[10px] font-normal text-muted-foreground">, / . to adjust</span>
           </h2>
           <div className="flex items-center gap-3">
             <Button
               onClick={() => changePenOpacity(penOpacity - OPACITY_STEP)}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full"
+              className="h-8 w-8 shrink-0 rounded-full bg-background/60 ring-1 ring-primary/15"
               aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}
             >
-              −
+              <Minus className="h-3.5 w-3.5" />
             </Button>
             <input
               type="range"
@@ -1452,22 +1493,25 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               aria-valuemin={OPACITY_RANGE[texture].min}
               aria-valuemax={OPACITY_RANGE[texture].max}
               aria-valuenow={penOpacity}
-              className="h-2 flex-1 cursor-pointer appearance-none rounded-full bg-primary/20 accent-primary"
+              className="h-2 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"
+              style={{
+                background: `linear-gradient(to right, oklch(0.58 0.15 20) ${((penOpacity - OPACITY_RANGE[texture].min) / (OPACITY_RANGE[texture].max - OPACITY_RANGE[texture].min)) * 100}%, oklch(0.58 0.15 20 / 0.18) ${((penOpacity - OPACITY_RANGE[texture].min) / (OPACITY_RANGE[texture].max - OPACITY_RANGE[texture].min)) * 100}%)`,
+              }}
             />
             <Button
               onClick={() => changePenOpacity(penOpacity + OPACITY_STEP)}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full"
+              className="h-8 w-8 shrink-0 rounded-full bg-background/60 ring-1 ring-primary/15"
               aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}
             >
-              +
+              <Plus className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <div className="mt-2 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <div className="mt-2.5 flex items-center justify-center gap-2 rounded-full bg-background/50 py-1.5 text-xs font-medium text-muted-foreground">
             <span
               aria-hidden
-              className="inline-block h-3.5 w-3.5 rounded-full"
+              className="inline-block h-3.5 w-3.5 rounded-full ring-2 ring-card"
               style={{ backgroundColor: color, opacity: penOpacity }}
             />
             {Math.round(penOpacity * 100)}%
@@ -1475,19 +1519,31 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         </section>
 
         {/* Export */}
-        <section aria-labelledby="export-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20">
-          <h2 id="export-heading" className="mb-2 flex items-center gap-2 text-sm font-semibold">
-            <Sparkles className="h-4 w-4 text-primary" /> Export
+        <section aria-labelledby="export-heading" className="rounded-3xl bg-gradient-to-br from-card to-card/70 p-4 shadow-md ring-1 ring-primary/15">
+          <h2 id="export-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+            </span>
+            Export
           </h2>
           <div className="grid gap-2">
-            <Button onClick={exportSwell} className="justify-start gap-2 rounded-full">
-              <Waves className="h-4 w-4" /> Swell Paper SVG
+            <Button onClick={exportSwell} className="justify-start gap-3 rounded-2xl py-5 shadow-md">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-foreground/20">
+                <Waves className="h-4 w-4" />
+              </span>
+              Swell Paper SVG
             </Button>
-            <Button onClick={exportColor} variant="secondary" className="justify-start gap-2 rounded-full">
-              <Palette className="h-4 w-4" /> Colour SVG
+            <Button onClick={exportColor} variant="secondary" className="justify-start gap-3 rounded-2xl py-5 shadow-sm">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground/10">
+                <Palette className="h-4 w-4" />
+              </span>
+              Colour SVG
             </Button>
-            <Button onClick={exportStl} variant="outline" className="justify-start gap-2 rounded-full">
-              <Box className="h-4 w-4" /> 3D Print (STL)
+            <Button onClick={exportStl} variant="outline" className="justify-start gap-3 rounded-2xl bg-background/60 py-5 shadow-sm ring-1 ring-primary/15">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+                <Box className="h-4 w-4" />
+              </span>
+              3D Print (STL)
             </Button>
           </div>
         </section>
