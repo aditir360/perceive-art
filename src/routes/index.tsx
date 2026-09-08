@@ -66,8 +66,8 @@ function Index() {
           <Sparkles className="h-3.5 w-3.5" /> A sonic-tactile art studio
         </span>
         <h1 className="mx-auto mt-6 max-w-3xl text-5xl font-bold leading-tight tracking-tight text-foreground sm:text-6xl">
-          Draw with <span className="text-primary">sound</span>.
-          <br /> Feel with <span className="text-primary">touch</span>.
+          Draw with <span className="bg-gradient-to-r from-primary to-accent-foreground bg-clip-text text-transparent">sound</span>.
+          <br /> Feel with <span className="bg-gradient-to-r from-primary to-accent-foreground bg-clip-text text-transparent">touch</span>.
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
           Perceive is a browser studio where blind and sighted creators sketch together —
