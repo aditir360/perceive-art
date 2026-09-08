@@ -750,10 +750,12 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(msg);
       if (bennettVoiceRef.current) utter.voice = bennettVoiceRef.current;
-      // Higher pitch + a touch more pace: this is what actually reads as
-      // "small, cheerful bear cub" rather than a neutral system announcer.
-      utter.rate  = 1.08;
-      utter.pitch = 1.65;
+      // Higher pitch reads as "small, cheerful bear cub", but pushing it too
+      // far (or speaking too fast) starts to hurt intelligibility — dialed
+      // both back slightly so it's still clearly Bennett, just easier to
+      // make out.
+      utter.rate  = 1.0;
+      utter.pitch = 1.4;
       window.speechSynthesis.speak(utter);
     }
   }, []);
