@@ -951,11 +951,12 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     <div className="grid items-start gap-6 lg:grid-cols-[1fr_280px]">
 
       {/* ── Canvas area ── */}
-      <div className="rounded-3xl bg-card p-4 shadow-lg ring-1 ring-primary/20">
+      <div className="relative overflow-visible rounded-3xl bg-gradient-to-br from-primary/20 via-card/80 to-accent/20 p-1.5 shadow-2xl shadow-primary/15 ring-1 ring-white/50 backdrop-blur-xl sm:p-2">
+        <div className="relative overflow-visible rounded-[1.35rem] bg-card/75 p-4 backdrop-blur-md sm:p-5">
 
         {/* Top bar */}
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary ring-1 ring-primary/20">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-2 rounded-full bg-card/70 px-3.5 py-2 text-xs font-bold text-primary ring-1 ring-white/60 shadow-sm backdrop-blur-sm">
             <Sparkles className="h-3.5 w-3.5" />
             {stats.data == null
               ? "Counting canvas drawings…"
@@ -966,7 +967,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             variant={visualAids ? "default" : "outline"}
             aria-pressed={visualAids}
             size="sm"
-            className="gap-1.5 rounded-full"
+            className="gap-1.5 rounded-full bg-card/70 shadow-sm ring-1 ring-white/60 backdrop-blur-sm"
           >
             <Eye className="h-3.5 w-3.5" /> Visual aids
             <kbd className="ml-0.5 rounded bg-background/40 px-1 py-0.5 text-[10px]">X</kbd>
@@ -974,24 +975,24 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         </div>
 
         {/* Controls */}
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Button onClick={toggleSound} variant={soundOn ? "default" : "secondary"} aria-pressed={soundOn} className="gap-2 rounded-full">
+        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-2xl bg-background/35 p-2 ring-1 ring-white/40">
+          <Button onClick={toggleSound} variant={soundOn ? "default" : "secondary"} aria-pressed={soundOn} className="gap-2 rounded-xl shadow-sm">
             {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             {soundOn ? "Sound On" : "Sound Off"}
             <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">S</kbd>
           </Button>
-          <Button onClick={toggleDrawing} variant={drawing ? "default" : "secondary"} aria-pressed={drawing} className="gap-2 rounded-full">
+          <Button onClick={toggleDrawing} variant={drawing ? "default" : "secondary"} aria-pressed={drawing} className="gap-2 rounded-xl shadow-sm">
             {drawing ? <Pencil className="h-4 w-4" /> : <Hand className="h-4 w-4" />}
             {drawing ? "Drawing" : "Idle"}
             <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">Space</kbd>
           </Button>
-          <Button onClick={undo}        variant="outline" className="gap-2 rounded-full"><Undo2 className="h-4 w-4" /> Undo</Button>
-          <Button onClick={clearCanvas} variant="outline" className="gap-2 rounded-full">
+          <Button onClick={undo}        variant="outline" className="gap-2 rounded-xl bg-card/70 shadow-sm ring-1 ring-white/50"><Undo2 className="h-4 w-4" /> Undo</Button>
+          <Button onClick={clearCanvas} variant="outline" className="gap-2 rounded-xl bg-card/70 shadow-sm ring-1 ring-white/50">
             <Eraser className="h-4 w-4" /> Clear
             <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">C</kbd>
           </Button>
           {guideKey && (
-            <Button onClick={stopGuide} variant="destructive" size="sm" className="gap-1.5 rounded-full">
+            <Button onClick={stopGuide} variant="destructive" size="sm" className="gap-1.5 rounded-xl shadow-sm">
               <X className="h-3.5 w-3.5" /> Stop guide
               <kbd className="ml-0.5 rounded bg-background/40 px-1 py-0.5 text-[10px]">Esc</kbd>
             </Button>
@@ -999,13 +1000,16 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         </div>
 
         {/* SVG Canvas + bear companion */}
-        <div className="relative mt-24">
-          <img
-            src={drawing ? bearDrawing : bearSleeping}
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute -top-24 left-1/2 z-10 h-24 w-24 -translate-x-1/2 select-none object-contain drop-shadow-lg sm:-top-28 sm:h-28 sm:w-28"
-          />
+        <div className="relative mt-14 rounded-[1.75rem] bg-gradient-to-br from-primary/10 via-background/55 to-accent/10 p-2 pt-3 shadow-inner ring-1 ring-white/60 sm:mt-16 sm:p-2.5 sm:pt-3.5">
+          <div className="pointer-events-none absolute -top-16 left-1/2 z-10 flex h-20 w-28 -translate-x-1/2 items-end justify-center sm:-top-[4.5rem] sm:h-24 sm:w-32">
+            <img
+              src={drawing ? bearDrawing : bearSleeping}
+              alt=""
+              aria-hidden="true"
+              className="h-20 w-20 select-none object-contain drop-shadow-[0_8px_12px_rgba(58,31,43,0.18)] sm:h-24 sm:w-24"
+            />
+          </div>
+          <div className="overflow-hidden rounded-2xl bg-[oklch(0.98_0.02_15)] shadow-lg ring-1 ring-white/70">
           <svg
             role="img"
             aria-label="Sonic tactile drawing canvas. Use arrow keys to move, space to toggle drawing."
@@ -1152,10 +1156,10 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           <circle cx={cursor.x} cy={cursor.y} r={12} fill={color} fillOpacity={0.18} stroke={color} strokeWidth={2} />
           <circle cx={cursor.x} cy={cursor.y} r={Math.max(2, penWidth / 2)} fill={color} fillOpacity={penOpacity} />
           </svg>
-
+          </div>
         </div>
 
-        <p className="mt-2.5 text-xs text-muted-foreground">
+        <p className="mt-3 rounded-xl bg-background/35 px-3 py-2 text-xs text-muted-foreground ring-1 ring-white/40">
           Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours · [ ] adjust thickness · , . adjust opacity · T cycles texture
         </p>
 
@@ -1215,6 +1219,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             </div>
           )}
         </section>
+        </div>
       </div>
 
       {/* ── Sidebar ── */}
