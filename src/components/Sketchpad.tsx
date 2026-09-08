@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { trackClick, useCanvasClicks } from "@/lib/usage";
+import bearSleeping from "@/assets/bear_sleeping.png";
+import bearDrawing from "@/assets/bear_drawing.png";
 import {
   Volume2,
   VolumeX,
@@ -997,22 +999,23 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         </div>
 
         {/* SVG Canvas */}
-        <svg
-          role="img"
-          aria-label="Sonic tactile drawing canvas. Use arrow keys to move, space to toggle drawing."
-          tabIndex={0}
-          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-          className={`w-full touch-none rounded-2xl bg-[oklch(0.98_0.02_15)] ${
-            visualAids
-              ? "ring-4 ring-primary/60 focus-visible:ring-4 focus-visible:ring-primary"
-              : "ring-2 ring-primary/40"
-          }`}
-          style={{ aspectRatio: `${WIDTH} / ${HEIGHT}` }}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-        >
+        <div className="relative">
+          <svg
+            role="img"
+            aria-label="Sonic tactile drawing canvas. Use arrow keys to move, space to toggle drawing."
+            tabIndex={0}
+            viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+            className={`w-full touch-none rounded-2xl bg-[oklch(0.98_0.02_15)] ${
+              visualAids
+                ? "ring-4 ring-primary/60 focus-visible:ring-4 focus-visible:ring-primary"
+                : "ring-2 ring-primary/40"
+            }`}
+            style={{ aspectRatio: `${WIDTH} / ${HEIGHT}` }}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+          >
           <defs>
             <pattern id="grid" width={GRID} height={GRID} patternUnits="userSpaceOnUse">
               <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="oklch(0.9 0.05 15)" strokeWidth="1" />
@@ -1142,7 +1145,18 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           {/* Cursor */}
           <circle cx={cursor.x} cy={cursor.y} r={12} fill={color} fillOpacity={0.18} stroke={color} strokeWidth={2} />
           <circle cx={cursor.x} cy={cursor.y} r={Math.max(2, penWidth / 2)} fill={color} fillOpacity={penOpacity} />
-        </svg>
+          </svg>
+
+          {/* Bear companion: drawing while you draw, asleep while idle. Sits on
+              the canvas itself (top-center) and is purely decorative and
+              click-through, so it never intercepts drawing input. */}
+          <img
+            src={drawing ? bearDrawing : bearSleeping}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute top-3 left-1/2 z-10 h-16 w-16 -translate-x-1/2 select-none object-contain drop-shadow-lg sm:top-4 sm:h-20 sm:w-20"
+          />
+        </div>
 
         <p className="mt-2.5 text-xs text-muted-foreground">
           Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours · [ ] adjust thickness · , . adjust opacity · T cycles texture
