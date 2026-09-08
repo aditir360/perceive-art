@@ -17,10 +17,13 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const stats = useCanvasClicks();
-
-  const handlePost = useCallback(({ svg }: { svg: string }) => {
-    saveArtwork(svg);
-  }, []);
+const handlePost = useCallback(async ({ svg }: { svg: string }) => {
+  try {
+    await saveArtwork(svg);
+  } catch (error) {
+    console.error("Failed to submit artwork:", error);
+  }
+}, []);
 
   return (
     <div className="min-h-screen">
