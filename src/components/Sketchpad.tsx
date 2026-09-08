@@ -1003,22 +1003,22 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           )}
         </div>
 
-        {/* Bear companion nook — its own designated spot, tucked between the
-            controls and the canvas so it never overlaps either. It sits in
-            normal flow (not absolutely positioned over other elements) and
-            only peeks slightly into the canvas below via a small negative
-            margin on its own container. */}
-        <div className="relative z-10 mx-auto -mb-7 flex h-24 w-32 items-end justify-center rounded-t-[1.75rem] bg-gradient-to-b from-card/90 via-card/60 to-transparent pb-1 sm:h-28 sm:w-36">
-          <img
-            src={drawing ? bearDrawing : bearSleeping}
-            alt=""
-            aria-hidden="true"
-            className="h-20 w-20 select-none object-contain drop-shadow-[0_8px_14px_rgba(58,31,43,0.22)] sm:h-24 sm:w-24"
-          />
-        </div>
-
-        {/* SVG Canvas */}
-        <div className="relative rounded-[1.75rem] bg-gradient-to-br from-primary/10 via-background/55 to-accent/10 p-2 pt-6 shadow-inner ring-1 ring-white/60 sm:p-2.5 sm:pt-7">
+        {/* SVG Canvas + bear companion, perched right on the canvas frame's
+            top edge like a badge. The wrapper's top margin (mt-8/mt-10)
+            reserves the gap below the controls row, and the bear's negative
+            offset (-top-8/-top-10) is kept smaller than that margin so it
+            stays inside the gap and never climbs back up into the controls
+            above it — it just straddles the canvas border, half in the gap
+            and half over the canvas. */}
+        <div className="relative mt-8 rounded-[1.75rem] bg-gradient-to-br from-primary/10 via-background/55 to-accent/10 p-2 pt-3 shadow-inner ring-1 ring-white/60 sm:mt-10 sm:p-2.5 sm:pt-3.5">
+          <div className="pointer-events-none absolute -top-8 left-1/2 z-10 flex -translate-x-1/2 justify-center sm:-top-10">
+            <img
+              src={drawing ? bearDrawing : bearSleeping}
+              alt=""
+              aria-hidden="true"
+              className="h-16 w-16 select-none object-contain drop-shadow-[0_6px_10px_rgba(58,31,43,0.25)] sm:h-20 sm:w-20"
+            />
+          </div>
           <div className="overflow-hidden rounded-2xl bg-[oklch(0.98_0.02_15)] shadow-lg ring-1 ring-white/70">
           <svg
             role="img"
