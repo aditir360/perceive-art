@@ -10,80 +10,83 @@ const scrollLinks = [
 
 export function SiteHeader() {
   return (
-    <header className="mx-auto max-w-6xl px-6 pt-6">
-      <div className="flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3">
-          <img
-            src="/bear-logo-new.png"
-            alt="Perceive logo"
-            className="h-14 w-14 rounded-full bg-card object-cover shadow-md ring-2 ring-primary/40 sm:h-16 sm:w-16"
-          />
-          <span className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Perceive
-          </span>
-        </Link>
+    <header className="sticky top-0 z-40 px-4 pt-4 sm:px-6">
+      <div className="mx-auto max-w-6xl rounded-[2rem] bg-card/80 px-4 py-3 shadow-lg ring-1 ring-primary/15 backdrop-blur-md sm:px-6">
+        <div className="flex items-center justify-between gap-3">
+          <Link to="/" className="group flex items-center gap-2.5 transition-transform duration-150 hover:scale-[1.02] sm:gap-3">
+            <img
+              src="/bear-logo-new.png"
+              alt="Perceive logo"
+              className="h-11 w-11 rounded-full bg-card object-cover shadow-md ring-2 ring-primary/40 transition-shadow group-hover:ring-primary/60 sm:h-12 sm:w-12"
+            />
+            <span className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              Perceive
+            </span>
+          </Link>
 
-        {/* Desktop navigation */}
-        <div className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
+          {/* Desktop navigation */}
+          <nav aria-label="Primary" className="hidden items-center gap-1 sm:flex">
+            {scrollLinks.map((link) => (
+              <Link
+                key={link.label}
+                to="/"
+                hash={link.hash}
+                className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <Link
+              to="/team"
+              className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+              activeProps={{ className: "!bg-primary/12 font-semibold !text-foreground" }}
+              activeOptions={{ exact: true }}
+            >
+              Team
+            </Link>
+          </nav>
+
+          {/* Desktop CTA */}
+          <Button asChild className="hidden rounded-full shadow-md sm:inline-flex">
+            <Link to="/" hash="studio" className="group gap-2">
+              Open studio
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </Button>
+
+          {/* Mobile CTA (visible next to logo, since mobile nav row is a separate scroller below) */}
+          <Button asChild size="sm" className="rounded-full shadow-sm sm:hidden">
+            <Link to="/" hash="studio" className="gap-1.5">
+              Studio <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
+        </div>
+
+        {/* Mobile navigation — always visible, horizontally scrollable */}
+        <nav
+          aria-label="Primary mobile"
+          className="mt-3 flex gap-2 overflow-x-auto pb-0.5 sm:hidden"
+        >
           {scrollLinks.map((link) => (
             <Link
               key={link.label}
               to="/"
               hash={link.hash}
-              className="transition-colors hover:text-foreground"
+              className="shrink-0 rounded-full bg-background/60 px-3.5 py-1.5 text-sm font-medium text-muted-foreground ring-1 ring-primary/10 transition-colors hover:bg-primary/10 hover:text-foreground"
             >
               {link.label}
             </Link>
           ))}
           <Link
             to="/team"
-            className="transition-colors hover:text-foreground"
-            activeProps={{ className: "font-semibold text-foreground" }}
+            className="shrink-0 rounded-full bg-background/60 px-3.5 py-1.5 text-sm font-medium text-muted-foreground ring-1 ring-primary/10 transition-colors hover:bg-primary/10 hover:text-foreground"
+            activeProps={{ className: "!bg-primary/12 font-semibold !text-foreground" }}
             activeOptions={{ exact: true }}
           >
             Team
           </Link>
-        </div>
-
-        {/* Desktop CTA */}
-        <Button asChild className="hidden rounded-full sm:inline-flex">
-          <Link to="/" hash="studio" className="gap-2">
-            Open studio <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Button>
+        </nav>
       </div>
-
-      {/* Mobile navigation — always visible, horizontally scrollable */}
-      <nav
-        aria-label="Primary"
-        className="mt-4 flex gap-3 overflow-x-auto pb-2 sm:hidden"
-      >
-        {scrollLinks.map((link) => (
-          <Link
-            key={link.label}
-            to="/"
-            hash={link.hash}
-            className="shrink-0 rounded-full bg-card px-4 py-2 text-sm font-medium text-muted-foreground shadow-sm ring-1 ring-primary/15 transition-colors hover:bg-primary/10 hover:text-foreground"
-          >
-            {link.label}
-          </Link>
-        ))}
-        <Link
-          to="/team"
-          className="shrink-0 rounded-full bg-card px-4 py-2 text-sm font-medium text-muted-foreground shadow-sm ring-1 ring-primary/15 transition-colors hover:bg-primary/10 hover:text-foreground"
-          activeProps={{ className: "bg-primary/10 font-semibold text-foreground" }}
-          activeOptions={{ exact: true }}
-        >
-          Team
-        </Link>
-        <Link
-          to="/"
-          hash="studio"
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-        >
-          Studio <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-      </nav>
     </header>
   );
 }
