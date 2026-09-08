@@ -38,17 +38,26 @@ function GalleryPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [loaded, setLoaded] = useState(false);
 
-  const refresh = () => {
-    setArtworks(getArtworks());
-    setDeviceId(getDeviceId());
-    setLoaded(true);
-  };
+ const refresh = async () => {
+  setLoaded(false);
 
-  // localStorage only exists client-side, so load after mount rather than
-  // during render — avoids a server/client hydration mismatch.
-  useEffect(() => {
-    refresh();
-  }, []);
+  try {
+    const nextArtworks = await getArtworks();
+    setArtworks(nextArtworks);
+    setDeviceId(getDeviceId());
+  } catch (error) {
+    console.error("Failed to load gallery:", error);
+    setArtworks([]);
+    setDeviceId(getDeviceId());
+  } finally {
+    setLoaded(true);
+  }
+};
+
+// Supabase data is loaded client-side after mount.
+useEffect(() => {
+  void refresh();
+}, []);
 
   const visible = useMemo(() => {
     if (filter === "mine") return artworks.filter((a) => a.authorId === deviceId);
@@ -119,9 +128,14 @@ function GalleryPage() {
             <Users className="h-3.5 w-3.5" /> Everyone else's
           </Button>
         </div>
-        <Button onClick={refresh} variant="outline" size="sm" className="gap-1.5 rounded-full">
-          <RefreshCw className="h-3.5 w-3.5" /> Refresh
-        </Button>
+       <Button
+  onClick={() => void refresh()}
+  variant="outline"
+  size="sm"
+  className="gap-1.5 rounded-full"
+>
+  <RefreshCw className="h-3.5 w-3.5" /> Refresh
+</Button>
       </div>
 
       <p className="mx-auto max-w-6xl px-6 pb-6 text-center text-xs text-muted-foreground">
