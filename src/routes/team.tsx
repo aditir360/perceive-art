@@ -79,7 +79,7 @@ function TeamPage() {
       <section className="mx-auto max-w-6xl px-6 pt-8">
         <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-primary">Meet the Founder</p>
         <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-br from-primary/25 via-card/70 to-accent/20 p-1.5 shadow-2xl shadow-primary/20 ring-1 ring-white/40 backdrop-blur-xl sm:p-2">
-          <div className="grid items-center gap-8 overflow-hidden rounded-[1.85rem] bg-card/40 p-8 backdrop-blur-md sm:p-10 md:grid-cols-[1.15fr_0.85fr] md:gap-10">
+          <div className="grid items-center gap-8 overflow-hidden rounded-[1.85rem] bg-card/40 p-8 backdrop-blur-md sm:p-10 md:grid-cols-[1.5fr_0.5fr] md:gap-10">
             {/* Text */}
             <div>
               <div className="flex items-center gap-3">
@@ -93,20 +93,29 @@ function TeamPage() {
               <h2 className="mt-5 text-2xl font-bold text-foreground sm:text-3xl">Aditi Ranjan</h2>
               <p className="mt-1 text-sm font-semibold text-primary">Founder &amp; Executive Director</p>
               <HoverListen
-                text="Aditi Ranjan, Founder and Executive Director. Aditi leads Perceive's vision and mission. She believes in using art for social good, building tools by leveraging technology, that let blind and sighted creators express themselves together."
+                text="Aditi Ranjan, Founder and Executive Director. Aditi leads Perceive's vision and mission. She believes in using art for social good, building tools by leveraging technology, that let blind and sighted creators express themselves together. Aditi started Perceive after seeing how few creative tools were built with blind and low-vision people in mind, and set out to change that by combining sound, touch, and design into a single accessible canvas. Outside of Perceive, she's driven by a belief that access to creativity is a form of equity, not an accommodation — and that the best tools are built with disabled creators, not just for them. She oversees Perceive's product direction, community partnerships, and long-term vision for making sonic-tactile art a mainstream creative medium."
                 label="Aditi Ranjan"
                 className="mt-4 block"
               >
                 <p className="text-base leading-relaxed text-muted-foreground">
                   Aditi leads Perceive's vision and mission. She believes in using art for social good,
                   building tools by leveraging technology, that let blind and sighted creators express
-                  themselves together.
+                  themselves together. She started Perceive after seeing how few creative tools were
+                  built with blind and low-vision people in mind, and set out to change that by
+                  combining sound, touch, and design into a single accessible canvas.
+                </p>
+                <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+                  Outside of Perceive, she's driven by a belief that access to creativity is a form of
+                  equity, not an accommodation — and that the best tools are built with disabled
+                  creators, not just for them. She oversees Perceive's product direction, community
+                  partnerships, and long-term vision for making sonic-tactile art a mainstream creative
+                  medium.
                 </p>
               </HoverListen>
             </div>
 
             {/* Photo */}
-            <div className="relative mx-auto w-full max-w-xs md:max-w-none">
+            <div className="relative mx-auto w-full max-w-[180px] md:max-w-[220px]">
               <div className="absolute -inset-2 -z-10 rounded-[2rem] bg-gradient-to-br from-primary/30 to-accent/30 blur-xl" aria-hidden />
               <img
                 src={founderPhoto}
@@ -254,30 +263,6 @@ function TeamPage() {
                   </span>
                 ))}
               </div>
-            </HoverListen>
-          </article>
-
-          {/* Now hiring */}
-          <article className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-secondary/40 via-card/70 to-transparent p-6 shadow-lg shadow-secondary/10 ring-1 ring-white/40 backdrop-blur-md transition-all hover:-translate-y-1.5 hover:shadow-xl">
-            <div className="flex items-center justify-between">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-card/60 text-secondary-foreground ring-1 ring-white/50 backdrop-blur-sm">
-                <Music className="h-7 w-7" />
-              </div>
-              <span className="rounded-full bg-card/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-primary ring-1 ring-white/50 backdrop-blur-sm">
-                Hiring
-              </span>
-            </div>
-            <HoverListen
-              text="Join our team. We're currently hiring. We're expanding and have spots open right now! Join us in growing Perceive's voice and sharing accessible creativity with the world."
-              label="Join our team"
-              className="mt-5 block"
-            >
-              <h2 className="text-xl font-bold text-foreground">Join our team!</h2>
-              <p className="mt-1 text-sm font-semibold text-primary">We're currently hiring</p>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                We're expanding and have spots open right now! Join us in growing
-                Perceive's voice and sharing accessible creativity with the world.
-              </p>
             </HoverListen>
           </article>
         </div>
