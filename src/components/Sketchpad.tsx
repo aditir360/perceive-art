@@ -1361,12 +1361,12 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             controls), so its position is completely independent of the
             controls row above — it cannot ever overlap those buttons. */}
         <div className="relative mt-2 rounded-[1.75rem] bg-gradient-to-br from-primary/10 via-background/55 to-accent/10 p-2 pt-3 shadow-inner ring-1 ring-white/60 sm:p-2.5 sm:pt-3.5">
-          <div className="pointer-events-none absolute -top-9 right-3 z-10 rotate-[6deg] sm:-top-11 sm:right-5">
+          <div className="pointer-events-none absolute -top-12 right-2 z-10 rotate-[6deg] sm:-top-16 sm:right-4">
             <img
               src={drawing ? bearDrawing : bearSleeping}
               alt=""
               aria-hidden="true"
-              className="h-16 w-16 select-none object-contain drop-shadow-[0_6px_10px_rgba(58,31,43,0.25)] sm:h-20 sm:w-20"
+              className="h-20 w-20 select-none object-contain drop-shadow-[0_6px_10px_rgba(58,31,43,0.25)] sm:h-28 sm:w-28"
             />
           </div>
           <div className="overflow-hidden rounded-2xl bg-[oklch(0.98_0.02_15)] shadow-lg ring-1 ring-white/70">
