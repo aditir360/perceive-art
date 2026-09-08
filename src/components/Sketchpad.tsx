@@ -1003,15 +1003,12 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           )}
         </div>
 
-        {/* SVG Canvas + bear companion, perched right on the canvas frame's
-            top edge like a badge. The wrapper's top margin (mt-8/mt-10)
-            reserves the gap below the controls row, and the bear's negative
-            offset (-top-8/-top-10) is kept smaller than that margin so it
-            stays inside the gap and never climbs back up into the controls
-            above it — it just straddles the canvas border, half in the gap
-            and half over the canvas. */}
-        <div className="relative mt-8 rounded-[1.75rem] bg-gradient-to-br from-primary/10 via-background/55 to-accent/10 p-2 pt-3 shadow-inner ring-1 ring-white/60 sm:mt-10 sm:p-2.5 sm:pt-3.5">
-          <div className="pointer-events-none absolute -top-8 left-1/2 z-10 flex -translate-x-1/2 justify-center sm:-top-10">
+        {/* SVG Canvas + bear companion. The bear is pinned to the canvas
+            frame's own top-right corner (not floating in the gap above the
+            controls), so its position is completely independent of the
+            controls row above — it cannot ever overlap those buttons. */}
+        <div className="relative mt-2 rounded-[1.75rem] bg-gradient-to-br from-primary/10 via-background/55 to-accent/10 p-2 pt-3 shadow-inner ring-1 ring-white/60 sm:p-2.5 sm:pt-3.5">
+          <div className="pointer-events-none absolute -top-9 right-3 z-10 rotate-[6deg] sm:-top-11 sm:right-5">
             <img
               src={drawing ? bearDrawing : bearSleeping}
               alt=""
