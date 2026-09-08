@@ -59,7 +59,7 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
   }, [inView]);
 
   const displayCount = useCountUp(drawingCount, inView, 1500);
-  const displayReach = useCountUp(1000, inView, 2000);
+  const displayReach = useCountUp(2000, inView, 2000);
   const displayViews = useCountUp(40000, inView, 2200);
 
   return (
