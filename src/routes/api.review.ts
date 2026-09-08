@@ -1,25 +1,64 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const reviewPassword = process.env.REVIEW_PASSWORD;
+const SESSION_COOKIE = "perceive_review_session";
 
-function getAdminClient() {
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("Missing Supabase server environment variables");
+function getEnv(name: string): string {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`Missing environment variable: ${name}`);
   }
 
-  return createClient(supabaseUrl, serviceRoleKey);
+  return value;
+}
+
+function createSessionToken(): string {
+  const secret = getEnv("SESSION_SECRET");
+
+  return createHmac("sha256", secret)
+    .update("perceive-review-session")
+    .digest("hex");
 }
 
 function isAuthenticated(request: Request): boolean {
-  if (!reviewPassword) return false;
+  const cookieHeader = request.headers.get("cookie") ?? "";
 
-  const cookie = request.headers.get("cookie") ?? "";
-  const expected = `perceive_review=${encodeURIComponent(reviewPassword)}`;
+  const token = cookieHeader
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${SESSION_COOKIE}=`))
+    ?.slice(`${SESSION_COOKIE}=`.length);
 
-  return cookie.split(";").some((part) => part.trim() === expected);
+  if (!token) return false;
+
+  const expected = createSessionToken();
+
+  if (token.length !== expected.length) return false;
+
+  return timingSafeEqual(
+    Buffer.from(token),
+    Buffer.from(expected),
+  );
+}
+
+function getAdminClient() {
+  return createClient(
+    getEnv("VITE_SUPABASE_URL"),
+    getEnv("SUPABASE_SERVICE_ROLE_KEY"),
+  );
+}
+
+function sessionCookie() {
+  return [
+    `${SESSION_COOKIE}=${createSessionToken()}`,
+    "HttpOnly",
+    "Secure",
+    "SameSite=Strict",
+    "Path=/",
+    "Max-Age=86400",
+  ].join("; ");
 }
 
 export const Route = createFileRoute("/api/review")({
@@ -27,7 +66,10 @@ export const Route = createFileRoute("/api/review")({
     handlers: {
       GET: async ({ request }) => {
         if (!isAuthenticated(request)) {
-          return Response.json({ error: "Unauthorized" }, { status: 401 });
+          return Response.json(
+            { error: "Unauthorized" },
+            { status: 401 },
+          );
         }
 
         try {
@@ -41,15 +83,19 @@ export const Route = createFileRoute("/api/review")({
 
           if (error) {
             console.error("Failed to load pending artwork:", error);
+
             return Response.json(
               { error: "Failed to load pending artwork" },
               { status: 500 },
             );
           }
 
-          return Response.json({ artworks: data ?? [] });
+          return Response.json({
+            artworks: data ?? [],
+          });
         } catch (error) {
-          console.error(error);
+          console.error("Review GET error:", error);
+
           return Response.json(
             { error: "Server configuration error" },
             { status: 500 },
@@ -60,22 +106,29 @@ export const Route = createFileRoute("/api/review")({
       POST: async ({ request }) => {
         try {
           const body = await request.json();
+          const reviewPassword = getEnv("REVIEW_PASSWORD");
 
-          if (body.password !== reviewPassword || !reviewPassword) {
+          if (
+            typeof body.password !== "string" ||
+            body.password !== reviewPassword
+          ) {
             return Response.json(
               { error: "Invalid password" },
               { status: 401 },
             );
           }
 
-          return new Response(JSON.stringify({ success: true }), {
-            status: 200,
-            headers: {
-              "Content-Type": "application/json",
-              "Set-Cookie": `perceive_review=${encodeURIComponent(reviewPassword)}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`,
+          return Response.json(
+            { success: true },
+            {
+              headers: {
+                "Set-Cookie": sessionCookie(),
+              },
             },
-          });
-        } catch {
+          );
+        } catch (error) {
+          console.error("Review login error:", error);
+
           return Response.json(
             { error: "Invalid request" },
             { status: 400 },
@@ -85,7 +138,10 @@ export const Route = createFileRoute("/api/review")({
 
       PATCH: async ({ request }) => {
         if (!isAuthenticated(request)) {
-          return Response.json({ error: "Unauthorized" }, { status: 401 });
+          return Response.json(
+            { error: "Unauthorized" },
+            { status: 401 },
+          );
         }
 
         try {
@@ -93,7 +149,10 @@ export const Route = createFileRoute("/api/review")({
           const id = Number(body.id);
           const status = body.status;
 
-          if (!Number.isInteger(id) || !["approved", "rejected"].includes(status)) {
+          if (
+            !Number.isInteger(id) ||
+            !["approved", "rejected"].includes(status)
+          ) {
             return Response.json(
               { error: "Invalid artwork update" },
               { status: 400 },
@@ -109,7 +168,8 @@ export const Route = createFileRoute("/api/review")({
               .eq("id", id);
 
             if (error) {
-              console.error(error);
+              console.error("Approve error:", error);
+
               return Response.json(
                 { error: "Failed to approve artwork" },
                 { status: 500 },
@@ -122,7 +182,8 @@ export const Route = createFileRoute("/api/review")({
               .eq("id", id);
 
             if (error) {
-              console.error(error);
+              console.error("Reject error:", error);
+
               return Response.json(
                 { error: "Failed to reject artwork" },
                 { status: 500 },
@@ -132,7 +193,8 @@ export const Route = createFileRoute("/api/review")({
 
           return Response.json({ success: true });
         } catch (error) {
-          console.error(error);
+          console.error("Review PATCH error:", error);
+
           return Response.json(
             { error: "Invalid request" },
             { status: 400 },
