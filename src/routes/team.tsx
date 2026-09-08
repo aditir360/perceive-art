@@ -3,6 +3,7 @@ import { HoverListen } from "@/components/ListenButton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Heart, Sparkles, Music, Music2, Star, Headphones, Palette, Lightbulb, Mail, Instagram, Linkedin, Brush, PenLine, Handshake, TrendingUp } from "lucide-react";
+import founderPhoto from "@/assets/founder_photo.png";
 
 export const Route = createFileRoute("/team")({
   head: () => ({
@@ -55,11 +56,11 @@ function TeamPage() {
 
       {/* Hero */}
       <header className="mx-auto max-w-6xl px-6 pt-12 pb-6 text-center sm:pt-16">
-        <span className="inline-flex items-center gap-2 rounded-full bg-card px-4 py-1.5 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
+        <span className="inline-flex items-center gap-2 rounded-full bg-card/70 px-4 py-1.5 text-xs font-bold text-primary shadow-sm ring-1 ring-white/50 backdrop-blur-sm">
           <Sparkles className="h-3.5 w-3.5" /> The people behind the mission
         </span>
         <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl">
-          Meet the <span className="text-primary">team</span>
+          Meet the <span className="bg-gradient-to-r from-primary to-accent-foreground bg-clip-text text-transparent">team</span>
         </h1>
         <HoverListen
           text="Meet the team behind Perceive. Perceive is built by students who believe creativity belongs to everyone. We combine art, sound, and advocacy to open new doors for blind and low-vision creators. Our founder and executive director is Aditi Ranjan. She leads our vision and uses art for social good. Our director of outreach and partnerships is Haasini Arunachalam. She leads our social media platforms and collaborates with other organizations for partnerships toward our mission. We are also opening social media positions soon, so we can expand and share our mission with even more people."
@@ -73,33 +74,66 @@ function TeamPage() {
         </HoverListen>
       </header>
 
-      {/* Leadership */}
-      <section className="mx-auto max-w-6xl px-6 pt-8">
-        <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-primary">Leadership</p>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Aditi Ranjan */}
-          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
-              <Sparkles className="h-7 w-7" />
-            </div>
-            <h2 className="mt-5 text-xl font-bold text-foreground">Aditi Ranjan</h2>
-            <p className="mt-1 text-sm font-semibold text-primary">Founder & Executive Director</p>
-            <HoverListen
-              text="Aditi Ranjan, Founder and Executive Director. Aditi leads Perceive's vision and mission. She believes in using art for social good, building tools by leveraging technology, that let blind and sighted creators express themselves together."
-              label="Aditi Ranjan"
-              className="mt-3 block"
-            >
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                Aditi leads Perceive's vision and mission. She believes in using art for social good,
-                building tools by leveraging technology, that let blind and sighted creators express themselves together.
-              </p>
-            </HoverListen>
-          </article>
 
+      {/* Meet the Founder — emphasized, its own spot above the rest of leadership */}
+      <section className="mx-auto max-w-6xl px-6 pt-8">
+        <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-primary">Meet the Founder</p>
+        <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-br from-primary/25 via-card/70 to-accent/20 p-1.5 shadow-2xl shadow-primary/20 ring-1 ring-white/40 backdrop-blur-xl sm:p-2">
+          <div className="grid items-center gap-8 overflow-hidden rounded-[1.85rem] bg-card/40 p-8 backdrop-blur-md sm:p-10 md:grid-cols-[1.15fr_0.85fr] md:gap-10">
+            {/* Text */}
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
+                  <Sparkles className="h-7 w-7" />
+                </div>
+                <span className="rounded-full bg-card/60 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary ring-1 ring-white/50 backdrop-blur-sm">
+                  Founder
+                </span>
+              </div>
+              <h2 className="mt-5 text-2xl font-bold text-foreground sm:text-3xl">Aditi Ranjan</h2>
+              <p className="mt-1 text-sm font-semibold text-primary">Founder &amp; Executive Director</p>
+              <HoverListen
+                text="Aditi Ranjan, Founder and Executive Director. Aditi leads Perceive's vision and mission. She believes in using art for social good, building tools by leveraging technology, that let blind and sighted creators express themselves together."
+                label="Aditi Ranjan"
+                className="mt-4 block"
+              >
+                <p className="text-base leading-relaxed text-muted-foreground">
+                  Aditi leads Perceive's vision and mission. She believes in using art for social good,
+                  building tools by leveraging technology, that let blind and sighted creators express
+                  themselves together.
+                </p>
+              </HoverListen>
+            </div>
+
+            {/* Photo */}
+            <div className="relative mx-auto w-full max-w-xs md:max-w-none">
+              <div className="absolute -inset-2 -z-10 rounded-[2rem] bg-gradient-to-br from-primary/30 to-accent/30 blur-xl" aria-hidden />
+              <img
+                src={founderPhoto}
+                alt="Aditi Ranjan, Founder and Executive Director of Perceive"
+                className="aspect-[4/5] w-full rounded-3xl object-cover shadow-xl ring-1 ring-white/50"
+              />
+              <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-card/80 px-2.5 py-1 text-[10px] font-bold text-primary shadow-sm ring-1 ring-white/60 backdrop-blur-sm">
+                <Sparkles className="h-3 w-3" /> Executive Director
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Directors */}
+      <section className="mx-auto max-w-6xl px-6 pt-10">
+        <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-primary">Directors</p>
+        <div className="grid gap-6 sm:grid-cols-2">
           {/* Haasini Arunachalam */}
-          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
-              <Heart className="h-7 w-7" />
+          <article className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-accent/30 via-card/70 to-transparent p-6 shadow-lg shadow-accent/10 ring-1 ring-white/40 backdrop-blur-md transition-all hover:-translate-y-1.5 hover:shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-card/60 text-accent-foreground ring-1 ring-white/50 backdrop-blur-sm">
+                <Heart className="h-7 w-7" />
+              </div>
+              <span className="rounded-full bg-card/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-accent-foreground ring-1 ring-white/50 backdrop-blur-sm">
+                Director
+              </span>
             </div>
             <h2 className="mt-5 text-xl font-bold text-foreground">Haasini Arunachalam</h2>
             <p className="mt-1 text-sm font-semibold text-primary">Director of Outreach & Partnerships</p>
@@ -116,9 +150,14 @@ function TeamPage() {
           </article>
 
           {/* Chelsea Hung */}
-          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
-              <Lightbulb className="h-7 w-7" />
+          <article className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-secondary/40 via-card/70 to-transparent p-6 shadow-lg shadow-secondary/10 ring-1 ring-white/40 backdrop-blur-md transition-all hover:-translate-y-1.5 hover:shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-card/60 text-secondary-foreground ring-1 ring-white/50 backdrop-blur-sm">
+                <Lightbulb className="h-7 w-7" />
+              </div>
+              <span className="rounded-full bg-card/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-primary ring-1 ring-white/50 backdrop-blur-sm">
+                Director
+              </span>
             </div>
             <h2 className="mt-5 text-xl font-bold text-foreground">Chelsea Hung</h2>
             <p className="mt-1 text-sm font-semibold text-primary">Director of Product Development</p>
@@ -142,8 +181,8 @@ function TeamPage() {
         <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-primary">The Team</p>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {/* Melody J. — Lead Graphic Designer */}
-          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+          <article className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-card/70 to-transparent p-6 shadow-lg shadow-primary/10 ring-1 ring-white/40 backdrop-blur-md transition-all hover:-translate-y-1.5 hover:shadow-xl">
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
               <Palette className="h-7 w-7" />
             </div>
             <HoverListen text="Melody J., Lead Graphic Designer." label="Melody J." className="mt-5 block">
@@ -153,8 +192,8 @@ function TeamPage() {
           </article>
 
           {/* Aswathy MK. — Graphic Designer */}
-          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+          <article className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-accent/30 via-card/70 to-transparent p-6 shadow-lg shadow-accent/10 ring-1 ring-white/40 backdrop-blur-md transition-all hover:-translate-y-1.5 hover:shadow-xl">
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-card/60 text-accent-foreground ring-1 ring-white/50 backdrop-blur-sm">
               <Brush className="h-7 w-7" />
             </div>
             <HoverListen text="Aswathy MK., Graphic Designer." label="Aswathy MK." className="mt-5 block">
@@ -164,8 +203,8 @@ function TeamPage() {
           </article>
 
           {/* Sarah P. — Content Writer */}
-          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+          <article className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-secondary/40 via-card/70 to-transparent p-6 shadow-lg shadow-secondary/10 ring-1 ring-white/40 backdrop-blur-md transition-all hover:-translate-y-1.5 hover:shadow-xl">
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-card/60 text-secondary-foreground ring-1 ring-white/50 backdrop-blur-sm">
               <PenLine className="h-7 w-7" />
             </div>
             <HoverListen text="Sarah P., Content Writer." label="Sarah P." className="mt-5 block">
@@ -175,8 +214,8 @@ function TeamPage() {
           </article>
 
           {/* Sahana K. — Partnerships Lead */}
-          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+          <article className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-card/70 to-transparent p-6 shadow-lg shadow-primary/10 ring-1 ring-white/40 backdrop-blur-md transition-all hover:-translate-y-1.5 hover:shadow-xl">
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
               <Handshake className="h-7 w-7" />
             </div>
             <HoverListen text="Sahana K., Partnerships Lead." label="Sahana K." className="mt-5 block">
@@ -186,9 +225,14 @@ function TeamPage() {
           </article>
 
           {/* Growth Interns */}
-          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md md:col-span-2 lg:col-span-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
-              <TrendingUp className="h-7 w-7" />
+          <article className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-accent/25 via-card/70 to-transparent p-6 shadow-lg shadow-accent/10 ring-1 ring-white/40 backdrop-blur-md transition-all hover:-translate-y-1.5 hover:shadow-xl md:col-span-2 lg:col-span-4">
+            <div className="flex items-center justify-between">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-card/60 text-accent-foreground ring-1 ring-white/50 backdrop-blur-sm">
+                <TrendingUp className="h-7 w-7" />
+              </div>
+              <span className="rounded-full bg-card/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-accent-foreground ring-1 ring-white/50 backdrop-blur-sm">
+                Growing
+              </span>
             </div>
             <HoverListen
               text="Growth Interns. Growing Perceive's reach, one campaign at a time. Our growth interns are: Akshita C., Samhita C., Aashi R., Vasinya R., Tanvir H., Mahlet K., Urwa W., Khuslen, Himani K., Gelila M., and Juwel H."
@@ -204,7 +248,7 @@ function TeamPage() {
                 ].map((name) => (
                   <span
                     key={name}
-                    className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary ring-1 ring-primary/20"
+                    className="rounded-full bg-card/60 px-3 py-1 text-sm font-medium text-foreground ring-1 ring-white/50 backdrop-blur-sm"
                   >
                     {name}
                   </span>
@@ -214,9 +258,14 @@ function TeamPage() {
           </article>
 
           {/* Now hiring */}
-          <article className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
-              <Music className="h-7 w-7" />
+          <article className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-secondary/40 via-card/70 to-transparent p-6 shadow-lg shadow-secondary/10 ring-1 ring-white/40 backdrop-blur-md transition-all hover:-translate-y-1.5 hover:shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-card/60 text-secondary-foreground ring-1 ring-white/50 backdrop-blur-sm">
+                <Music className="h-7 w-7" />
+              </div>
+              <span className="rounded-full bg-card/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-primary ring-1 ring-white/50 backdrop-blur-sm">
+                Hiring
+              </span>
             </div>
             <HoverListen
               text="Join our team. We're currently hiring. We're expanding and have spots open right now! Join us in growing Perceive's voice and sharing accessible creativity with the world."
@@ -236,20 +285,25 @@ function TeamPage() {
 
       {/* Join CTA */}
       <section className="mx-auto max-w-6xl px-6 py-10">
-        <div className="rounded-3xl bg-gradient-to-br from-primary/10 via-secondary/20 to-accent/20 p-8 text-center ring-1 ring-primary/15 sm:p-12">
-          <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Want to join the mission?</h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-            We're currently hiring and have spots open! We're looking for kind, creative people who want to make art accessible for everyone. Apply below to join the mission.
-          </p>
-          <Button asChild className="mt-6 rounded-full" size="lg">
-            <a
-              href="https://docs.google.com/forms/d/e/1FAIpQLSe_ng2dfextv6ry_MOO0tUCb3a7znWzRWCOmI8NOLjEoJ9f0Q/viewform?usp=header"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Apply now
-            </a>
-          </Button>
+        <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-br from-primary/25 via-card/70 to-accent/25 p-1.5 shadow-2xl shadow-primary/20 ring-1 ring-white/40 backdrop-blur-xl sm:p-2">
+          <div className="rounded-[1.85rem] bg-card/40 p-8 text-center backdrop-blur-md sm:p-12">
+            <span className="inline-flex items-center gap-2 rounded-full bg-card/60 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary ring-1 ring-white/50 backdrop-blur-sm">
+              <Sparkles className="h-3 w-3" /> We're hiring
+            </span>
+            <h2 className="mt-4 text-2xl font-bold text-foreground sm:text-3xl">Want to join the mission?</h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
+              We're currently hiring and have spots open! We're looking for kind, creative people who want to make art accessible for everyone. Apply below to join the mission.
+            </p>
+            <Button asChild className="mt-6 rounded-full shadow-md" size="lg">
+              <a
+                href="https://docs.google.com/forms/d/e/1FAIpQLSe_ng2dfextv6ry_MOO0tUCb3a7znWzRWCOmI8NOLjEoJ9f0Q/viewform?usp=header"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Apply now
+              </a>
+            </Button>
+          </div>
         </div>
       </section>
 
