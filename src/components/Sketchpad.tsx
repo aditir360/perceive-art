@@ -268,7 +268,7 @@ const SHAPE_GUIDES: Record<string, ShapeGuide> = {
   },
 };
 
-function nearestOnGuide(p: Point, guide: ShapeGuide): { distance: number; progress: number } {
+function nearestOnGuide(p: Point, guide: ShapeGuide): { distance: number; progress: number; point: Point } {
   const pts = guide.points.map((n) => ({ x: n.x * WIDTH, y: n.y * HEIGHT }));
   let best = Infinity;
   let bestIdx = 0;
@@ -276,7 +276,61 @@ function nearestOnGuide(p: Point, guide: ShapeGuide): { distance: number; progre
     const d = Math.hypot(p.x - pts[i].x, p.y - pts[i].y);
     if (d < best) { best = d; bestIdx = i; }
   }
-  return { distance: best, progress: bestIdx / (pts.length - 1) };
+  return { distance: best, progress: bestIdx / (pts.length - 1), point: pts[bestIdx] };
+}
+
+// Turns a vector from the drawer's current position to the nearest point on
+// the guide path into a plain-language compass direction — this is what
+// lets the guide voice say *how* to get back, not just that you've strayed.
+// Screen Y grows downward, so "up" means a negative dy.
+function describeDirection(from: Point, to: Point): string {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  if (Math.hypot(dx, dy) < 1) return "right where you are";
+  const angle = Math.atan2(dy, dx); // radians, 0 = right, +Y down
+  const deg = (angle * 180) / Math.PI;
+  // 8-way compass bucketed into 45° wedges
+  if (deg >= -22.5 && deg < 22.5)   return "right";
+  if (deg >= 22.5 && deg < 67.5)    return "down and to the right";
+  if (deg >= 67.5 && deg < 112.5)   return "down";
+  if (deg >= 112.5 && deg < 157.5)  return "down and to the left";
+  if (deg >= -67.5 && deg < -22.5)  return "up and to the right";
+  if (deg >= -112.5 && deg < -67.5) return "up";
+  if (deg >= -157.5 && deg < -112.5) return "up and to the left";
+  return "left";
+}
+
+// Rough, friendly magnitude so the voice can say how far, not just which way.
+function describeDistance(px: number): string {
+  if (px < 90)  return "just a little";
+  if (px < 160) return "a bit";
+  return "quite a ways";
+}
+
+// Small pools of alternate phrasings so the guide doesn't sound like a
+// broken record when the same event (off-course, back on track, checkpoint
+// praise) fires over and over during a single drawing session.
+const OFF_COURSE_INTROS = [
+  "You've drifted off the path.",
+  "You're off the line now.",
+  "Strayed off course a bit.",
+];
+const BACK_ON_TRACK_LINES = [
+  "Nice, you're back on track.",
+  "There you go, right on the line.",
+  "Good — back on the path.",
+];
+const CHECKPOINT_PRAISE = [
+  "Nice work.",
+  "Great job.",
+  "You're doing great.",
+  "Looking good.",
+  "Keep it up.",
+];
+
+function pickVaried(pool: string[], avoid: string): string {
+  const options = pool.filter((s) => s !== avoid);
+  return options[Math.floor(Math.random() * options.length)] ?? pool[0];
 }
 
 // Per-texture rendering: highlighter gets boxy caps/joins plus a multiply
@@ -457,6 +511,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const guideOscRef    = useRef<{ osc: OscillatorNode; gain: GainNode } | null>(null);
   const trailRef       = useRef<Point[]>([]);
   const offCourseRef   = useRef(false);
+  // Guide-voice smarts: throttles repeated off-course reminders, avoids
+  // repeating the exact same phrase twice in a row, and makes sure the
+  // "you finished the shape" cheer only fires once per guide run.
+  const lastOffCourseSayAt = useRef(0);
+  const lastOffCourseIntro = useRef("");
+  const lastBackOnTrackLine = useRef("");
+  const lastPraiseLine = useRef("");
+  const guideCompletedRef = useRef(false);
 
   const stats = useCanvasClicks();
 
@@ -533,19 +595,36 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const trackGuide = useCallback((p: Point) => {
     if (!guideKey || !soundOn) return;
     const guide = SHAPE_GUIDES[guideKey];
-    const { distance, progress } = nearestOnGuide(p, guide);
+    const { distance, progress, point: nearestPt } = nearestOnGuide(p, guide);
 
-    // "You've moved off course" — spoken warning, edge-triggered so it says
-    // this once when you stray too far, then stays quiet until you've
-    // actually made it back close to the path (hysteresis; see thresholds
-    // above) rather than repeating on every frame near the boundary.
+    // "You've moved off course" — now tells you which way and how far to
+    // move to get back, instead of just flagging that you've strayed.
+    // Edge-triggered on first crossing the threshold (hysteresis; see
+    // thresholds above), then re-announced every few seconds *with an
+    // updated direction* for as long as you stay off course, since where
+    // you need to head can change as you keep moving.
+    const now = Date.now();
     if (!offCourseRef.current && distance > OFF_COURSE_ENTER) {
       offCourseRef.current = true;
-      say(`You've moved off the ${guide.name} path. Head back toward the glowing line.`);
+      lastOffCourseSayAt.current = now;
+      const intro = pickVaried(OFF_COURSE_INTROS, lastOffCourseIntro.current);
+      lastOffCourseIntro.current = intro;
+      const dir = describeDirection(p, nearestPt);
+      const far = describeDistance(distance);
+      say(`${intro} Move ${dir}, ${far}, to get back to the ${guide.name.toLowerCase()} line.`);
       if (audioRef.current) playEdgeBump(audioRef.current.ctx);
     } else if (offCourseRef.current && distance < OFF_COURSE_EXIT) {
       offCourseRef.current = false;
-      say("Back on track.");
+      const line = pickVaried(BACK_ON_TRACK_LINES, lastBackOnTrackLine.current);
+      lastBackOnTrackLine.current = line;
+      say(line);
+    } else if (offCourseRef.current && now - lastOffCourseSayAt.current > 4000) {
+      // Still off course after a while — give a fresh directional nudge
+      // rather than staying silent or nagging every frame.
+      lastOffCourseSayAt.current = now;
+      const dir = describeDirection(p, nearestPt);
+      const far = describeDistance(distance);
+      say(`Still off course — head ${dir}, ${far}.`);
     }
 
     const g = guideOscRef.current;
@@ -565,7 +644,15 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     for (let i = cps.length - 1; i >= 0; i--) {
       if (progress >= cps[i].at && i > lastCheckpoint.current) {
         lastCheckpoint.current = i;
-        say(cps[i].say);
+        // Interactive praise on every checkpoint after the first (the
+        // first is just the opening instruction, nothing to praise yet).
+        if (i > 0 && !offCourseRef.current) {
+          const praise = pickVaried(CHECKPOINT_PRAISE, lastPraiseLine.current);
+          lastPraiseLine.current = praise;
+          say(`${praise} ${cps[i].say}`);
+        } else {
+          say(cps[i].say);
+        }
         // Play a gentle chime note to signal a checkpoint
         if (audioRef.current) {
           const noteFreqs = [523, 587, 659, 698, 784];
@@ -574,6 +661,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         break;
       }
     }
+
+    // Shape complete — fires once, near the very end of the path while
+    // still close enough to the line to count as actually finishing it.
+    if (!guideCompletedRef.current && progress >= 0.97 && distance < OFF_COURSE_EXIT) {
+      guideCompletedRef.current = true;
+      say(`Great job — you completed the ${guide.name.toLowerCase()}! Press stop guide, or keep going to trace it again.`);
+      if (audioRef.current) playCompleteChime(audioRef.current.ctx);
+    }
   }, [guideKey, soundOn, say]);
 
   const startGuide = useCallback((key: string) => {
@@ -581,6 +676,11 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setGuideKey(key);
     lastCheckpoint.current = -1;
     offCourseRef.current = false;
+    guideCompletedRef.current = false;
+    lastOffCourseSayAt.current = 0;
+    lastOffCourseIntro.current = "";
+    lastBackOnTrackLine.current = "";
+    lastPraiseLine.current = "";
     setGuidesPanelOpen(false);
     startGuideTone();
     const guide = SHAPE_GUIDES[key];
