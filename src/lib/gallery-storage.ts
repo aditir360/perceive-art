@@ -1,69 +1,83 @@
-// ── Gallery storage ──────────────────────────────────────────────────────
-// Shared by the "/" route (Studio, where artwork is made) and the
-// "/gallery" route (where it's displayed). Deliberately lives outside
-// src/routes/ — route files are meant to mostly just export `Route`, and
-// having one route import another can confuse the file-based router's
-// route-tree crawler at build time and drag an entire other page's
-// dependencies into the wrong chunk.
-//
-// NOTE: this is a localStorage-backed store, so posted art currently only
-// persists per-browser/device — it is not yet synced to a real server, so
-// "everyone around the world" seeing it only holds true for people sharing
-// this browser profile. The function names/shapes below are written so they
-// can be swapped for real API calls later without touching gallery.tsx or
-// Sketchpad.tsx.
+import { supabase } from "@/lib/supabase";
 
-const GALLERY_STORAGE_KEY = "perceive:gallery-artworks";
 const DEVICE_ID_KEY = "perceive:device-id";
 
 export type GalleryArtwork = {
-  id: string;
+  id: number;
   svg: string;
   authorId: string;
   createdAt: number;
 };
 
-function makeId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+function makeDeviceId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-/** A stable, anonymous per-browser id — no account required. Used only to
- * tell "posted by me" apart from everyone else's work in the gallery filter. */
+/** Anonymous, stable ID for this browser. Used only for the "Mine" filter. */
 export function getDeviceId(): string {
   if (typeof window === "undefined") return "server";
+
   let id = window.localStorage.getItem(DEVICE_ID_KEY);
+
   if (!id) {
-    id = makeId();
+    id = makeDeviceId();
     window.localStorage.setItem(DEVICE_ID_KEY, id);
   }
+
   return id;
 }
 
-/** All posted artwork, newest first. Safe to call during SSR (returns []). */
-export function getArtworks(): GalleryArtwork[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(GALLERY_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as GalleryArtwork[];
-    return Array.isArray(parsed) ? parsed.sort((a, b) => b.createdAt - a.createdAt) : [];
-  } catch {
-    return [];
+/** Gets only artwork that has been approved by the Perceive reviewer. */
+export async function getArtworks(): Promise<GalleryArtwork[]> {
+  const { data, error } = await supabase
+    .from("artworks")
+    .select("id, svg, author_id, created_at")
+    .eq("status", "approved")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Failed to load gallery:", error);
+    throw error;
   }
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    svg: row.svg,
+    authorId: row.author_id,
+    createdAt: new Date(row.created_at).getTime(),
+  }));
 }
 
-/** Persists a new piece of artwork and returns the saved record. */
-export function saveArtwork(svg: string): GalleryArtwork {
-  const artwork: GalleryArtwork = {
-    id: makeId(),
-    svg,
-    authorId: getDeviceId(),
-    createdAt: Date.now(),
-  };
-  if (typeof window !== "undefined") {
-    const next = [artwork, ...getArtworks()];
-    window.localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(next));
+/**
+ * Submits artwork for moderation.
+ * New artwork is ALWAYS inserted as pending.
+ */
+export async function saveArtwork(svg: string): Promise<GalleryArtwork> {
+  const authorId = getDeviceId();
+
+  const { data, error } = await supabase
+    .from("artworks")
+    .insert({
+      svg,
+      author_id: authorId,
+      status: "pending",
+    })
+    .select("id, svg, author_id, created_at")
+    .single();
+
+  if (error) {
+    console.error("Failed to submit artwork:", error);
+    throw error;
   }
-  return artwork;
+
+  return {
+    id: data.id,
+    svg: data.svg,
+    authorId: data.author_id,
+    createdAt: new Date(data.created_at).getTime(),
+  };
 }
