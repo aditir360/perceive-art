@@ -34,6 +34,10 @@ import {
   Paintbrush,
   Minus,
   Plus,
+  Infinity as InfinityIcon,
+  Zap,
+  Flower2,
+  TrendingUp,
 } from "lucide-react";
 
 const TEXTURE_ICONS: Record<Texture, typeof PenLine> = {
@@ -54,6 +58,13 @@ const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
   wave:     { Icon: Waves,    color: "#4da6ff" }, // Sky
   spiral:   { Icon: Orbit,    color: "#9b72cf" }, // Plum
   house:    { Icon: Home,     color: "#48b376" }, // Mint
+  // ── Advanced guides: more direction changes, sharper turns, and (for the
+  // infinity loop) a self-crossing path — noticeably harder to trace than
+  // the beginner set above. ──────────────────────────────────────────────
+  infinity:  { Icon: InfinityIcon, color: "#5b5ea6" }, // Indigo
+  lightning: { Icon: Zap,          color: "#f5a623" }, // Sun
+  flower:    { Icon: Flower2,      color: "#f9a8a8" }, // Peach
+  staircase: { Icon: TrendingUp,   color: "#3fb8af" }, // Teal
 };
 
 type Point = { x: number; y: number };
@@ -276,6 +287,97 @@ const SHAPE_GUIDES: Record<string, ShapeGuide> = {
       { at: 0.7,  say: "Top of the left wall — draw straight down." },
       { at: 0.85, say: "Bottom-left again — draw right to close the base." },
       { at: 0.95, say: "House complete." },
+    ],
+  },
+
+  // ── Advanced guides ──────────────────────────────────────────────────────
+  // These are intentionally harder than the shapes above: more direction
+  // changes packed into the same space, sharper corners, and — for
+  // "infinity" — a path that crosses itself, which means the nearest-point
+  // search can briefly jump between the two lobes. Good next step once the
+  // basic shapes feel easy.
+  infinity: {
+    name: "Infinity",
+    description: "A figure-eight that loops and crosses itself in the middle",
+    emoji: "♾️",
+    points: Array.from({ length: 96 }, (_, i) => {
+      const t = (i / 96) * Math.PI * 2;
+      const denom = 1 + Math.sin(t) * Math.sin(t);
+      return norm(0.5 + (0.34 * Math.cos(t)) / denom, 0.5 + (0.22 * Math.sin(t) * Math.cos(t)) / denom);
+    }),
+    checkpoints: [
+      { at: 0,    say: "Start at the rightmost point. Curve left into the right loop." },
+      { at: 0.25, say: "Crossing through the center — head into the left loop now." },
+      { at: 0.5,  say: "Leftmost point of the figure eight — curve back toward the center." },
+      { at: 0.75, say: "Crossing the center a second time — curve into the right loop to finish." },
+      { at: 0.95, say: "Almost done — close the loop back at the rightmost point." },
+    ],
+  },
+  lightning: {
+    name: "Lightning Bolt",
+    description: "A jagged zigzag with sharp, sudden turns",
+    emoji: "⚡",
+    points: [
+      norm(0.08, 0.80),
+      norm(0.22, 0.20),
+      norm(0.36, 0.80),
+      norm(0.50, 0.20),
+      norm(0.64, 0.80),
+      norm(0.78, 0.20),
+      norm(0.92, 0.80),
+    ],
+    checkpoints: [
+      { at: 0,     say: "Start at the bottom-left. Draw a sharp diagonal line up and to the right." },
+      { at: 0.166, say: "Sharp turn — now angle down and to the right." },
+      { at: 0.333, say: "Sharp turn again — back up and to the right." },
+      { at: 0.5,   say: "Halfway across — turn sharply down and to the right." },
+      { at: 0.666, say: "Turn sharply up and to the right once more." },
+      { at: 0.833, say: "One more sharp turn — angle down and to the right." },
+      { at: 0.95,  say: "Almost there — finish the zigzag at the bottom-right." },
+    ],
+  },
+  flower: {
+    name: "Flower",
+    description: "Five petals that each loop out from the center and back",
+    emoji: "🌸",
+    points: Array.from({ length: 120 }, (_, i) => {
+      const t = (i / 120) * Math.PI;
+      const r = 0.34 * Math.cos(5 * t);
+      return norm(0.5 + r * Math.cos(t), 0.5 + r * Math.sin(t));
+    }),
+    checkpoints: [
+      { at: 0,    say: "Start at the tip of the first petal. Curve inward toward the center." },
+      { at: 0.2,  say: "Back at the center — curve outward into the second petal and back." },
+      { at: 0.4,  say: "Third petal now — out from the center and back in." },
+      { at: 0.6,  say: "Fourth petal — keep the curves smooth and even." },
+      { at: 0.8,  say: "Final petal — out and back one last time." },
+      { at: 0.95, say: "Closing the last petal back at the starting tip." },
+    ],
+  },
+  staircase: {
+    name: "Staircase",
+    description: "A run of right-angle steps climbing up to the right",
+    emoji: "🪜",
+    points: [
+      norm(0.15, 0.85),
+      norm(0.15, 0.65),
+      norm(0.35, 0.65),
+      norm(0.35, 0.45),
+      norm(0.55, 0.45),
+      norm(0.55, 0.25),
+      norm(0.75, 0.25),
+      norm(0.75, 0.15),
+      norm(0.90, 0.15),
+    ],
+    checkpoints: [
+      { at: 0,     say: "Start at the bottom of the stairs. Draw straight up for the first step." },
+      { at: 0.125, say: "Turn — draw straight right." },
+      { at: 0.25,  say: "Turn — draw straight up again." },
+      { at: 0.375, say: "Turn — draw straight right." },
+      { at: 0.5,   say: "Halfway up the staircase — turn and draw straight up." },
+      { at: 0.625, say: "Turn — draw straight right." },
+      { at: 0.75,  say: "Turn — one more short step up." },
+      { at: 0.95,  say: "Final stretch — draw right to reach the top of the stairs." },
     ],
   },
 };
@@ -502,7 +604,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const [cursor,    setCursor]    = useState<Point>({ x: WIDTH / 2, y: HEIGHT / 2 });
   const [soundOn,   setSoundOn]   = useState(false);
   const [announce,  setAnnounce]  = useState(
-    "Welcome to Sonic Bear Studio. Press S to start sound, D to toggle drawing, arrow keys to move the brush."
+    "Hey, Bennett here! Press S for sound, Space to start drawing, and the arrow keys to move me around the canvas."
   );
   const [colorIndex, setColorIndex] = useState(0);
   const [texture, setTexture] = useState<Texture>("pen");
