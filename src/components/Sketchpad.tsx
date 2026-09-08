@@ -998,8 +998,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           )}
         </div>
 
-        {/* SVG Canvas */}
-        <div className="relative">
+        {/* SVG Canvas + bear companion */}
+        <div className="relative mt-14">
+          <img
+            src={drawing ? bearDrawing : bearSleeping}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-16 left-1/2 z-10 h-24 w-24 -translate-x-1/2 select-none object-contain drop-shadow-lg sm:-top-20 sm:h-28 sm:w-28"
+          />
           <svg
             role="img"
             aria-label="Sonic tactile drawing canvas. Use arrow keys to move, space to toggle drawing."
@@ -1147,15 +1153,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           <circle cx={cursor.x} cy={cursor.y} r={Math.max(2, penWidth / 2)} fill={color} fillOpacity={penOpacity} />
           </svg>
 
-          {/* Bear companion: drawing while you draw, asleep while idle. Sits on
-              the canvas itself (top-center) and is purely decorative and
-              click-through, so it never intercepts drawing input. */}
-          <img
-            src={drawing ? bearDrawing : bearSleeping}
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute top-1 left-1/2 z-10 h-20 w-20 -translate-x-1/2 -translate-y-1/3 select-none object-contain drop-shadow-lg sm:top-2 sm:h-24 sm:w-24"
-          />
         </div>
 
         <p className="mt-2.5 text-xs text-muted-foreground">
