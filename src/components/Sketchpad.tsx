@@ -967,7 +967,11 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             variant={visualAids ? "default" : "outline"}
             aria-pressed={visualAids}
             size="sm"
-            className="gap-1.5 rounded-full bg-card/70 shadow-sm ring-1 ring-white/60 backdrop-blur-sm"
+            className={
+              visualAids
+                ? "gap-1.5 rounded-full shadow-sm"
+                : "gap-1.5 rounded-full border-2 border-primary/50 bg-card font-semibold text-primary shadow-sm hover:bg-primary/10 hover:text-primary"
+            }
           >
             <Eye className="h-3.5 w-3.5" /> Visual aids
             <kbd className="ml-0.5 rounded bg-background/40 px-1 py-0.5 text-[10px]">X</kbd>
@@ -999,16 +1003,22 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           )}
         </div>
 
-        {/* SVG Canvas + bear companion */}
-        <div className="relative mt-14 rounded-[1.75rem] bg-gradient-to-br from-primary/10 via-background/55 to-accent/10 p-2 pt-3 shadow-inner ring-1 ring-white/60 sm:mt-16 sm:p-2.5 sm:pt-3.5">
-          <div className="pointer-events-none absolute -top-16 left-1/2 z-10 flex h-20 w-28 -translate-x-1/2 items-end justify-center sm:-top-[4.5rem] sm:h-24 sm:w-32">
-            <img
-              src={drawing ? bearDrawing : bearSleeping}
-              alt=""
-              aria-hidden="true"
-              className="h-20 w-20 select-none object-contain drop-shadow-[0_8px_12px_rgba(58,31,43,0.18)] sm:h-24 sm:w-24"
-            />
-          </div>
+        {/* Bear companion nook — its own designated spot, tucked between the
+            controls and the canvas so it never overlaps either. It sits in
+            normal flow (not absolutely positioned over other elements) and
+            only peeks slightly into the canvas below via a small negative
+            margin on its own container. */}
+        <div className="relative z-10 mx-auto -mb-7 flex h-24 w-32 items-end justify-center rounded-t-[1.75rem] bg-gradient-to-b from-card/90 via-card/60 to-transparent pb-1 sm:h-28 sm:w-36">
+          <img
+            src={drawing ? bearDrawing : bearSleeping}
+            alt=""
+            aria-hidden="true"
+            className="h-20 w-20 select-none object-contain drop-shadow-[0_8px_14px_rgba(58,31,43,0.22)] sm:h-24 sm:w-24"
+          />
+        </div>
+
+        {/* SVG Canvas */}
+        <div className="relative rounded-[1.75rem] bg-gradient-to-br from-primary/10 via-background/55 to-accent/10 p-2 pt-6 shadow-inner ring-1 ring-white/60 sm:p-2.5 sm:pt-7">
           <div className="overflow-hidden rounded-2xl bg-[oklch(0.98_0.02_15)] shadow-lg ring-1 ring-white/70">
           <svg
             role="img"
