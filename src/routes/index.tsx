@@ -18,11 +18,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   const stats = useCanvasClicks();
 const handlePost = useCallback(async ({ svg }: { svg: string }) => {
-  try {
-    await saveArtwork(svg);
-  } catch (error) {
-    console.error("Failed to submit artwork:", error);
-  }
+  await saveArtwork(svg);
 }, []);
 
   return (
