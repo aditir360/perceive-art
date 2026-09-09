@@ -994,7 +994,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           return null;
         });
         if (audioRef.current) playSineNote(audioRef.current.ctx, 392, 0.18, 0.10);
-        say("Nice line! Saved it.");
+        say("Great line! Saved it.");
       }
       return next;
     });
@@ -1269,7 +1269,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       if (c && c.points.length > 1) setStrokes((s) => [...s, c]);
       return null;
     });
-    say("Nice line! Saved it.");
+    say("Great line! Saved it.");
   };
 
   const exportStl = () => {
