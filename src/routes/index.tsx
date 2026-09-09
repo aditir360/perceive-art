@@ -206,8 +206,9 @@ const handlePost = useCallback(async ({ svg }: { svg: string }) => {
               We're just getting started. Here's a taste of what's next for Perceive.
             </p>
 
-            <div className="mx-auto mt-8 grid max-w-3xl gap-4 sm:grid-cols-3">
+            <div className="mx-auto mt-8 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
+                { icon: Ear, title: "Autonomous sound guide", body: "A fully hands-free audio guide for blind users, plus a sighted mode with visual aids — two ways to create." },
                 { icon: Users2, title: "Collaborative canvas", body: "Draw together with someone else in real time." },
                 { icon: Smartphone, title: "Mobile studio", body: "The full sonic canvas, right in your pocket." },
                 { icon: Wand2, title: "More audio guides", body: "New shapes, patterns, and freeform templates." },
