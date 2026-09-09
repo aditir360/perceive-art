@@ -2,9 +2,19 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 /**
- * Reads the current number of approved drawings.
- * The count comes directly from the artworks table,
- * so it stays in sync with the public gallery.
+ * Tracks a canvas interaction locally.
+ *
+ * Kept for Sketchpad compatibility. The old implementation sent
+ * these events to the removed site_stats/increment_stat system.
+ */
+export function trackClick() {
+  // Intentionally left as a no-op.
+  // Drawing count is now based directly on approved artworks.
+}
+
+/**
+ * Reads the current number of approved drawings directly from
+ * the artworks table.
  */
 export function useCanvasClicks() {
   return useQuery({
