@@ -271,6 +271,31 @@ const handlePost = useCallback(async ({ svg }: { svg: string }) => {
         </div>
       </section>
 
+      {/* Newsletter */}
+      <section className="mx-auto max-w-6xl px-6 pb-20">
+        <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-br from-primary/25 via-card/70 to-accent/25 p-1.5 shadow-2xl shadow-primary/20 ring-1 ring-white/40 backdrop-blur-xl sm:p-2">
+          <div className="rounded-[1.85rem] bg-card/40 p-8 text-center backdrop-blur-md sm:p-12">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
+              <Mail className="h-7 w-7" />
+            </div>
+            <h2 className="mt-4 text-2xl font-bold text-foreground sm:text-3xl">Stay in the loop</h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
+              Sign up for our newsletter to hear about new features, audio guides, and community art
+              drops as they launch.
+            </p>
+            <Button asChild className="mt-6 rounded-full shadow-md" size="lg">
+              <a
+                href="https://forms.gle/TwF7RfXNysUPA28YA"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Sign up for our newsletter
+              </a>
+            </Button>
+          </div>
+        </div>
+      </section>
+
 
       <footer className="border-t border-primary/10 bg-card/50 py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-xs text-muted-foreground sm:flex-row">
