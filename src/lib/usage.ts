@@ -15,21 +15,28 @@ async function flush() {
 
   pending = 0;
 
-  const { error } = await supabase.rpc("increment_stat", {
+  console.log("[usage] flushing", n, "canvas click(s)");
+
+  const { data, error } = await supabase.rpc("increment_stat", {
     _name: STAT,
     _by: n,
   });
 
   if (error) {
     pending += n;
-    console.warn("[usage] failed to flush", error);
+    console.error("[usage] failed to flush:", error);
+    return;
   }
+
+  console.log("[usage] counter updated:", data);
 }
 
 export function trackClick() {
   if (typeof window === "undefined") return;
 
   pending += 1;
+
+  console.log("[usage] trackClick()", pending);
 
   if (flushTimer == null) {
     flushTimer = setTimeout(() => {
@@ -58,6 +65,7 @@ export function useCanvasClicks() {
         .maybeSingle();
 
       if (error) {
+        console.error("[usage] failed to read counter:", error);
         throw error;
       }
 
