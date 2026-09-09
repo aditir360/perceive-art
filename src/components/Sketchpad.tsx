@@ -1303,7 +1303,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const activeGuide = guideKey ? SHAPE_GUIDES[guideKey] : null;
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[1fr_280px]">
+    <div className="grid items-start gap-6 lg:grid-cols-[1fr_336px]">
 
       {/* ── Canvas area ── */}
       <div className="relative overflow-visible rounded-3xl bg-gradient-to-br from-primary/20 via-card/80 to-accent/20 p-1.5 shadow-2xl shadow-primary/15 ring-1 ring-white/50 backdrop-blur-xl sm:p-2">
@@ -1334,7 +1334,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         </div>
 
         {/* Controls */}
-        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-2xl bg-background/35 p-2 ring-1 ring-white/40">
+        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-2xl bg-gradient-to-br from-primary/10 via-background/40 to-accent/10 p-2 shadow-inner ring-1 ring-white/50 backdrop-blur-sm">
           <Button onClick={toggleSound} variant={soundOn ? "default" : "secondary"} aria-pressed={soundOn} className="gap-2 rounded-xl shadow-sm">
             {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             {soundOn ? "Sound On" : "Sound Off"}
@@ -1392,16 +1392,12 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             onPointerCancel={onPointerUp}
           >
           <defs>
-            {/* Soft radial paper glow — a flat fill reads as a plain
-                rectangle; a gentle center-to-edge gradient gives the page
-                some depth, like light falling on real paper. */}
-            <radialGradient id="paperGlow" cx="50%" cy="38%" r="75%">
-              <stop offset="0%"  stopColor="oklch(0.995 0.008 15)" />
-              <stop offset="65%" stopColor="oklch(0.98 0.02 15)" />
-              <stop offset="100%" stopColor="oklch(0.955 0.035 15)" />
-            </radialGradient>
+            {/* Classic grid — kept as plain crosshatch lines (not dots),
+                since that's the look that reads clearly as "graph paper"
+                for tracing/drawing. A warm rose tint on the lines instead of
+                cool grey is the one small upgrade here. */}
             <pattern id="grid" width={GRID} height={GRID} patternUnits="userSpaceOnUse">
-              <circle cx="0" cy="0" r="1.4" fill="oklch(0.82 0.07 20)" opacity="0.5" />
+              <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="oklch(0.88 0.05 20)" strokeWidth="1" />
             </pattern>
             {/* Glow filter for guide path */}
             <filter id="glow">
@@ -1431,7 +1427,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             </filter>
           </defs>
 
-          <rect width="100%" height="100%" fill="url(#paperGlow)" />
+          <rect width="100%" height="100%" fill="oklch(0.975 0.025 15)" />
           <rect width="100%" height="100%" fill="url(#grid)" />
 
           {/* Corner flourishes — small quarter-arc ornaments purely for
@@ -1611,9 +1607,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       <aside className="space-y-4">
 
         {/* Palette */}
-        <section aria-labelledby="colors-heading" className="rounded-3xl bg-gradient-to-br from-card to-card/70 p-4 shadow-md ring-1 ring-primary/15">
+        <section aria-labelledby="colors-heading" className="rounded-3xl bg-gradient-to-br from-primary/20 via-card/75 to-transparent p-4 shadow-lg shadow-primary/10 ring-1 ring-white/50 backdrop-blur-md">
           <h2 id="colors-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
               <Palette className="h-3.5 w-3.5" />
             </span>
             Palette
@@ -1643,9 +1639,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         </section>
 
         {/* Texture */}
-        <section aria-labelledby="texture-heading" className="rounded-3xl bg-gradient-to-br from-card to-card/70 p-4 shadow-md ring-1 ring-primary/15">
+        <section aria-labelledby="texture-heading" className="rounded-3xl bg-gradient-to-br from-accent/30 via-card/75 to-transparent p-4 shadow-lg shadow-accent/10 ring-1 ring-white/50 backdrop-blur-md">
           <h2 id="texture-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
               <Pencil className="h-3.5 w-3.5" />
             </span>
             Texture
@@ -1663,7 +1659,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                   className={`flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-medium shadow-sm transition-all ${
                     active
                       ? "bg-primary text-primary-foreground shadow-md"
-                      : "bg-background/60 text-foreground ring-1 ring-primary/15 hover:bg-primary/10"
+                      : "bg-card/60 text-foreground ring-1 ring-white/50 backdrop-blur-sm hover:bg-primary/10"
                   }`}
                 >
                   <TextureIcon className="h-4 w-4" />
@@ -1677,9 +1673,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         {/* Thickness + Opacity (per active texture) — merged into one card;
             two sliders under one header take noticeably less vertical
             space than two separate cards each with their own header/ring. */}
-        <section aria-labelledby="pen-heading" className="rounded-3xl bg-gradient-to-br from-card to-card/70 p-4 shadow-md ring-1 ring-primary/15">
+        <section aria-labelledby="pen-heading" className="rounded-3xl bg-gradient-to-br from-secondary/40 via-card/75 to-transparent p-4 shadow-lg shadow-secondary/10 ring-1 ring-white/50 backdrop-blur-md">
           <h2 id="pen-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
               <Pencil className="h-3.5 w-3.5" />
             </span>
             {TEXTURE_LABELS[texture]} settings
@@ -1687,14 +1683,17 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
           <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
             <span>Thickness</span>
-            <span className="rounded-full bg-background/60 px-2 py-0.5 text-[10px]">[ / ] to adjust</span>
+            <span className="flex items-center gap-1.5">
+              <span className="font-semibold text-foreground">{penWidth}px</span>
+              <span className="rounded-full bg-background/60 px-2 py-0.5 text-[10px]">[ / ]</span>
+            </span>
           </div>
-          <div className="mt-1.5 flex items-center gap-3">
+          <div className="mt-1.5 flex items-center gap-2.5">
             <Button
               onClick={() => changePenWidth(penWidth - 1)}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-background/60 ring-1 ring-primary/15"
+              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
               aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}
             >
               <Minus className="h-3.5 w-3.5" />
@@ -1710,7 +1709,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               aria-valuemin={MIN_PEN_WIDTH}
               aria-valuemax={MAX_PEN_WIDTH}
               aria-valuenow={penWidth}
-              className="h-2 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"
+              className="h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"
               style={{
                 background: `linear-gradient(to right, oklch(0.58 0.15 20) ${((penWidth - MIN_PEN_WIDTH) / (MAX_PEN_WIDTH - MIN_PEN_WIDTH)) * 100}%, oklch(0.58 0.15 20 / 0.18) ${((penWidth - MIN_PEN_WIDTH) / (MAX_PEN_WIDTH - MIN_PEN_WIDTH)) * 100}%)`,
               }}
@@ -1719,24 +1718,26 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               onClick={() => changePenWidth(penWidth + 1)}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-background/60 ring-1 ring-primary/15"
+              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
               aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}
             >
               <Plus className="h-3.5 w-3.5" />
             </Button>
-            <span className="w-11 shrink-0 text-right text-xs font-medium text-muted-foreground">{penWidth}px</span>
           </div>
 
           <div className="mt-4 flex items-center justify-between text-xs font-medium text-muted-foreground">
             <span>Opacity</span>
-            <span className="rounded-full bg-background/60 px-2 py-0.5 text-[10px]">, / . to adjust</span>
+            <span className="flex items-center gap-1.5">
+              <span className="font-semibold text-foreground">{Math.round(penOpacity * 100)}%</span>
+              <span className="rounded-full bg-background/60 px-2 py-0.5 text-[10px]">, / .</span>
+            </span>
           </div>
-          <div className="mt-1.5 flex items-center gap-3">
+          <div className="mt-1.5 flex items-center gap-2.5">
             <Button
               onClick={() => changePenOpacity(penOpacity - OPACITY_STEP)}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-background/60 ring-1 ring-primary/15"
+              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
               aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}
             >
               <Minus className="h-3.5 w-3.5" />
@@ -1752,7 +1753,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               aria-valuemin={OPACITY_RANGE[texture].min}
               aria-valuemax={OPACITY_RANGE[texture].max}
               aria-valuenow={penOpacity}
-              className="h-2 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"
+              className="h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"
               style={{
                 background: `linear-gradient(to right, oklch(0.58 0.15 20) ${((penOpacity - OPACITY_RANGE[texture].min) / (OPACITY_RANGE[texture].max - OPACITY_RANGE[texture].min)) * 100}%, oklch(0.58 0.15 20 / 0.18) ${((penOpacity - OPACITY_RANGE[texture].min) / (OPACITY_RANGE[texture].max - OPACITY_RANGE[texture].min)) * 100}%)`,
               }}
@@ -1761,19 +1762,18 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               onClick={() => changePenOpacity(penOpacity + OPACITY_STEP)}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-background/60 ring-1 ring-primary/15"
+              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
               aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}
             >
               <Plus className="h-3.5 w-3.5" />
             </Button>
-            <span className="w-11 shrink-0 text-right text-xs font-medium text-muted-foreground">{Math.round(penOpacity * 100)}%</span>
           </div>
         </section>
 
         {/* Canvas Sound */}
-        <section aria-labelledby="canvas-sound-heading" className="rounded-3xl bg-gradient-to-br from-card to-card/70 p-4 shadow-md ring-1 ring-primary/15">
+        <section aria-labelledby="canvas-sound-heading" className="rounded-3xl bg-gradient-to-br from-primary/20 via-card/75 to-transparent p-4 shadow-lg shadow-primary/10 ring-1 ring-white/50 backdrop-blur-md">
           <h2 id="canvas-sound-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
               <Volume2 className="h-3.5 w-3.5" />
             </span>
             Canvas sound
@@ -1790,7 +1790,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                   className={`flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-medium shadow-sm transition-all ${
                     active
                       ? "bg-primary text-primary-foreground shadow-md"
-                      : "bg-background/60 text-foreground ring-1 ring-primary/15 hover:bg-primary/10"
+                      : "bg-card/60 text-foreground ring-1 ring-white/50 backdrop-blur-sm hover:bg-primary/10"
                   }`}
                 >
                   <StyleIcon className="h-4 w-4" />
@@ -1804,7 +1804,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               onClick={() => setSoundVolume((v) => Math.max(0, +(v - 0.1).toFixed(2)))}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-background/60 ring-1 ring-primary/15"
+              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
               aria-label="Decrease canvas sound volume"
             >
               <Minus className="h-3.5 w-3.5" />
@@ -1824,7 +1824,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               onClick={() => setSoundVolume((v) => Math.min(1, +(v + 0.1).toFixed(2)))}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-background/60 ring-1 ring-primary/15"
+              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
               aria-label="Increase canvas sound volume"
             >
               <Plus className="h-3.5 w-3.5" />
@@ -1836,9 +1836,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         </section>
 
         {/* Export & Share — merged into one card */}
-        <section aria-labelledby="export-heading" className="rounded-3xl bg-gradient-to-br from-card to-card/70 p-4 shadow-md ring-1 ring-primary/15">
+        <section aria-labelledby="export-heading" className="rounded-3xl bg-gradient-to-br from-accent/25 via-card/75 to-transparent p-4 shadow-lg shadow-accent/10 ring-1 ring-white/50 backdrop-blur-md">
           <h2 id="export-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
               <Sparkles className="h-3.5 w-3.5" />
             </span>
             Export
@@ -1868,7 +1868,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             <>
               <div className="my-4 border-t border-primary/10" />
               <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/12 text-primary">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
                   <Globe className="h-3.5 w-3.5" />
                 </span>
                 Share
@@ -1893,7 +1893,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             tallest block in this sidebar and most people don't need it
             open all the time, so tucking it away keeps the whole sidebar
             closer in height to the canvas next to it. */}
-        <section aria-labelledby="kbd-heading" className="rounded-3xl bg-card p-4 shadow-md ring-1 ring-primary/20 text-xs text-muted-foreground">
+        <section aria-labelledby="kbd-heading" className="rounded-3xl bg-gradient-to-br from-secondary/30 via-card/75 to-transparent p-4 shadow-lg shadow-secondary/10 ring-1 ring-white/50 backdrop-blur-md text-xs text-muted-foreground">
           <button
             type="button"
             onClick={() => setKeyboardPanelOpen((o) => !o)}
