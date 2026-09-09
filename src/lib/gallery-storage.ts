@@ -56,28 +56,19 @@ export async function getArtworks(): Promise<GalleryArtwork[]> {
  * Submits artwork for moderation.
  * New artwork is ALWAYS inserted as pending.
  */
-export async function saveArtwork(svg: string): Promise<GalleryArtwork> {
+export async function saveArtwork(svg: string): Promise<void> {
   const authorId = getDeviceId();
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("artworks")
     .insert({
       svg,
       author_id: authorId,
       status: "pending",
-    })
-    .select("id, svg, author_id, created_at")
-    .single();
+    });
 
   if (error) {
     console.error("Failed to submit artwork:", error);
     throw error;
   }
-
-  return {
-    id: data.id,
-    svg: data.svg,
-    authorId: data.author_id,
-    createdAt: new Date(data.created_at).getTime(),
-  };
 }
