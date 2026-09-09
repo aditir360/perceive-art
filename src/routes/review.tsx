@@ -70,9 +70,10 @@ function ReviewPage() {
       });
 
       if (!response.ok) {
-        setMessage("Incorrect password.");
-        return;
-      }
+  const data = await response.json().catch(() => null);
+  setMessage(data?.error ?? `Server error (${response.status})`);
+  return;
+}
 
       setLoggedIn(true);
       setPassword("");
