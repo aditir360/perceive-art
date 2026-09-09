@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { trackClick, useCanvasClicks } from "@/lib/usage";
 import bearSleeping from "@/assets/bear_sleeping.png";
@@ -1185,7 +1186,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setJustPosted(true);
     setTimeout(() => setJustPosted(false), 2200);
     if (audioRef.current) playCompleteChime(audioRef.current.ctx);
-    say("Yay! Posted to the gallery for everyone to see.");
+    say("Yay! Sent it in for review — it'll go live on the gallery once approved.");
     trackClick();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onPost, strokes, current, say]);
@@ -1544,6 +1545,32 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours · [ ] adjust thickness · , . adjust opacity · T cycles texture
         </p>
 
+        {/* New feature callout — Public Gallery. Placed right under the
+            canvas so it's clearly visible without digging into the
+            sidebar's Export/Share card. */}
+        <div className="mt-4 flex flex-col items-start gap-3 rounded-2xl bg-gradient-to-br from-accent/25 via-card/80 to-primary/15 p-4 shadow-md ring-1 ring-white/50 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
+              <Globe className="h-4 w-4" />
+            </span>
+            <div>
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
+                New
+              </span>
+              <p className="mt-1 text-sm font-semibold text-foreground">The Public Gallery is here</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Finish a drawing and send it in for review — approved pieces get featured on the
+                Gallery page for creators everywhere to see.
+              </p>
+            </div>
+          </div>
+          <Button asChild variant="outline" size="sm" className="w-full shrink-0 rounded-full bg-card/60 backdrop-blur-sm sm:w-auto">
+            <Link to="/gallery" className="gap-1.5">
+              <Globe className="h-3.5 w-3.5" /> View Gallery
+            </Link>
+          </Button>
+        </div>
+
         {/* Audio Guides — moved here from the sidebar so this card doesn't sit
             half-empty next to the taller settings column */}
         <section aria-labelledby="guides-heading" className="mt-4 border-t border-border pt-4">
@@ -1874,7 +1901,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 Share
               </h2>
               <p className="mb-3 text-xs text-muted-foreground">
-                Post your artwork to the public gallery so creators everywhere can see it.
+                Send your artwork in for a quick review — approved pieces appear on the public
+                Gallery page for creators everywhere to see.
               </p>
               <Button
                 onClick={requestPost}
@@ -1883,7 +1911,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 className="w-full justify-center gap-2 rounded-full"
               >
                 {justPosted ? <Check className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-                {justPosted ? "Posted!" : "Post to Gallery"}
+                {justPosted ? "Sent for review!" : "Send to Gallery"}
               </Button>
             </>
           )}
@@ -1937,10 +1965,11 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               <Globe className="h-6 w-6" />
             </div>
             <h2 id="post-confirm-heading" className="mt-4 text-lg font-bold text-foreground">
-              Post this to the gallery?
+              Send this to the gallery?
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Your artwork will become public — anyone around the world will be able to see it on the Gallery page.
+              Our team reviews every submission before it goes live — once approved, anyone around
+              the world will be able to see it on the Gallery page.
             </p>
             <div className="mt-5 flex gap-2">
               <Button onClick={cancelPost} variant="outline" className="flex-1 rounded-full">
@@ -1948,7 +1977,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 <kbd className="ml-1.5 rounded bg-background/40 px-1 py-0.5 text-[10px]">Esc</kbd>
               </Button>
               <Button onClick={confirmPost} className="flex-1 gap-2 rounded-full">
-                <Globe className="h-4 w-4" /> Yes, post it
+                <Globe className="h-4 w-4" /> Yes, send for review
               </Button>
             </div>
           </div>
