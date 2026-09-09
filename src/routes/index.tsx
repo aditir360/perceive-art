@@ -1,12 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useCallback } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sketchpad } from "@/components/Sketchpad";
 import { RollingStats } from "@/components/RollingStats";
 import { StudioPreviewCards } from "@/components/StudioPreviewCards";
-import { ListenButton } from "@/components/ListenButton";
+import { HoverListen } from "@/components/ListenButton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useCanvasClicks } from "@/lib/usage";
+import { saveArtwork } from "@/lib/gallery-storage";
 import bearPeek from "@/assets/bear-peek-cropped.png";
-import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight, Music, Music2, Star, Palette, Headphones, Mail, Instagram, Linkedin, Rocket, Users2, Smartphone, Wand2 } from "lucide-react";
+import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight, Music, Music2, Star, Palette, Headphones, Mail, Instagram, Linkedin, Rocket, Users2, Smartphone, Wand2, Handshake, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -15,6 +17,9 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const stats = useCanvasClicks();
+const handlePost = useCallback(async ({ svg }: { svg: string }) => {
+  await saveArtwork(svg);
+}, []);
 
   return (
     <div className="min-h-screen">
@@ -60,8 +65,8 @@ function Index() {
           <Sparkles className="h-3.5 w-3.5" /> A sonic-tactile art studio
         </span>
         <h1 className="mx-auto mt-6 max-w-3xl text-5xl font-bold leading-tight tracking-tight text-foreground sm:text-6xl">
-          Draw with <span className="text-primary">sound</span>.
-          <br /> Feel with <span className="text-primary">touch</span>.
+          Draw with <span className="bg-gradient-to-r from-primary to-accent-foreground bg-clip-text text-transparent">sound</span>.
+          <br /> Feel with <span className="bg-gradient-to-r from-primary to-accent-foreground bg-clip-text text-transparent">touch</span>.
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
           Perceive is a browser studio where blind and sighted creators sketch together —
@@ -74,6 +79,9 @@ function Index() {
           </Button>
           <Button asChild size="lg" variant="secondary" className="rounded-full">
             <a href="#mission">Our mission</a>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="rounded-full">
+            <Link to="/gallery">Browse the gallery</Link>
           </Button>
         </div>
       </header>
@@ -90,7 +98,7 @@ function Index() {
             src={bearPeek}
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-0 z-10 h-56 w-56 -translate-x-1/2 -translate-y-8 select-none object-contain object-bottom drop-shadow-xl sm:h-72 sm:w-72 sm:-translate-y-10"
+            className="pointer-events-none absolute left-1/2 top-3 z-10 h-56 w-56 -translate-x-1/2 select-none object-contain object-bottom drop-shadow-xl sm:top-4 sm:h-72 sm:w-72"
           />
           <div className="rounded-3xl bg-card px-8 pb-8 pt-10 shadow-sm ring-1 ring-primary/15 sm:px-12 sm:pb-12 sm:pt-12">
             <div className="flex items-center gap-3">
@@ -100,16 +108,15 @@ function Index() {
             <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
               Creativity shouldn't require sight.
             </h2>
-            <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Art has always been about expression, but most creative tools are designed around vision. Perceive reimagines the canvas by making drawing accessible through hearing, touch, and spatial interaction — empowering blind and low-vision artists while inviting every creator to explore a new way of making art. We believe creativity belongs to everyone, and the ability to create should never depend on how you see the world.
-
-            </p>
-            <div className="mt-5">
-              <ListenButton
-                label="Listen to our mission"
-                text="Our mission. Creativity shouldn't require sight. Most drawing tools assume you can see the canvas. We disagree. Perceive was built so that 3.4 million blind and low-vision people in the US, and millions more worldwide, can express themselves visually through the senses they already trust: hearing and touch. Our goal is a world where making art is a right, not a privilege granted by vision."
-              />
-            </div>
+            <HoverListen
+              text="Our mission. Creativity shouldn't require sight. Most drawing tools assume you can see the canvas. We disagree. Perceive was built so that 3.4 million blind and low-vision people in the US, and millions more worldwide, can express themselves visually through the senses they already trust: hearing and touch. Our goal is a world where making art is a right, not a privilege granted by vision."
+              label="our mission"
+              className="mt-4"
+            >
+              <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
+                Art has always been about expression, but most creative tools are designed around vision. Perceive reimagines the canvas by making drawing accessible through hearing, touch, and spatial interaction — empowering blind and low-vision artists while inviting every creator to explore a new way of making art. We believe creativity belongs to everyone, and the ability to create should never depend on how you see the world.
+              </p>
+            </HoverListen>
           </div>
         </div>
       </section>
@@ -119,15 +126,15 @@ function Index() {
       {/* How it works */}
       <section id="how" className="mx-auto max-w-6xl px-6 pb-16">
         <h2 className="text-center text-3xl font-bold tracking-tight sm:text-4xl">How Perceive works</h2>
-        <p className="mx-auto mt-3 max-w-2xl text-center text-muted-foreground">
-          Three senses, one canvas. Move, listen, and print.
-        </p>
-        <div className="mt-6 flex justify-center">
-          <ListenButton
-            label="Listen to how it works"
-            text="How Perceive works. Three senses, one canvas. Move, listen, and print. First: hear the canvas. Your cursor's horizontal position pans the sound left and right. Vertical position raises or lowers the pitch. You always know where you are. Second: draw with intention. Tap space to start a line and tap again to connect it. A soft chime confirms every choice, and edges buzz gently so you never get lost. Third: hold your art. Export a high-contrast SVG for swell paper, or a ready-to-print STL, and turn what you heard into something you can run your fingers across."
-          />
-        </div>
+        <HoverListen
+          text="How Perceive works. Three senses, one canvas. Move, listen, and print. First: hear the canvas. Your cursor's horizontal position pans the sound left and right. Vertical position raises or lowers the pitch. You always know where you are. Second: draw with intention. Tap space to start a line and tap again to connect it. A soft chime confirms every choice, and edges buzz gently so you never get lost. Third: hold your art. Export a high-contrast SVG for swell paper, or a ready-to-print STL, and turn what you heard into something you can run your fingers across."
+          label="how it works"
+          className="mx-auto mt-3 block max-w-2xl"
+        >
+          <p className="text-center text-muted-foreground">
+            Three senses, one canvas. Move, listen, and print.
+          </p>
+        </HoverListen>
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           {[
             {
@@ -146,15 +153,14 @@ function Index() {
               body: "Export a high-contrast SVG for swell paper — or a ready-to-print STL — and turn what you heard into something you can run your fingers across.",
             },
           ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="group rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+            <div key={title} className="rounded-3xl bg-card p-6 shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
                 <Icon className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
-              <div className="mt-4">
-                <ListenButton label={`Listen`} text={`${title}. ${body}`} />
-              </div>
+              <HoverListen text={`${title}. ${body}`} label={title} className="mt-4 block">
+                <h3 className="text-lg font-semibold">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
+              </HoverListen>
             </div>
           ))}
         </div>
@@ -174,7 +180,7 @@ function Index() {
           </div>
         </div>
         <div>
-          <Sketchpad />
+          <Sketchpad onPost={handlePost} />
         </div>
       </section>
 
@@ -200,8 +206,9 @@ function Index() {
               We're just getting started. Here's a taste of what's next for Perceive.
             </p>
 
-            <div className="mx-auto mt-8 grid max-w-3xl gap-4 sm:grid-cols-3">
+            <div className="mx-auto mt-8 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
+                { icon: Ear, title: "Autonomous sound guide", body: "A fully hands-free audio guide for blind users, plus a sighted mode with visual aids — two ways to create." },
                 { icon: Users2, title: "Collaborative canvas", body: "Draw together with someone else in real time." },
                 { icon: Smartphone, title: "Mobile studio", body: "The full sonic canvas, right in your pocket." },
                 { icon: Wand2, title: "More audio guides", body: "New shapes, patterns, and freeform templates." },
@@ -222,21 +229,71 @@ function Index() {
         </div>
       </section>
 
-       {/* Feedback */}
+      {/* Partnerships & Feedback */}
       <section className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="rounded-3xl bg-card p-8 text-center shadow-sm ring-1 ring-primary/15 sm:p-10">
-          <p className="text-sm text-muted-foreground">
-            Have recommendations for new features or improvements?{" "}
-            <a
-              href="https://docs.google.com/forms/d/e/1FAIpQLSdG2YExqtuXOD8MGkRUPJpYgdbs3wpZNALVpLXo1SRCWK15Ng/viewform?usp=header"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-primary underline-offset-2 hover:underline"
-            >
-              Submit this form here
-            </a>
-            .
-          </p>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div className="rounded-3xl bg-card p-8 text-center shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+              <Handshake className="h-6 w-6" />
+            </div>
+            <h3 className="mt-4 text-base font-semibold text-foreground">Want to partner with us?</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Interested in partnering with Perceive?{" "}
+              <a
+                href="https://docs.google.com/forms/d/e/1FAIpQLSf_OkgdZOlep14jdmhITfNYSM1wQno_i6vTizwocXpr5AG0Bg/viewform?usp=dialog"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-primary underline-offset-2 hover:underline"
+              >
+                Submit this form here
+              </a>
+              .
+            </p>
+          </div>
+
+          <div className="rounded-3xl bg-card p-8 text-center shadow-sm ring-1 ring-primary/15 transition-all hover:-translate-y-1 hover:shadow-md">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
+              <MessageSquare className="h-6 w-6" />
+            </div>
+            <h3 className="mt-4 text-base font-semibold text-foreground">Have feedback for us?</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Have recommendations for new features or improvements?{" "}
+              <a
+                href="https://docs.google.com/forms/d/e/1FAIpQLSdG2YExqtuXOD8MGkRUPJpYgdbs3wpZNALVpLXo1SRCWK15Ng/viewform?usp=header"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-primary underline-offset-2 hover:underline"
+              >
+                Submit this form here
+              </a>
+              .
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Newsletter */}
+      <section className="mx-auto max-w-6xl px-6 pb-20">
+        <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-br from-primary/25 via-card/70 to-accent/25 p-1.5 shadow-2xl shadow-primary/20 ring-1 ring-white/40 backdrop-blur-xl sm:p-2">
+          <div className="rounded-[1.85rem] bg-card/40 p-8 text-center backdrop-blur-md sm:p-12">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
+              <Mail className="h-7 w-7" />
+            </div>
+            <h2 className="mt-4 text-2xl font-bold text-foreground sm:text-3xl">Stay in the loop</h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
+              Sign up for our newsletter to hear about new features, audio guides, and community art
+              drops as they launch.
+            </p>
+            <Button asChild className="mt-6 rounded-full shadow-md" size="lg">
+              <a
+                href="https://forms.gle/TwF7RfXNysUPA28YA"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Sign up for our newsletter
+              </a>
+            </Button>
+          </div>
         </div>
       </section>
 

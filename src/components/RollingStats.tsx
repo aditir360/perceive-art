@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Users, Zap } from "lucide-react";
+import { Sparkles, Users, Eye, Zap, ArrowUpRight } from "lucide-react";
 
 interface RollingStatsProps {
   drawingCount: number | null | undefined;
@@ -59,54 +59,82 @@ export function RollingStats({ drawingCount }: RollingStatsProps) {
   }, [inView]);
 
   const displayCount = useCountUp(drawingCount, inView, 1500);
-  const displayReach = useCountUp(300, inView, 2000);
+  const displayReach = useCountUp(2000, inView, 2000);
+  const displayViews = useCountUp(40000, inView, 2200);
 
   return (
     <div
       ref={sectionRef}
-      className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-card to-accent/10 p-6 shadow-sm ring-1 ring-primary/20 sm:p-8"
+      className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-card/70 to-accent/20 p-1.5 shadow-2xl shadow-primary/25 ring-1 ring-white/40 backdrop-blur-xl sm:p-2"
     >
-      <div className="relative mx-auto grid max-w-xl grid-cols-2 gap-4 sm:gap-6">
+      <div className="relative flex flex-col divide-y divide-white/40 overflow-hidden rounded-[1.35rem] sm:flex-row sm:divide-x sm:divide-y-0">
         {/* Drawings Created */}
-        <div className="flex flex-col items-center rounded-2xl bg-card p-5 text-center shadow-sm ring-1 ring-primary/15 transition-shadow hover:shadow-md sm:p-6">
-          <div className="flex items-center gap-2">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15">
-              <Sparkles className="h-4 w-4 text-primary" />
+        <div className="group relative flex flex-1 flex-col justify-between overflow-hidden bg-gradient-to-br from-primary/25 via-primary/10 to-transparent p-6 backdrop-blur-md sm:p-7">
+          <div className="flex items-center justify-between">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-card/60 ring-1 ring-white/50 backdrop-blur-sm">
+              <Sparkles className="h-5 w-5 text-primary" />
             </div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Drawings
+            <span className="flex items-center gap-1 rounded-full bg-card/60 px-2.5 py-1 text-[10px] font-bold text-primary ring-1 ring-white/50 backdrop-blur-sm">
+              <ArrowUpRight className="h-3 w-3" /> Live
             </span>
           </div>
-          <div className="mt-3">
-            <div className="bg-gradient-to-br from-[oklch(0.42_0.19_10)] to-[oklch(0.32_0.13_340)] bg-clip-text text-4xl font-black leading-none text-transparent sm:text-5xl">
+          <div className="mt-8">
+            <div className="text-4xl font-black leading-none tracking-tight text-foreground sm:text-5xl">
               {drawingCount === null || drawingCount === undefined ? "—" : displayCount.toLocaleString()}
             </div>
-            <p className="mt-1.5 text-xs font-medium text-muted-foreground">created worldwide</p>
+            <div className="mt-4 flex items-center justify-between border-t border-white/40 pt-3">
+              <span className="text-xs font-bold uppercase tracking-widest text-foreground/70">Drawings</span>
+              <span className="text-xs font-medium text-muted-foreground">created worldwide</span>
+            </div>
           </div>
         </div>
 
         {/* People Reached */}
-        <div className="flex flex-col items-center rounded-2xl bg-card p-5 text-center shadow-sm ring-1 ring-accent/40 transition-shadow hover:shadow-md sm:p-6">
-          <div className="flex items-center gap-2">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent/40">
-              <Users className="h-4 w-4 text-accent-foreground" />
+        <div className="group relative flex flex-1 flex-col justify-between overflow-hidden bg-gradient-to-br from-accent/30 via-accent/10 to-transparent p-6 backdrop-blur-md sm:p-7">
+          <div className="flex items-center justify-between">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-card/60 ring-1 ring-white/50 backdrop-blur-sm">
+              <Users className="h-5 w-5 text-accent-foreground" />
             </div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Reach
+            <span className="rounded-full bg-card/60 px-2.5 py-1 text-[10px] font-bold text-accent-foreground ring-1 ring-white/50 backdrop-blur-sm">
+              +9.4% MoM
             </span>
           </div>
-          <div className="mt-3">
-            <div className="bg-gradient-to-br from-[oklch(0.38_0.12_300)] to-[oklch(0.3_0.1_260)] bg-clip-text text-4xl font-black leading-none text-transparent sm:text-5xl">
+          <div className="mt-8">
+            <div className="text-4xl font-black leading-none tracking-tight text-foreground sm:text-5xl">
               {displayReach.toLocaleString()}+
             </div>
-            <p className="mt-1.5 text-xs font-medium text-muted-foreground">people impacted</p>
+            <div className="mt-4 flex items-center justify-between border-t border-white/40 pt-3">
+              <span className="text-xs font-bold uppercase tracking-widest text-foreground/70">Reach</span>
+              <span className="text-xs font-medium text-muted-foreground">people impacted</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Social Media Views */}
+        <div className="group relative flex flex-1 flex-col justify-between overflow-hidden bg-gradient-to-br from-secondary/40 via-secondary/15 to-transparent p-6 backdrop-blur-md sm:p-7">
+          <div className="flex items-center justify-between">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-card/60 ring-1 ring-white/50 backdrop-blur-sm">
+              <Eye className="h-5 w-5 text-secondary-foreground" />
+            </div>
+            <span className="rounded-full bg-card/60 px-2.5 py-1 text-[10px] font-bold text-primary ring-1 ring-white/50 backdrop-blur-sm">
+              +2.1k this week
+            </span>
+          </div>
+          <div className="mt-8">
+            <div className="text-4xl font-black leading-none tracking-tight text-foreground sm:text-5xl">
+              {displayViews.toLocaleString()}+
+            </div>
+            <div className="mt-4 flex items-center justify-between border-t border-white/40 pt-3">
+              <span className="text-xs font-bold uppercase tracking-widest text-foreground/70">Views</span>
+              <span className="text-xs font-medium text-muted-foreground">on social media</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Progress bar */}
-      <div className="relative mx-auto mt-6 flex max-w-xl items-center gap-3">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-primary/15">
+      <div className="relative mx-auto flex items-center gap-3 px-5 py-4 sm:px-6">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-card/50">
           <div
             className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
             style={{
