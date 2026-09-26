@@ -1789,21 +1789,21 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             Palette
             <span className="ml-auto rounded-full bg-background/60 px-2 py-0.5 text-[10px] font-normal text-muted-foreground">Q / E to cycle</span>
           </h2>
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex flex-wrap gap-4">
             {COLORS.map((c) => (
               <button
                 key={c.value}
                 onClick={() => pickColor(c)}
                 aria-label={`Color ${c.name}`}
                 aria-pressed={color === c.value}
-                className={`relative h-9 w-9 rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
+                className={`relative h-[3.375rem] w-[3.375rem] rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
                   color === c.value ? "scale-110 ring-foreground" : "ring-transparent"
                 }`}
                 style={{ backgroundColor: c.value }}
               >
                 {color === c.value && (
                   <Check
-                    className="absolute inset-0 m-auto h-4 w-4 drop-shadow"
+                    className="absolute inset-0 m-auto h-6 w-6 drop-shadow"
                     style={{ color: ["#f5a623", "#e0b04f", "#f9a8a8"].includes(c.value) ? "#3a1f2b" : "#fff" }}
                   />
                 )}
@@ -1821,7 +1821,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             Texture
             <span className="ml-auto rounded-full bg-background/60 px-2 py-0.5 text-[10px] font-normal text-muted-foreground">T to cycle</span>
           </h2>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             {TEXTURE_ORDER.map((t) => {
               const TextureIcon = TEXTURE_ICONS[t];
               const active = texture === t;
@@ -1830,13 +1830,13 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                   key={t}
                   onClick={() => changeTexture(t)}
                   aria-pressed={active}
-                  className={`flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-medium shadow-sm transition-all ${
+                  className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-medium shadow-sm transition-all ${
                     active
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "bg-card/60 text-foreground ring-1 ring-white/50 backdrop-blur-sm hover:bg-primary/10"
                   }`}
                 >
-                  <TextureIcon className="h-4 w-4" />
+                  <TextureIcon className="h-5 w-5" />
                   {TEXTURE_LABELS[t]}
                 </button>
               );
@@ -1952,7 +1952,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             </span>
             Canvas sound
           </h2>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             {SOUND_STYLE_ORDER.map((s) => {
               const StyleIcon = SOUND_STYLE_ICONS[s];
               const active = soundStyle === s;
@@ -1961,13 +1961,13 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                   key={s}
                   onClick={() => { setSoundStyle(s); say(`${SOUND_STYLE_LABELS[s]} sound.`); trackClick(); }}
                   aria-pressed={active}
-                  className={`flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-medium shadow-sm transition-all ${
+                  className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-medium shadow-sm transition-all ${
                     active
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "bg-card/60 text-foreground ring-1 ring-white/50 backdrop-blur-sm hover:bg-primary/10"
                   }`}
                 >
-                  <StyleIcon className="h-4 w-4" />
+                  <StyleIcon className="h-5 w-5" />
                   {SOUND_STYLE_LABELS[s]}
                 </button>
               );
