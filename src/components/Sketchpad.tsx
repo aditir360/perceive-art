@@ -87,7 +87,14 @@ const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
 
 type Point = { x: number; y: number };
 type Texture = "pen" | "pencil" | "highlighter" | "paintbrush";
-type Stroke = { color: string; width: number; opacity: number; texture: Texture; points: Point[] };
+type Stroke = {
+  color: string;
+  width: number;
+  opacity: number;
+  texture: Texture;
+  points: Point[];
+  mode?: "draw" | "blend";
+};
 
 // Shared thickness range across all four textures — one slider, applied to
 // whichever texture is currently selected (each texture remembers its own
@@ -689,6 +696,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const [colorIndex, setColorIndex] = useState(0);
   const [texture, setTexture] = useState<Texture>("pen");
   const [textureSettings, setTextureSettings] = useState(DEFAULT_TEXTURE_SETTINGS);
+  const [tool, setTool] = useState<"draw" | "eraser" | "blend">("draw");
+  const [eraserSize, setEraserSize] = useState(28);
+  const [blendSize, setBlendSize] = useState(36);
   // Derived, not stored directly: always reflects whichever texture is
   // currently selected, so every existing thickness/opacity usage below
   // (sliders, stroke creation, cursor preview) automatically applies to the
@@ -966,7 +976,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       say("Whoa, that's the edge!");
     }
 
-    if (drawing) {
+    if (drawing && tool === "draw") {
       setCurrent((c) => {
         if (!c) return { color, width: penWidth, opacity: penOpacity, texture, points: [p] };
         const start = c.points[0];
@@ -977,10 +987,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         return { ...c, points: [...c.points, p] };
       });
     }
-  }, [drawing, color, penWidth, penOpacity, texture, updateAudio, trackGuide, say]);
+  }, [drawing, tool, color, penWidth, penOpacity, texture, updateAudio, trackGuide, say]);
 
   // ── Drawing toggle ────────────────────────────────────────────────────────
   const toggleDrawing = useCallback(() => {
+    if (tool !== "draw") {
+      say("Switch to Draw before using the drawing toggle.");
+      return;
+    }
     trackClick();
     setDrawing((d) => {
       const next = !d;
@@ -998,7 +1012,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       }
       return next;
     });
-  }, [color, cursor, penWidth, penOpacity, texture, say]);
+  }, [tool, color, cursor, penWidth, penOpacity, texture, say]);
 
   // ── Sound toggle ──────────────────────────────────────────────────────────
   const toggleSound = useCallback(() => {
@@ -1090,7 +1104,87 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     changeTexture(TEXTURE_ORDER[(i + 1) % TEXTURE_ORDER.length]);
   }, [texture, changeTexture]);
 
+  // ── Eraser + blend helpers ────────────────────────────────────────────────
+  const pointToSegmentDistance = (p: Point, a: Point, b: Point): number => {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    if (len2 === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
+    return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+  };
+
+  const eraseAt = useCallback((p: Point) => {
+    const radius = eraserSize / 2;
+    setStrokes((prev) => {
+      const next: Stroke[] = [];
+      for (const stroke of prev) {
+        let segment: Point[] = [];
+        const flush = () => {
+          if (segment.length > 1) next.push({ ...stroke, points: segment });
+          segment = [];
+        };
+        for (let i = 0; i < stroke.points.length; i++) {
+          const pt = stroke.points[i];
+          const near = i === 0
+            ? Math.hypot(pt.x - p.x, pt.y - p.y) <= radius + stroke.width / 2
+            : pointToSegmentDistance(p, stroke.points[i - 1], pt) <= radius + stroke.width / 2;
+          if (near) flush();
+          else segment.push(pt);
+        }
+        flush();
+      }
+      return next;
+    });
+  }, [eraserSize]);
+
+  const hexRgb = (hex: string) => {
+    const n = parseInt(hex.replace("#", ""), 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  };
+
+  const rgbHex = (r: number, g: number, b: number) =>
+    `#${[r, g, b].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("")}`;
+
+  const blendColorAt = useCallback((p: Point) => {
+    const radius = blendSize / 2 + 12;
+    const colors: { r: number; g: number; b: number; weight: number }[] = [];
+    for (const stroke of strokes) {
+      for (let i = 1; i < stroke.points.length; i++) {
+        const d = pointToSegmentDistance(p, stroke.points[i - 1], stroke.points[i]);
+        if (d <= radius + stroke.width / 2) {
+          const c = hexRgb(stroke.color);
+          colors.push({ ...c, weight: Math.max(0.1, 1 - d / radius) });
+          break;
+        }
+      }
+    }
+    if (!colors.length) return color;
+    const total = colors.reduce((sum, c) => sum + c.weight, 0);
+    return rgbHex(
+      colors.reduce((sum, c) => sum + c.r * c.weight, 0) / total,
+      colors.reduce((sum, c) => sum + c.g * c.weight, 0) / total,
+      colors.reduce((sum, c) => sum + c.b * c.weight, 0) / total,
+    );
+  }, [blendSize, color, strokes]);
+
+  const changeToolSize = useCallback((next: number) => {
+    const clamped = Math.max(4, Math.min(100, Math.round(next)));
+    if (tool === "eraser") setEraserSize(clamped);
+    else if (tool === "blend") setBlendSize(clamped);
+    else changePenWidth(clamped);
+    trackClick();
+  }, [tool, changePenWidth]);
+
   // ── Canvas ops ────────────────────────────────────────────────────────────
+  const selectTool = useCallback((next: "draw" | "eraser" | "blend") => {
+    setTool(next);
+    setDrawing(false);
+    setCurrent(null);
+    const label = next === "draw" ? "Drawing tool selected" : next === "eraser" ? `Eraser selected, size ${eraserSize}` : `Blend tool selected, size ${blendSize}`;
+    say(label);
+    trackClick();
+  }, [eraserSize, blendSize, say]);
+
   const clearCanvas = useCallback(() => {
     setStrokes([]);
     setCurrent(null);
@@ -1223,11 +1317,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       else if (e.key === ",") { e.preventDefault(); changePenOpacity(penOpacity - OPACITY_STEP); }
       else if (e.key === ".") { e.preventDefault(); changePenOpacity(penOpacity + OPACITY_STEP); }
       else if (e.key.toLowerCase() === "t") { e.preventDefault(); cycleTexture(); }
+      else if (e.key.toLowerCase() === "r") { e.preventDefault(); selectTool("eraser"); }
+      else if (e.key.toLowerCase() === "b") { e.preventDefault(); selectTool("blend"); }
+      else if (e.key.toLowerCase() === "v") { e.preventDefault(); selectTool("draw"); }
       else if (e.key.toLowerCase() === "escape" && guideKey) { e.preventDefault(); stopGuide(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, penWidth, changePenWidth, penOpacity, changePenOpacity, cycleTexture, guideKey, stopGuide, say, postConfirmOpen, cancelPost, confirmPost]);
+  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, penWidth, changePenWidth, penOpacity, changePenOpacity, cycleTexture, selectTool, guideKey, stopGuide, say, postConfirmOpen, cancelPost, confirmPost]);
 
   // ── Pointer ───────────────────────────────────────────────────────────────
   const pointerDrawing = useRef(false);
@@ -1246,7 +1343,19 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     const p = svgPoint(e);
     setCursor(p);
     setDrawing(true);
-    setCurrent({ color, width: penWidth, opacity: penOpacity, texture, points: [p] });
+    if (tool === "eraser") {
+      eraseAt(p);
+    } else {
+      const blend = tool === "blend";
+      setCurrent({
+        color: blend ? blendColorAt(p) : color,
+        width: blend ? blendSize : penWidth,
+        opacity: blend ? 0.42 : penOpacity,
+        texture: blend ? "paintbrush" : texture,
+        mode: blend ? "blend" : "draw",
+        points: [p],
+      });
+    }
     updateAudio(p);
     trackClick();
   };
@@ -1256,20 +1365,28 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setCursor(p);
     updateAudio(p);
     trackGuide(p);
-    if (pointerDrawing.current) {
-      setCurrent((c) => c ? { ...c, points: [...c.points, p] } : { color, width: penWidth, opacity: penOpacity, texture, points: [p] });
+    if (!pointerDrawing.current) return;
+    if (tool === "eraser") {
+      eraseAt(p);
+      return;
     }
+    setCurrent((c) => c ? { ...c, points: [...c.points, p] } : null);
   };
 
   const onPointerUp = () => {
     if (!pointerDrawing.current) return;
     pointerDrawing.current = false;
     setDrawing(false);
-    setCurrent((c) => {
-      if (c && c.points.length > 1) setStrokes((s) => [...s, c]);
-      return null;
-    });
-    say("Great line! Saved it.");
+    if (tool !== "eraser") {
+      setCurrent((c) => {
+        if (c && c.points.length > 1) setStrokes((st) => [...st, c]);
+        return null;
+      });
+      say(tool === "blend" ? "Colors blended together." : "Great line! Saved it.");
+    } else {
+      setCurrent(null);
+      say("Erased that part.");
+    }
   };
 
   const exportStl = () => {
@@ -1346,11 +1463,29 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             {drawing ? "Drawing" : "Idle"}
             <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">Space</kbd>
           </Button>
+          <Button onClick={() => selectTool("draw")} variant={tool === "draw" ? "default" : "secondary"} className="gap-2 rounded-xl shadow-sm">
+            <Pencil className="h-4 w-4" /> Draw <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">V</kbd>
+          </Button>
+          <Button onClick={() => selectTool("eraser")} variant={tool === "eraser" ? "default" : "secondary"} className="gap-2 rounded-xl shadow-sm">
+            <Eraser className="h-4 w-4" /> Eraser <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">R</kbd>
+          </Button>
+          <Button onClick={() => selectTool("blend")} variant={tool === "blend" ? "default" : "secondary"} className="gap-2 rounded-xl shadow-sm">
+            <Waves className="h-4 w-4" /> Blend <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">B</kbd>
+          </Button>
           <Button onClick={undo}        variant="outline" className="gap-2 rounded-xl bg-card/70 shadow-sm ring-1 ring-white/50"><Undo2 className="h-4 w-4" /> Undo</Button>
           <Button onClick={clearCanvas} variant="outline" className="gap-2 rounded-xl bg-card/70 shadow-sm ring-1 ring-white/50">
             <Eraser className="h-4 w-4" /> Clear
             <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">C</kbd>
           </Button>
+          {tool !== "draw" && (
+            <label className="flex min-w-[190px] items-center gap-2 rounded-xl bg-card/70 px-3 py-2 text-xs font-semibold text-primary ring-1 ring-white/50">
+              <span className="w-14">{tool === "eraser" ? "Eraser" : "Blend"} size</span>
+              <input type="range" min="4" max="100" step="1" value={tool === "eraser" ? eraserSize : blendSize}
+                onChange={(e) => changeToolSize(Number(e.target.value))} className="w-24 accent-primary"
+                aria-label={`${tool === "eraser" ? "Eraser" : "Blend"} size`} />
+              <span className="w-7 text-right">{tool === "eraser" ? eraserSize : blendSize}</span>
+            </label>
+          )}
           {guideKey && (
             <Button onClick={stopGuide} variant="destructive" size="sm" className="gap-1.5 rounded-xl shadow-sm">
               <X className="h-3.5 w-3.5" /> Stop guide
@@ -1426,6 +1561,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             <filter id="brushSoften" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="0.6" />
             </filter>
+            <filter id="blendSoften" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="5" />
+            </filter>
           </defs>
 
           <rect width="100%" height="100%" fill="oklch(0.975 0.025 15)" />
@@ -1494,6 +1632,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               points={s.points.map((p) => `${p.x},${p.y}`).join(" ")}
               fill="none" stroke={s.color} strokeWidth={s.width} strokeOpacity={s.opacity}
               {...textureVisualProps(s.texture)}
+              filter={s.mode === "blend" ? "url(#blendSoften)" : textureVisualProps(s.texture).filter}
+              style={s.mode === "blend" ? { mixBlendMode: "multiply" } : textureVisualProps(s.texture).style}
             />
           ))}
           {strokes.flatMap((s, i) =>
@@ -1512,6 +1652,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               points={current.points.map((p) => `${p.x},${p.y}`).join(" ")}
               fill="none" stroke={current.color} strokeWidth={current.width} strokeOpacity={current.opacity}
               {...textureVisualProps(current.texture)}
+              filter={current.mode === "blend" ? "url(#blendSoften)" : textureVisualProps(current.texture).filter}
+              style={current.mode === "blend" ? { mixBlendMode: "multiply" } : textureVisualProps(current.texture).style}
             />
           )}
           {current && getBrushDabs(current).map((d, j) => (
@@ -1535,14 +1677,19 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           ))}
 
           {/* Cursor */}
-          <circle cx={cursor.x} cy={cursor.y} r={12} fill={color} fillOpacity={0.18} stroke={color} strokeWidth={2} />
-          <circle cx={cursor.x} cy={cursor.y} r={Math.max(2, penWidth / 2)} fill={color} fillOpacity={penOpacity} />
+          <circle cx={cursor.x} cy={cursor.y}
+            r={tool === "eraser" ? eraserSize / 2 : tool === "blend" ? blendSize / 2 : 12}
+            fill={tool === "eraser" ? "white" : color}
+            fillOpacity={tool === "eraser" ? 0.5 : 0.18}
+            stroke={tool === "eraser" ? "oklch(0.55 0.08 20)" : color}
+            strokeWidth={2} strokeDasharray={tool === "eraser" ? "5 4" : undefined} />
+          {tool === "draw" && <circle cx={cursor.x} cy={cursor.y} r={Math.max(2, penWidth / 2)} fill={color} fillOpacity={penOpacity} />}
           </svg>
           </div>
         </div>
 
         <p className="mt-3 rounded-xl bg-background/35 px-3 py-2 text-xs text-muted-foreground ring-1 ring-white/40">
-          Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours · [ ] adjust thickness · , . adjust opacity · T cycles texture
+          Left/right pans sound · Up/down changes pitch · Q/E colours · [ ] thickness · , . opacity · T texture · V draw · R eraser · B blend
         </p>
 
         {/* New feature callout — Public Gallery. Placed right under the
