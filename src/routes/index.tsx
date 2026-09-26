@@ -93,7 +93,7 @@ const handlePost = useCallback(async ({ svg }: { svg: string }) => {
 
       {/* Mission */}
       <section id="mission" className="mx-auto mt-10 max-w-5xl px-6 pb-16 sm:mt-16">
-        <div className="relative pt-40 sm:pt-52">
+        <div className="relative pt-52">
           <img
             src={bearPeek}
             alt=""
