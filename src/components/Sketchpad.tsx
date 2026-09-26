@@ -725,6 +725,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const lastBackOnTrackLine = useRef("");
   const lastPraiseLine = useRef("");
   const guideCompletedRef = useRef(false);
+  const completedLineCountRef = useRef(0);
 
   const stats = useCanvasClicks();
 
@@ -771,6 +772,13 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       window.speechSynthesis.speak(utter);
     }
   }, []);
+
+  const maybePraiseEveryTenthLine = useCallback(() => {
+    completedLineCountRef.current += 1;
+    if (completedLineCountRef.current % 10 === 0) {
+      say("Great line! Saved it.");
+    }
+  }, [say]);
 
   useEffect(() => {
     return () => {
@@ -1004,16 +1012,19 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         if (audioRef.current) playSineNote(audioRef.current.ctx, 659, 0.15, 0.12);
         say("Drawing on — go ahead, I'm right here with you.");
       } else {
+        const finishedLine = current;
         setCurrent((c) => {
           if (c && c.points.length > 1) setStrokes((s) => [...s, c]);
           return null;
         });
+        if (finishedLine && finishedLine.points.length > 1) {
+          maybePraiseEveryTenthLine();
+        }
         if (audioRef.current) playSineNote(audioRef.current.ctx, 392, 0.18, 0.10);
-        say("Great line! Saved it.");
       }
       return next;
     });
-  }, [tool, color, cursor, penWidth, penOpacity, texture, say]);
+  }, [tool, color, cursor, penWidth, penOpacity, texture, current, maybePraiseEveryTenthLine, say]);
 
   // ── Sound toggle ──────────────────────────────────────────────────────────
   const toggleSound = useCallback(() => {
@@ -1188,6 +1199,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
   const clearCanvas = useCallback(() => {
     setStrokes([]);
+    completedLineCountRef.current = 0;
     setCurrent(null);
     setDrawing(false);
     if (audioRef.current) {
@@ -1379,11 +1391,16 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     pointerDrawing.current = false;
     setDrawing(false);
     if (tool !== "eraser") {
+      const finishedLine = current;
       setCurrent((c) => {
         if (c && c.points.length > 1) setStrokes((st) => [...st, c]);
         return null;
       });
-      say(tool === "blend" ? "Colors blended together." : "Great line! Saved it.");
+      if (tool === "blend") {
+        say("Colors blended together.");
+      } else if (finishedLine && finishedLine.points.length > 1) {
+        maybePraiseEveryTenthLine();
+      }
     } else {
       setCurrent(null);
       say("Erased that part.");
