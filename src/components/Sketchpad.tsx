@@ -65,6 +65,7 @@ const TEXTURE_ICONS: Record<Texture, typeof PenLine> = {
   paintbrush: Paintbrush,
 };
 
+// Hi :D
 // Icon + colour badge per guide, reusing the same swatches from the palette
 // below (Rose, Gold, Sky, etc.) instead of introducing new colours or emoji.
 const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
