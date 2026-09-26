@@ -132,6 +132,8 @@ const DEFAULT_TEXTURE_SETTINGS: Record<Texture, { width: number; opacity: number
 };
 
 const COLORS = [
+  { name: "Black",    value: "#000000", tone: 220.00 },
+  { name: "White",    value: "#ffffff", tone: 880.00 },
   { name: "Rose",     value: "#e88aab", tone: 523.25 },
   { name: "Peach",    value: "#f9a8a8", tone: 587.33 },
   { name: "Sun",      value: "#f5a623", tone: 659.25 },
@@ -954,7 +956,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     const guide = SHAPE_GUIDES[key];
     if (audioRef.current) playGuideStart(audioRef.current.ctx, 392);
     say(`Let's trace a ${guide.name.toLowerCase()} together! ${guide.checkpoints[0].say} Get close to the glowing line and I'll hum louder the closer you get.`);
-    trackClick();
   }, [startGuideTone, stopGuideTone, say]);
 
   const stopGuide = useCallback(() => {
@@ -963,7 +964,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     offCourseRef.current = false;
     say("Guide stopped — nice tracing!");
     setGuideKey(null);
-    trackClick();
   }, [guideKey, stopGuideTone, say]);
 
   // ── Movement ─────────────────────────────────────────────────────────────
@@ -1004,7 +1004,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       say("Switch to Draw before using the drawing toggle.");
       return;
     }
-    trackClick();
     setDrawing((d) => {
       const next = !d;
       if (next) {
@@ -1028,7 +1027,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
   // ── Sound toggle ──────────────────────────────────────────────────────────
   const toggleSound = useCallback(() => {
-    trackClick();
     setSoundOn((s) => {
       const next = !s;
       if (next) {
@@ -1055,7 +1053,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       say(`${c.name}`);
       return next;
     });
-    trackClick();
   }, [say]);
 
   const pickColor = useCallback((c: typeof COLORS[0]) => {
@@ -1063,7 +1060,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setColorIndex(COLORS.indexOf(c));
     if (audioRef.current) playSineNote(audioRef.current.ctx, c.tone, 0.2, 0.11, true);
     say(`Color: ${c.name}`);
-    trackClick();
   }, [say]);
 
   // ── Pen thickness (applies to whichever texture is active) ─────────────────
@@ -1079,7 +1075,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       say(`${TEXTURE_LABELS[texture]} thickness ${clamped}`);
       return { ...prev, [texture]: { ...prev[texture], width: clamped } };
     });
-    trackClick();
   }, [texture, say]);
 
   // ── Pen opacity (applies to whichever texture is active) ───────────────────
@@ -1097,7 +1092,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       say(`${TEXTURE_LABELS[texture]} opacity ${Math.round(clamped * 100)} percent`);
       return { ...prev, [texture]: { ...prev[texture], opacity: clamped } };
     });
-    trackClick();
   }, [texture, say]);
 
   // ── Texture ──────────────────────────────────────────────────────────────
@@ -1108,7 +1102,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       say(`${TEXTURE_LABELS[next]} selected`);
       return next;
     });
-    trackClick();
   }, [say]);
 
   const cycleTexture = useCallback(() => {
@@ -1184,7 +1177,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     if (tool === "eraser") setEraserSize(clamped);
     else if (tool === "blend") setBlendSize(clamped);
     else changePenWidth(clamped);
-    trackClick();
   }, [tool, changePenWidth]);
 
   // ── Canvas ops ────────────────────────────────────────────────────────────
@@ -1194,7 +1186,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setCurrent(null);
     const label = next === "draw" ? "Drawing tool selected" : next === "eraser" ? `Eraser selected, size ${eraserSize}` : `Blend tool selected, size ${blendSize}`;
     say(label);
-    trackClick();
   }, [eraserSize, blendSize, say]);
 
   const clearCanvas = useCallback(() => {
@@ -1207,22 +1198,19 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       setTimeout(() => audioRef.current && playSineNote(audioRef.current.ctx, 196, 0.25, 0.06), 120);
     }
     say("All clear! Ready for a fresh drawing.");
-    trackClick();
   }, [say]);
 
   const undo = useCallback(() => {
     setStrokes((s) => s.slice(0, -1));
     if (audioRef.current) playSineNote(audioRef.current.ctx, 330, 0.18, 0.09);
     say("Oops, undone! Let's try that again.");
-    trackClick();
   }, [say]);
 
   const toggleVisualAids = useCallback(() => {
     setVisualAids((v) => {
       const next = !v;
       say(next ? "Visual aids are on! I've got you." : "Visual aids off — I'll guide you by sound.");
-      trackClick();
-      return next;
+        return next;
     });
   }, [say]);
 
@@ -1266,8 +1254,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     a.click();
   };
 
-  const exportSwell = () => { dl("sonic-bear-swell.svg", buildSvgString(true),  "image/svg+xml"); say("There you go — your swell paper SVG is downloading."); trackClick(); };
-  const exportColor = () => { dl("sonic-bear-color.svg", buildSvgString(false), "image/svg+xml"); say("Nice! Your color SVG is downloading.");       trackClick(); };
+  const exportSwell = () => { dl("sonic-bear-swell.svg", buildSvgString(true),  "image/svg+xml"); say("There you go — your swell paper SVG is downloading."); };
+  const exportColor = () => { dl("sonic-bear-color.svg", buildSvgString(false), "image/svg+xml"); say("Nice! Your color SVG is downloading.");       };
 
   // ── Post to Gallery ──────────────────────────────────────────────────────
   const hasArtwork = strokes.length > 0 || (!!current && current.points.length > 1);
@@ -1278,7 +1266,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       return;
     }
     setPostConfirmOpen(true);
-    trackClick();
   }, [hasArtwork, say]);
 
   const cancelPost = useCallback(() => {
@@ -1294,7 +1281,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setTimeout(() => setJustPosted(false), 2200);
     if (audioRef.current) playCompleteChime(audioRef.current.ctx);
     say("Yay! Sent it in for review — it'll go live on the gallery once approved.");
-    trackClick();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onPost, strokes, current, say]);
 
@@ -1353,6 +1339,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     (e.target as Element).setPointerCapture?.(e.pointerId);
     pointerDrawing.current = true;
+    trackClick();
     const p = svgPoint(e);
     setCursor(p);
     setDrawing(true);
@@ -1370,7 +1357,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       });
     }
     updateAudio(p);
-    trackClick();
   };
 
   const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -1429,7 +1415,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         box(s.points[i-1].x*scale,(HEIGHT-s.points[i-1].y)*scale,s.points[i].x*scale,(HEIGHT-s.points[i].y)*scale);
     dl("sonic-bear.stl", `solid sb\n${facets.join("\n")}\nendsolid sb`, "model/stl");
     say("Your 3D file is ready — happy printing!");
-    trackClick();
   };
 
   // Trail
@@ -1822,7 +1807,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 {color === c.value && (
                   <Check
                     className="absolute inset-0 m-auto h-6 w-6 drop-shadow"
-                    style={{ color: ["#f5a623", "#e0b04f", "#f9a8a8"].includes(c.value) ? "#3a1f2b" : "#fff" }}
+                    style={{ color: ["#f5a623", "#e0b04f", "#f9a8a8", "#ffffff"].includes(c.value) ? "#3a1f2b" : "#fff" }}
                   />
                 )}
               </button>
@@ -1977,7 +1962,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               return (
                 <button
                   key={s}
-                  onClick={() => { setSoundStyle(s); say(`${SOUND_STYLE_LABELS[s]} sound.`); trackClick(); }}
+                  onClick={() => { setSoundStyle(s); say(`${SOUND_STYLE_LABELS[s]} sound.`); }}
                   aria-pressed={active}
                   className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-medium shadow-sm transition-all ${
                     active
