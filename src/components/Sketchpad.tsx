@@ -185,6 +185,23 @@ const LABEL_ROW     = "flex items-center justify-between text-sm font-medium tex
 const KBD_CHIP      = "rounded-full bg-background/60 px-2 py-0.5 text-xs";
 const ACTION_BTN    = "h-12 justify-start gap-3 rounded-2xl px-4 text-sm font-medium";
 
+// ── Studio layout helpers (editorial three-column workspace) ─────────────────
+// Italic serif accent used for the occasional cursive word in headings.
+const ACCENT = "font-['Instrument_Serif',Georgia,serif] font-normal italic tracking-tight";
+const ROW_BTN = "flex h-11 w-full items-center gap-3 rounded-xl px-3.5 text-sm font-medium transition-colors";
+const ROW_ON  = "bg-foreground text-background shadow-md";
+const ROW_OFF = "text-foreground hover:bg-primary/10";
+const ICON_BTN = "grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground";
+
+function SectionLabel({ id, n, title, Icon }: { id: string; n: string; title: string; Icon: typeof Circle }) {
+  return (
+    <h2 id={id} className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+      <span><span className="text-primary">{n}</span> / {title}</span>
+      <Icon className="h-4 w-4 opacity-70" aria-hidden />
+    </h2>
+  );
+}
+
 const WIDTH  = 900;
 const HEIGHT = 560;
 const GRID   = 60;
@@ -1502,152 +1519,197 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   // Guide path rendered on canvas
   const activeGuide = guideKey ? SHAPE_GUIDES[guideKey] : null;
 
+  const activeColorName = COLORS.find((c) => c.value === color)?.name ?? "";
+  const statusText = drawing
+    ? "Drawing"
+    : strokes.length === 0
+      ? "A fresh start"
+      : `${strokes.length} ${strokes.length === 1 ? "line" : "lines"} drawn`;
+  const sizeValue = tool === "eraser" ? eraserSize : blendSize;
+
   return (
-    <div className="mx-auto grid w-full max-w-[1080px] grid-cols-[minmax(0,1fr)] items-start gap-6 2xl:max-w-none 2xl:grid-cols-[minmax(0,1fr)_680px]">
+    <div className="w-full">
+      <div className="overflow-hidden rounded-[2rem] bg-card/70 shadow-2xl shadow-primary/15 ring-1 ring-white/60 backdrop-blur-xl">
+        <div className="grid xl:grid-cols-[288px_minmax(0,1fr)_340px]">
 
-      {/* ── Canvas area ── */}
-      <div className="relative overflow-visible rounded-[2rem] border border-white/70 bg-gradient-to-br from-primary/30 via-card/85 to-accent/30 p-1.5 shadow-[0_28px_80px_-28px_hsl(var(--primary)/0.65)] ring-1 ring-primary/20 backdrop-blur-xl sm:p-2.5">
-        <div className="relative overflow-visible rounded-[1.7rem] border border-white/60 bg-gradient-to-br from-card/90 via-card/75 to-primary/5 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md sm:p-5">
+          {/* ───────── LEFT: tools, color, brush ───────── */}
+          <aside
+            aria-label="Drawing tools"
+            className="order-2 grid divide-y divide-border/70 border-t border-border/70 md:grid-cols-3 md:divide-x md:divide-y-0 xl:order-1 xl:block xl:divide-x-0 xl:divide-y xl:border-r xl:border-t-0"
+          >
+            {/* 01 / Tools */}
+            <section aria-labelledby="tools-heading" className="p-5">
+              <SectionLabel id="tools-heading" n="01" title="Tools" Icon={Hand} />
+              <div className="mt-4 space-y-1.5">
+                <button onClick={() => selectTool("draw")} aria-pressed={tool === "draw"} className={`${ROW_BTN} ${tool === "draw" ? ROW_ON : ROW_OFF}`}>
+                  <Pencil className="h-4 w-4 shrink-0" /> Draw <span className="ml-auto text-xs opacity-60">V</span>
+                </button>
+                <button onClick={() => selectTool("eraser")} aria-pressed={tool === "eraser"} className={`${ROW_BTN} ${tool === "eraser" ? ROW_ON : ROW_OFF}`}>
+                  <Eraser className="h-4 w-4 shrink-0" /> Eraser <span className="ml-auto text-xs opacity-60">R</span>
+                </button>
+                <button onClick={() => selectTool("blend")} aria-pressed={tool === "blend"} className={`${ROW_BTN} ${tool === "blend" ? ROW_ON : ROW_OFF}`}>
+                  <Waves className="h-4 w-4 shrink-0" /> Blend <span className="ml-auto text-xs opacity-60">B</span>
+                </button>
+              </div>
 
-        {/* Main product badge */}
-        <div className="mb-5 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-card/85 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-primary shadow-md ring-1 ring-primary/20 backdrop-blur-md">
-            <Sparkles className="h-3.5 w-3.5" />
-            Our main product
-          </span>
-          <span className="rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary ring-1 ring-primary/15">
-            Draw · Listen · Create
-          </span>
-        </div>
+              {tool !== "draw" && (
+                <label className="mt-3 flex items-center gap-3 text-sm font-medium text-muted-foreground">
+                  <span className="shrink-0">{tool === "eraser" ? "Eraser" : "Blend"} size</span>
+                  <input
+                    type="range" min="4" max="100" step="1" value={sizeValue}
+                    onChange={(e) => changeToolSize(Number(e.target.value))}
+                    className="min-w-0 flex-1 accent-primary"
+                    aria-label={`${tool === "eraser" ? "Eraser" : "Blend"} size`}
+                  />
+                  <span className="w-8 text-right text-foreground">{sizeValue}</span>
+                </label>
+              )}
 
-        {/* Top bar */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex h-12 items-center gap-2 rounded-full bg-card/70 px-4 text-sm font-bold text-primary ring-1 ring-white/60 shadow-sm backdrop-blur-sm">
-            <Sparkles className="h-4 w-4" />
-            {stats.data == null
-              ? "Counting canvas drawings…"
-              : `${stats.data.toLocaleString()} drawings created worldwide`}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Guide voice — switch the narrator between Bennett and the lady voice */}
-            <div
-              role="group"
-              aria-label="Guide voice"
-              className="inline-flex min-h-12 max-w-full flex-wrap items-center gap-1 rounded-full bg-card/70 p-1 ring-1 ring-white/60 shadow-sm backdrop-blur-sm"
-            >
-              <span className="flex items-center gap-1.5 pl-3 pr-1 text-sm font-semibold text-muted-foreground">
-                <Volume2 className="h-4 w-4 text-primary" /> Voice
-              </span>
-              {VOICE_PERSONA_ORDER.map((v) => {
-                const active = voicePersona === v;
-                return (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => chooseVoicePersona(v)}
-                    aria-pressed={active}
-                    className={`h-10 rounded-full px-4 text-sm font-semibold transition-all ${
-                      active
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-foreground hover:bg-primary/10"
-                    }`}
-                  >
-                    {VOICE_PERSONA_LABELS[v]}
+              <div className="mt-4 space-y-1.5 border-t border-border/70 pt-4">
+                <button onClick={toggleDrawing} aria-pressed={drawing} className={`${ROW_BTN} ${drawing ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : ROW_OFF}`}>
+                  {drawing ? <Pencil className="h-4 w-4 shrink-0 text-primary" /> : <Hand className="h-4 w-4 shrink-0" />}
+                  {drawing ? "Pen down" : "Pen up"} <span className="ml-auto text-xs opacity-60">Space</span>
+                </button>
+                <button onClick={toggleVisualAids} aria-pressed={visualAids} className={`${ROW_BTN} ${visualAids ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : ROW_OFF}`}>
+                  <Eye className="h-4 w-4 shrink-0" /> Visual aids <span className="ml-auto text-xs opacity-60">X</span>
+                </button>
+                {guideKey && (
+                  <button onClick={stopGuide} className={`${ROW_BTN} bg-destructive text-destructive-foreground shadow-sm`}>
+                    <X className="h-4 w-4 shrink-0" /> Stop guide <span className="ml-auto text-xs opacity-70">Esc</span>
                   </button>
-                );
-              })}
-              <span aria-hidden className="mx-0.5 h-4 w-px bg-border" />
-              <button
-                type="button"
-                onClick={toggleVoiceOn}
-                aria-pressed={voiceOn}
-                aria-label={voiceOn ? "Turn narration voice off" : "Turn narration voice on"}
-                className={`flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-all ${
-                  voiceOn
-                    ? "text-foreground hover:bg-primary/10"
-                    : "bg-muted text-muted-foreground ring-1 ring-border"
-                }`}
-              >
-                {voiceOn ? <Mic className="h-4 w-4 text-primary" /> : <MicOff className="h-4 w-4" />}
-                {voiceOn ? "Narration on" : "Narration off"}
-              </button>
+                )}
+              </div>
+            </section>
+
+            {/* 02 / Color */}
+            <section aria-labelledby="colors-heading" className="p-5">
+              <SectionLabel id="colors-heading" n="02" title="Color" Icon={Palette} />
+              <div className="mt-4 grid grid-cols-6 gap-2.5">
+                {COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    onClick={() => pickColor(c)}
+                    aria-label={`Color ${c.name}`}
+                    aria-pressed={color === c.value}
+                    className={`relative aspect-square w-full rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
+                      color === c.value ? "scale-105 ring-foreground" : "ring-border/60"
+                    }`}
+                    style={{ backgroundColor: c.value }}
+                  >
+                    {color === c.value && (
+                      <Check
+                        className="absolute inset-0 m-auto h-4 w-4 drop-shadow"
+                        style={{ color: ["#f5a623", "#e0b04f", "#f9a8a8", "#ffffff"].includes(c.value) ? "#3a1f2b" : "#fff" }}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                {activeColorName} <span className="font-medium normal-case tracking-normal">· Q / E to cycle</span>
+              </p>
+            </section>
+
+            {/* 03 / Brush */}
+            <section aria-labelledby="brush-heading" className="p-5">
+              <SectionLabel id="brush-heading" n="03" title="Brush" Icon={Paintbrush} />
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {TEXTURE_ORDER.map((t) => {
+                  const TextureIcon = TEXTURE_ICONS[t];
+                  const active = texture === t;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => changeTexture(t)}
+                      aria-pressed={active}
+                      className={`flex h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-2 text-sm font-medium transition-colors ${
+                        active ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : "ring-1 ring-border/70 text-foreground hover:bg-primary/10"
+                      }`}
+                    >
+                      <TextureIcon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{TEXTURE_LABELS[t]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">T to cycle textures</p>
+
+              <div className="mt-5 flex items-center justify-between text-sm">
+                <span className="font-medium">Size</span>
+                <span className="text-muted-foreground">{penWidth} px <span className="ml-1 text-xs">[ / ]</span></span>
+              </div>
+              <div className="mt-2 flex items-center gap-2.5">
+                <Button onClick={() => changePenWidth(penWidth - 1)} variant="outline" size="icon" className={STEP_BTN} aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}>
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <input
+                  type="range"
+                  min={MIN_PEN_WIDTH}
+                  max={MAX_PEN_WIDTH}
+                  step={1}
+                  value={penWidth}
+                  onChange={(e) => changePenWidth(Number(e.target.value))}
+                  aria-label={`${TEXTURE_LABELS[texture]} thickness`}
+                  aria-valuemin={MIN_PEN_WIDTH}
+                  aria-valuemax={MAX_PEN_WIDTH}
+                  aria-valuenow={penWidth}
+                  className={SLIDER_CLASS}
+                  style={{
+                    background: `linear-gradient(to right, oklch(0.58 0.15 20) ${((penWidth - MIN_PEN_WIDTH) / (MAX_PEN_WIDTH - MIN_PEN_WIDTH)) * 100}%, oklch(0.58 0.15 20 / 0.18) ${((penWidth - MIN_PEN_WIDTH) / (MAX_PEN_WIDTH - MIN_PEN_WIDTH)) * 100}%)`,
+                  }}
+                />
+                <Button onClick={() => changePenWidth(penWidth + 1)} variant="outline" size="icon" className={STEP_BTN} aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="mt-5 flex items-center justify-between text-sm">
+                <span className="font-medium">Opacity</span>
+                <span className="text-muted-foreground">{Math.round(penOpacity * 100)}% <span className="ml-1 text-xs">, / .</span></span>
+              </div>
+              <div className="mt-2 flex items-center gap-2.5">
+                <Button onClick={() => changePenOpacity(penOpacity - OPACITY_STEP)} variant="outline" size="icon" className={STEP_BTN} aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}>
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <input
+                  type="range"
+                  min={OPACITY_RANGE[texture].min}
+                  max={OPACITY_RANGE[texture].max}
+                  step={OPACITY_STEP}
+                  value={penOpacity}
+                  onChange={(e) => changePenOpacity(Number(e.target.value))}
+                  aria-label={`${TEXTURE_LABELS[texture]} opacity`}
+                  aria-valuemin={OPACITY_RANGE[texture].min}
+                  aria-valuemax={OPACITY_RANGE[texture].max}
+                  aria-valuenow={penOpacity}
+                  className={SLIDER_CLASS}
+                  style={{
+                    background: `linear-gradient(to right, oklch(0.58 0.15 20) ${((penOpacity - OPACITY_RANGE[texture].min) / (OPACITY_RANGE[texture].max - OPACITY_RANGE[texture].min)) * 100}%, oklch(0.58 0.15 20 / 0.18) ${((penOpacity - OPACITY_RANGE[texture].min) / (OPACITY_RANGE[texture].max - OPACITY_RANGE[texture].min)) * 100}%)`,
+                  }}
+                />
+                <Button onClick={() => changePenOpacity(penOpacity + OPACITY_STEP)} variant="outline" size="icon" className={STEP_BTN} aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </section>
+          </aside>
+
+          {/* ───────── CENTER: the canvas ───────── */}
+          <section aria-label="Canvas" className="order-1 min-w-0 p-5 xl:order-2">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3 text-[11px] font-bold uppercase tracking-[0.18em]">
+                <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-[oklch(0.58_0.13_150)]" />
+                <span className="truncate text-foreground">Untitled canvas</span>
+                <span className="hidden font-medium normal-case tracking-normal text-muted-foreground sm:inline">{WIDTH} × {HEIGHT}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <button onClick={undo} aria-label="Undo last line" className={ICON_BTN}><Undo2 className="h-4 w-4" /></button>
+                <span aria-hidden className="h-5 w-px bg-border" />
+                <button onClick={clearCanvas} aria-label="Clear canvas (C)" className={ICON_BTN}><Eraser className="h-4 w-4" /></button>
+              </div>
             </div>
-            <Button
-              onClick={toggleVisualAids}
-              variant={visualAids ? "default" : "outline"}
-              aria-pressed={visualAids}
-              className={
-                visualAids
-                  ? "h-12 gap-2 rounded-full px-5 text-sm font-medium shadow-sm"
-                  : "h-12 gap-2 rounded-full border-2 border-primary/50 bg-card px-5 text-sm font-semibold text-primary shadow-sm hover:bg-primary/10 hover:text-primary"
-              }
-            >
-              <Eye className="h-4 w-4" /> Visual aids
-              <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">X</kbd>
-            </Button>
-          </div>
-        </div>
 
-        {/* Controls */}
-        <div className="mb-2 grid grid-cols-2 gap-2 rounded-2xl bg-gradient-to-br from-primary/10 via-background/40 to-accent/10 p-2 shadow-inner ring-1 ring-white/50 backdrop-blur-sm sm:grid-cols-4">
-          <Button onClick={toggleSound} variant={soundOn ? "default" : "secondary"} aria-pressed={soundOn} className="h-12 min-w-0 gap-2 rounded-2xl px-3 text-sm font-medium shadow-sm">
-            {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            {soundOn ? "Sound On" : "Sound Off"}
-            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">S</kbd>
-          </Button>
-          <Button onClick={toggleDrawing} variant={drawing ? "default" : "secondary"} aria-pressed={drawing} className="h-12 min-w-0 gap-2 rounded-2xl px-3 text-sm font-medium shadow-sm">
-            {drawing ? <Pencil className="h-4 w-4" /> : <Hand className="h-4 w-4" />}
-            {drawing ? "Drawing" : "Idle"}
-            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">Space</kbd>
-          </Button>
-          <Button onClick={() => selectTool("draw")} variant={tool === "draw" ? "default" : "secondary"} className="h-12 min-w-0 gap-2 rounded-2xl px-3 text-sm font-medium shadow-sm">
-            <Pencil className="h-4 w-4" /> Draw <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">V</kbd>
-          </Button>
-          <Button onClick={() => selectTool("eraser")} variant={tool === "eraser" ? "default" : "secondary"} className="h-12 min-w-0 gap-2 rounded-2xl px-3 text-sm font-medium shadow-sm">
-            <Eraser className="h-4 w-4" /> Eraser <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">R</kbd>
-          </Button>
-          <Button onClick={() => selectTool("blend")} variant={tool === "blend" ? "default" : "secondary"} className="h-12 min-w-0 gap-2 rounded-2xl px-3 text-sm font-medium shadow-sm">
-            <Waves className="h-4 w-4" /> Blend <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">B</kbd>
-          </Button>
-          <Button onClick={undo}        variant="outline" className="h-12 min-w-0 gap-2 rounded-2xl bg-card/70 px-3 text-sm font-medium shadow-sm ring-1 ring-white/50"><Undo2 className="h-4 w-4" /> Undo</Button>
-          <Button onClick={clearCanvas} variant="outline" className="h-12 min-w-0 gap-2 rounded-2xl bg-card/70 px-3 text-sm font-medium shadow-sm ring-1 ring-white/50">
-            <Eraser className="h-4 w-4" /> Clear
-            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">C</kbd>
-          </Button>
-          {tool !== "draw" && (
-            <label className="col-span-2 flex h-12 min-w-0 items-center gap-3 rounded-2xl border border-white/50 bg-card/70 px-4 text-sm font-semibold text-primary shadow-sm ring-1 ring-primary/10 backdrop-blur-sm sm:col-span-2">
-              <span className="shrink-0">{tool === "eraser" ? "Eraser" : "Blend"} size</span>
-              <input type="range" min="4" max="100" step="1" value={tool === "eraser" ? eraserSize : blendSize}
-                onChange={(e) => changeToolSize(Number(e.target.value))} className="min-w-0 flex-1 accent-primary"
-                aria-label={`${tool === "eraser" ? "Eraser" : "Blend"} size`} />
-              <span className="w-8 text-right">{tool === "eraser" ? eraserSize : blendSize}</span>
-            </label>
-          )}
-          {guideKey && (
-            <Button onClick={stopGuide} variant="destructive" className="h-12 min-w-0 gap-2 rounded-2xl px-3 text-sm font-medium shadow-sm">
-              <X className="h-4 w-4" /> Stop guide
-              <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">Esc</kbd>
-            </Button>
-          )}
-        </div>
-
-        {/* SVG Canvas + bear companion. The bear is pinned to the canvas
-            frame's own top-right corner (not floating in the gap above the
-            controls), so its position is completely independent of the
-            controls row above — it cannot ever overlap those buttons. */}
-        <div className="relative mt-2 rounded-[1.75rem] bg-gradient-to-br from-primary/15 via-background/60 to-accent/15 p-2 pt-3 shadow-inner ring-1 ring-primary/20 sm:p-2.5 sm:pt-3.5">
-          <div className="pointer-events-none absolute -top-12 right-2 z-10 rotate-[6deg] sm:-top-16 sm:right-4">
-            <img
-              src={drawing ? bearDrawing : bearSleeping}
-              alt=""
-              aria-hidden="true"
-              className="h-20 w-20 select-none object-contain drop-shadow-[0_6px_10px_rgba(58,31,43,0.25)] sm:h-28 sm:w-28"
-            />
-          </div>
-          {/* Double ring "mat frame" — a slim gold hairline just inside the
-              soft outer shadow gives the canvas a gallery-framed feel
-              instead of a flat rectangle. */}
-          <div className="overflow-hidden rounded-2xl bg-[oklch(0.98_0.02_15)] shadow-xl shadow-primary/10 ring-1 ring-[oklch(0.7_0.09_75)]/40">
+            <div className="relative overflow-hidden rounded-xl bg-[oklch(0.98_0.02_15)] shadow-inner ring-1 ring-border">
           <svg
             role="img"
             aria-label="Sonic tactile drawing canvas. Use arrow keys to move, space to toggle drawing."
@@ -1822,403 +1884,279 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             strokeWidth={2} strokeDasharray={tool === "eraser" ? "5 4" : undefined} />
           {tool === "draw" && <circle cx={cursor.x} cy={cursor.y} r={Math.max(2, penWidth / 2)} fill={color} fillOpacity={penOpacity} />}
           </svg>
-          </div>
+              {strokes.length === 0 && !current && (
+                <div aria-hidden className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+                  <Sparkles className="h-6 w-6 text-primary" />
+                  <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.2em] text-foreground">This space is yours</p>
+                  <p className={`${ACCENT} mt-2 text-3xl text-muted-foreground sm:text-4xl`}>Make your first mark anywhere.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+              <span className="flex items-center gap-2.5">
+                <img
+                  src={drawing ? bearDrawing : bearSleeping}
+                  alt=""
+                  aria-hidden="true"
+                  className="h-10 w-10 select-none object-contain drop-shadow-[0_4px_6px_rgba(58,31,43,0.2)]"
+                />
+                <span aria-hidden className="h-2 w-2 rounded-full bg-[oklch(0.58_0.13_150)]" />
+                <span className="text-[oklch(0.42_0.1_150)]">{statusText}</span>
+              </span>
+              <span>Drag to draw <span aria-hidden>·</span> Every line has a sound</span>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {stats.data == null
+                ? "Counting canvas drawings…"
+                : `${stats.data.toLocaleString()} drawings created worldwide`}
+            </p>
+          </section>
+
+          {/* ───────── RIGHT: sound, guide voice, inspiration ───────── */}
+          <aside
+            aria-label="Sound and inspiration"
+            className="order-3 grid divide-y divide-border/70 border-t border-border/70 md:grid-cols-3 md:divide-x md:divide-y-0 xl:block xl:divide-x-0 xl:divide-y xl:border-l xl:border-t-0"
+          >
+            {/* 04 / Sound */}
+            <section aria-labelledby="sound-heading" className="p-5">
+              <SectionLabel id="sound-heading" n="04" title="Sound" Icon={Volume2} />
+              <div className="mt-4 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-2xl font-black leading-tight tracking-tight">
+                    Give it a <span className={`${ACCENT} text-[1.15em]`}>voice.</span>
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">Every movement can make music.</p>
+                </div>
+                <button
+                  onClick={toggleSound}
+                  aria-pressed={soundOn}
+                  aria-label={soundOn ? "Turn sound off (S)" : "Turn sound on (S)"}
+                  className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl ring-1 transition-colors ${
+                    soundOn ? "bg-primary text-primary-foreground ring-primary shadow-md" : "bg-card text-foreground ring-border hover:bg-primary/10"
+                  }`}
+                >
+                  {soundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+                </button>
+              </div>
+
+              <div className="mt-4 space-y-1.5">
+                {SOUND_STYLE_ORDER.map((st) => {
+                  const StyleIcon = SOUND_STYLE_ICONS[st];
+                  const active = soundStyle === st;
+                  return (
+                    <button
+                      key={st}
+                      onClick={() => { setSoundStyle(st); say(`${SOUND_STYLE_LABELS[st]} sound.`); }}
+                      aria-pressed={active}
+                      className={`${ROW_BTN} ${active ? "bg-primary/15 ring-1 ring-primary/40" : "ring-1 ring-border/70 hover:bg-primary/10"}`}
+                    >
+                      <StyleIcon className="h-4 w-4 shrink-0" />
+                      {SOUND_STYLE_LABELS[st]}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 flex items-center gap-2.5">
+                <Button onClick={() => setSoundVolume((v) => Math.max(0, +(v - 0.1).toFixed(2)))} variant="outline" size="icon" className={STEP_BTN} aria-label="Decrease canvas sound volume">
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={soundVolume}
+                  onChange={(e) => setSoundVolume(Number(e.target.value))}
+                  aria-label="Canvas sound volume"
+                  className={SLIDER_CLASS}
+                  style={{ background: `linear-gradient(to right, oklch(0.58 0.15 20) ${soundVolume * 100}%, oklch(0.58 0.15 20 / 0.18) ${soundVolume * 100}%)` }}
+                />
+                <Button onClick={() => setSoundVolume((v) => Math.min(1, +(v + 0.1).toFixed(2)))} variant="outline" size="icon" className={STEP_BTN} aria-label="Increase canvas sound volume">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="mt-2 text-right text-sm text-muted-foreground">{Math.round(soundVolume * 100)}%</p>
+            </section>
+
+            {/* 05 / Guide voice */}
+            <section aria-labelledby="voice-heading" className="p-5">
+              <SectionLabel id="voice-heading" n="05" title="Guide voice" Icon={Mic} />
+              <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight">
+                Pick your <span className={`${ACCENT} text-[1.15em]`}>guide.</span>
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">Who talks you through the canvas.</p>
+              <div role="group" aria-label="Guide voice" className="mt-4 grid grid-cols-2 gap-2">
+                {VOICE_PERSONA_ORDER.map((v) => {
+                  const active = voicePersona === v;
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => chooseVoicePersona(v)}
+                      aria-pressed={active}
+                      className={`flex h-11 items-center justify-center rounded-xl px-3 text-sm font-medium transition-colors ${
+                        active ? ROW_ON : "ring-1 ring-border/70 text-foreground hover:bg-primary/10"
+                      }`}
+                    >
+                      {VOICE_PERSONA_LABELS[v]}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={toggleVoiceOn}
+                aria-pressed={voiceOn}
+                aria-label={voiceOn ? "Turn narration voice off" : "Turn narration voice on"}
+                className={`mt-2 flex h-11 w-full items-center gap-3 rounded-xl px-3.5 text-sm font-medium transition-colors ${
+                  voiceOn ? "bg-primary/15 ring-1 ring-primary/40" : "bg-muted text-muted-foreground ring-1 ring-border"
+                }`}
+              >
+                {voiceOn ? <Mic className="h-4 w-4 text-primary" /> : <MicOff className="h-4 w-4" />}
+                {voiceOn ? "Narration on" : "Narration off"}
+              </button>
+            </section>
+
+            {/* 06 / Inspiration */}
+            <section aria-labelledby="guides-heading" className="p-5">
+              <SectionLabel id="guides-heading" n="06" title="Inspiration" Icon={Map} />
+              <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight">
+                Need a place <span className={`${ACCENT} text-[1.15em]`}>to start?</span>
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Try following a shape, or just let your hand wander.
+              </p>
+              <button
+                type="button"
+                onClick={() => setGuidesPanelOpen((o) => !o)}
+                aria-expanded={guidesPanelOpen}
+                aria-controls="guide-list"
+                className="mt-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-primary"
+              >
+                {guidesPanelOpen ? "Hide shapes" : "Show shapes"} <span className="font-medium normal-case tracking-normal text-muted-foreground">· G</span>
+                <ChevronRight className={`h-4 w-4 transition-transform ${guidesPanelOpen ? "rotate-90" : ""}`} />
+              </button>
+
+              {guideKey && (
+                <p className="mt-3 rounded-xl bg-primary/10 px-3 py-2 text-xs text-primary ring-1 ring-primary/20">
+                  Active: <strong>{SHAPE_GUIDES[guideKey].name}</strong>. Move near the glowing path to hear the guide tone.
+                </p>
+              )}
+
+              {guidesPanelOpen && (
+                <div id="guide-list" className="mt-3 grid grid-cols-2 gap-2">
+                  {Object.entries(SHAPE_GUIDES).map(([key, guide]) => {
+                    const { Icon, color: gColor } = GUIDE_ICONS[key];
+                    const active = guideKey === key;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => (active ? stopGuide() : startGuide(key))}
+                        aria-pressed={active}
+                        title={guide.description}
+                        className={`flex min-h-12 min-w-0 items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors ${
+                          active ? "bg-primary/15 text-foreground ring-1 ring-primary/50" : "ring-1 ring-border/70 hover:bg-primary/10"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" style={{ color: gColor }} />
+                        <span className="min-w-0 leading-tight">
+                          {guide.name}
+                          {active && <span className="block text-[10px] font-normal text-muted-foreground">Active. Press to stop</span>}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </aside>
         </div>
 
-        <p className="mt-4 rounded-2xl bg-background/35 px-4 py-3 text-sm leading-relaxed text-muted-foreground ring-1 ring-white/40">
-          Left/right pans sound · Up/down changes pitch · Q/E colours · [ ] thickness · , . opacity · T texture · V draw · R eraser · B blend
-        </p>
-
-        {/* Audio Guides — moved here from the sidebar so this card doesn't sit
-            half-empty next to the taller settings column */}
-        <section aria-labelledby="guides-heading" className="mt-4 border-t border-border pt-4">
-          <button
-            id="guides-heading"
-            onClick={() => setGuidesPanelOpen((o) => !o)}
-            className="mb-2 flex w-full items-center justify-between text-base font-semibold"
-            aria-expanded={guidesPanelOpen}
-          >
-            <span className="flex items-center gap-2">
-              <Map className="h-5 w-5 text-primary" />
-              Audio guides
-              <kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-normal text-muted-foreground">G</kbd>
-            </span>
-            <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${guidesPanelOpen ? "rotate-90" : ""}`} />
-          </button>
-
-          {guideKey && (
-            <p className="mb-2 rounded-xl bg-primary/10 px-3 py-2 text-xs text-primary ring-1 ring-primary/20">
-              Active: <strong>{SHAPE_GUIDES[guideKey].name}</strong> — move near the glowing path to hear the guide tone
-            </p>
-          )}
-
-          {guidesPanelOpen && (
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {Object.entries(SHAPE_GUIDES).map(([key, guide]) => {
-                const { Icon, color } = GUIDE_ICONS[key];
-                return (
-                  <button
-                    key={key}
-                    onClick={() => guideKey === key ? stopGuide() : startGuide(key)}
-                    className={`flex items-start gap-3 rounded-2xl p-3 text-left transition ring-1 ${
-                      guideKey === key
-                        ? "bg-primary/15 ring-primary/50 text-primary"
-                        : "bg-background/50 ring-border hover:bg-primary/8 hover:ring-primary/30"
-                    }`}
-                  >
-                    <span
-                      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
-                      style={{ backgroundColor: `${color}26` }}
-                    >
-                      <Icon className="h-4 w-4" style={{ color }} />
-                    </span>
-                    <div>
-                      <div className="text-base font-medium leading-tight">
-                        {guide.name}
-                        {guideKey === key && <span className="ml-1.5 text-xs font-normal opacity-70">(active — press to stop)</span>}
-                      </div>
-                      <div className="mt-1 text-sm text-muted-foreground leading-snug">{guide.description}</div>
-                    </div>
-                  </button>
-                );
-              })}
+        {/* ───────── BOTTOM BAND: keep your art ───────── */}
+        <div className="grid divide-y divide-border/70 border-t border-border/70 md:grid-cols-3 md:divide-x md:divide-y-0">
+          {/* 07 / Export */}
+          <section aria-labelledby="export-heading" className="p-5">
+            <SectionLabel id="export-heading" n="07" title="Export" Icon={Box} />
+            <h3 className="mt-4 text-xl font-black tracking-tight">
+              Hold it in your <span className={`${ACCENT} text-[1.15em]`}>hands.</span>
+            </h3>
+            <div className="mt-4 grid gap-2">
+              <Button onClick={exportSwell} className={`${ACTION_BTN} shadow-md`}>
+                <Waves className="h-4 w-4 shrink-0" /> Swell Paper SVG
+              </Button>
+              <Button onClick={exportColor} variant="secondary" className={`${ACTION_BTN} shadow-sm`}>
+                <Palette className="h-4 w-4 shrink-0" /> Colour SVG
+              </Button>
+              <Button onClick={exportStl} variant="outline" className={`${ACTION_BTN} bg-background/60 ring-1 ring-primary/15`}>
+                <Box className="h-4 w-4 shrink-0" /> 3D Print (STL)
+              </Button>
             </div>
-          )}
-        </section>
+          </section>
+
+          {/* 08 / Share */}
+          <section aria-labelledby="share-heading" className="flex flex-col p-5">
+            <SectionLabel id="share-heading" n="08" title="Share" Icon={Globe} />
+            <h3 className="mt-4 text-xl font-black tracking-tight">
+              Let the world <span className={`${ACCENT} text-[1.15em]`}>see it.</span>
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Send your artwork in for a quick review. Approved pieces appear on the public Gallery for creators everywhere to see.
+            </p>
+            <div className="mt-auto grid gap-2 pt-4">
+              {onPost && (
+                <Button
+                  onClick={requestPost}
+                  disabled={!hasArtwork}
+                  variant={justPosted ? "secondary" : "default"}
+                  className="h-12 w-full justify-center gap-2 rounded-2xl text-sm font-medium"
+                >
+                  {justPosted ? <Check className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+                  {justPosted ? "Sent for review!" : "Send to Gallery"}
+                </Button>
+              )}
+              <Button asChild variant="outline" className="h-12 w-full rounded-2xl bg-card/60 text-sm font-medium">
+                <Link to="/gallery" className="gap-2"><Globe className="h-4 w-4" /> View Gallery</Link>
+              </Button>
+            </div>
+          </section>
+
+          {/* 09 / Shortcuts */}
+          <section aria-labelledby="kbd-heading" className="p-5">
+            <SectionLabel id="kbd-heading" n="09" title="Shortcuts" Icon={Keyboard} />
+            <h3 className="mt-4 text-xl font-black tracking-tight">
+              Keys for <span className={`${ACCENT} text-[1.15em]`}>speed.</span>
+            </h3>
+            <button
+              type="button"
+              onClick={() => setKeyboardPanelOpen((o) => !o)}
+              aria-expanded={keyboardPanelOpen}
+              aria-controls="kbd-list"
+              className="mt-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-primary"
+            >
+              {keyboardPanelOpen ? "Hide shortcuts" : "Show shortcuts"}
+              <ChevronRight className={`h-4 w-4 transition-transform ${keyboardPanelOpen ? "rotate-90" : ""}`} />
+            </button>
+            {keyboardPanelOpen && (
+              <ul id="kbd-list" className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                <li>Arrows: move brush (Shift = ×3)</li>
+                <li>Space / D: toggle drawing</li>
+                <li>S: toggle sound</li>
+                <li>C: clear canvas</li>
+                <li>Q / E: cycle colour</li>
+                <li>[ / ]: thickness</li>
+                <li>, / .: opacity</li>
+                <li>T: cycle texture</li>
+                <li>V / R / B: draw, eraser, blend</li>
+                <li>G: open / close guides</li>
+                <li>Esc: stop active guide</li>
+                <li>X: toggle visual aids</li>
+              </ul>
+            )}
+          </section>
         </div>
       </div>
-
-      {/* ── Sidebar ── */}
-      <aside className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-2">
-
-        {/* Palette */}
-        <section aria-labelledby="colors-heading" className={`${CARD_BASE} bg-gradient-to-br from-primary/20 via-card/75 to-transparent shadow-primary/10`}>
-          <h2 id="colors-heading" className={CARD_HEADING}>
-            <span className={CARD_BADGE}>
-              <Palette className="h-4 w-4" />
-            </span>
-            Palette
-            <span className={CARD_HINT}>Q / E to cycle</span>
-          </h2>
-          <div className="grid grid-cols-6 gap-2">
-            {COLORS.map((c) => (
-              <button
-                key={c.value}
-                onClick={() => pickColor(c)}
-                aria-label={`Color ${c.name}`}
-                aria-pressed={color === c.value}
-                className={`relative aspect-square w-full max-w-11 justify-self-center rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
-                  color === c.value ? "scale-110 ring-foreground" : "ring-transparent"
-                }`}
-                style={{ backgroundColor: c.value }}
-              >
-                {color === c.value && (
-                  <Check
-                    className="absolute inset-0 m-auto h-[1.125rem] w-[1.125rem] drop-shadow"
-                    style={{ color: ["#f5a623", "#e0b04f", "#f9a8a8", "#ffffff"].includes(c.value) ? "#3a1f2b" : "#fff" }}
-                  />
-                )}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Texture */}
-        <section aria-labelledby="texture-heading" className={`${CARD_BASE} bg-gradient-to-br from-accent/30 via-card/75 to-transparent shadow-accent/10`}>
-          <h2 id="texture-heading" className={CARD_HEADING}>
-            <span className={CARD_BADGE}>
-              <Pencil className="h-4 w-4" />
-            </span>
-            Texture
-            <span className={CARD_HINT}>T to cycle</span>
-          </h2>
-          <div className="grid grid-cols-2 gap-2.5">
-            {TEXTURE_ORDER.map((t) => {
-              const TextureIcon = TEXTURE_ICONS[t];
-              const active = texture === t;
-              return (
-                <button
-                  key={t}
-                  onClick={() => changeTexture(t)}
-                  aria-pressed={active}
-                  className={`${OPTION_BTN} ${active ? OPTION_ON : OPTION_OFF}`}
-                >
-                  <TextureIcon className="h-4 w-4 shrink-0" />
-                  {TEXTURE_LABELS[t]}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Thickness + Opacity (per active texture) — merged into one card;
-            two sliders under one header take noticeably less vertical
-            space than two separate cards each with their own header/ring. */}
-        <section aria-labelledby="pen-heading" className={`${CARD_BASE} bg-gradient-to-br from-secondary/40 via-card/75 to-transparent shadow-secondary/10`}>
-          <h2 id="pen-heading" className={CARD_HEADING}>
-            <span className={CARD_BADGE}>
-              <Pencil className="h-4 w-4" />
-            </span>
-            {TEXTURE_LABELS[texture]} settings
-          </h2>
-
-          <div className={LABEL_ROW}>
-            <span>Thickness</span>
-            <span className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">{penWidth}px</span>
-              <span className={KBD_CHIP}>[ / ]</span>
-            </span>
-          </div>
-          <div className="mt-2 flex items-center gap-3">
-            <Button
-              onClick={() => changePenWidth(penWidth - 1)}
-              variant="outline"
-              size="icon"
-              className={STEP_BTN}
-              aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}
-            >
-              <Minus className="h-4 w-4" />
-            </Button>
-            <input
-              type="range"
-              min={MIN_PEN_WIDTH}
-              max={MAX_PEN_WIDTH}
-              step={1}
-              value={penWidth}
-              onChange={(e) => changePenWidth(Number(e.target.value))}
-              aria-label={`${TEXTURE_LABELS[texture]} thickness`}
-              aria-valuemin={MIN_PEN_WIDTH}
-              aria-valuemax={MAX_PEN_WIDTH}
-              aria-valuenow={penWidth}
-              className={SLIDER_CLASS}
-              style={{
-                background: `linear-gradient(to right, oklch(0.58 0.15 20) ${((penWidth - MIN_PEN_WIDTH) / (MAX_PEN_WIDTH - MIN_PEN_WIDTH)) * 100}%, oklch(0.58 0.15 20 / 0.18) ${((penWidth - MIN_PEN_WIDTH) / (MAX_PEN_WIDTH - MIN_PEN_WIDTH)) * 100}%)`,
-              }}
-            />
-            <Button
-              onClick={() => changePenWidth(penWidth + 1)}
-              variant="outline"
-              size="icon"
-              className={STEP_BTN}
-              aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <div className={`mt-5 ${LABEL_ROW}`}>
-            <span>Opacity</span>
-            <span className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">{Math.round(penOpacity * 100)}%</span>
-              <span className={KBD_CHIP}>, / .</span>
-            </span>
-          </div>
-          <div className="mt-2 flex items-center gap-3">
-            <Button
-              onClick={() => changePenOpacity(penOpacity - OPACITY_STEP)}
-              variant="outline"
-              size="icon"
-              className={STEP_BTN}
-              aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}
-            >
-              <Minus className="h-4 w-4" />
-            </Button>
-            <input
-              type="range"
-              min={OPACITY_RANGE[texture].min}
-              max={OPACITY_RANGE[texture].max}
-              step={OPACITY_STEP}
-              value={penOpacity}
-              onChange={(e) => changePenOpacity(Number(e.target.value))}
-              aria-label={`${TEXTURE_LABELS[texture]} opacity`}
-              aria-valuemin={OPACITY_RANGE[texture].min}
-              aria-valuemax={OPACITY_RANGE[texture].max}
-              aria-valuenow={penOpacity}
-              className={SLIDER_CLASS}
-              style={{
-                background: `linear-gradient(to right, oklch(0.58 0.15 20) ${((penOpacity - OPACITY_RANGE[texture].min) / (OPACITY_RANGE[texture].max - OPACITY_RANGE[texture].min)) * 100}%, oklch(0.58 0.15 20 / 0.18) ${((penOpacity - OPACITY_RANGE[texture].min) / (OPACITY_RANGE[texture].max - OPACITY_RANGE[texture].min)) * 100}%)`,
-              }}
-            />
-            <Button
-              onClick={() => changePenOpacity(penOpacity + OPACITY_STEP)}
-              variant="outline"
-              size="icon"
-              className={STEP_BTN}
-              aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </section>
-
-        {/* Canvas Sound */}
-        <section aria-labelledby="canvas-sound-heading" className={`${CARD_BASE} bg-gradient-to-br from-primary/20 via-card/75 to-transparent shadow-primary/10`}>
-          <h2 id="canvas-sound-heading" className={CARD_HEADING}>
-            <span className={CARD_BADGE}>
-              <Volume2 className="h-4 w-4" />
-            </span>
-            Canvas sound
-          </h2>
-          <div className="grid grid-cols-2 gap-2.5">
-            {SOUND_STYLE_ORDER.map((s) => {
-              const StyleIcon = SOUND_STYLE_ICONS[s];
-              const active = soundStyle === s;
-              return (
-                <button
-                  key={s}
-                  onClick={() => { setSoundStyle(s); say(`${SOUND_STYLE_LABELS[s]} sound.`); }}
-                  aria-pressed={active}
-                  className={`${OPTION_BTN} ${active ? OPTION_ON : OPTION_OFF}`}
-                >
-                  <StyleIcon className="h-4 w-4 shrink-0" />
-                  {SOUND_STYLE_LABELS[s]}
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-4 flex items-center gap-3">
-            <Button
-              onClick={() => setSoundVolume((v) => Math.max(0, +(v - 0.1).toFixed(2)))}
-              variant="outline"
-              size="icon"
-              className={STEP_BTN}
-              aria-label="Decrease canvas sound volume"
-            >
-              <Minus className="h-4 w-4" />
-            </Button>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={soundVolume}
-              onChange={(e) => setSoundVolume(Number(e.target.value))}
-              aria-label="Canvas sound volume"
-              className={SLIDER_CLASS}
-              style={{ background: `linear-gradient(to right, oklch(0.58 0.15 20) ${soundVolume * 100}%, oklch(0.58 0.15 20 / 0.18) ${soundVolume * 100}%)` }}
-            />
-            <Button
-              onClick={() => setSoundVolume((v) => Math.min(1, +(v + 0.1).toFixed(2)))}
-              variant="outline"
-              size="icon"
-              className={STEP_BTN}
-              aria-label="Increase canvas sound volume"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="mt-2 text-center text-sm font-medium text-muted-foreground">
-            {Math.round(soundVolume * 100)}% volume
-          </p>
-        </section>
-
-        {/* Export */}
-        <section aria-labelledby="export-heading" className={`${CARD_BASE} bg-gradient-to-br from-accent/25 via-card/75 to-transparent shadow-accent/10`}>
-          <h2 id="export-heading" className={CARD_HEADING}>
-            <span className={CARD_BADGE}>
-              <Sparkles className="h-4 w-4" />
-            </span>
-            Export
-          </h2>
-          <div className="grid gap-2.5">
-            <Button onClick={exportSwell} className={`${ACTION_BTN} shadow-md`}>
-              <Waves className="h-4 w-4 shrink-0" />
-              Swell Paper SVG
-            </Button>
-            <Button onClick={exportColor} variant="secondary" className={`${ACTION_BTN} shadow-sm`}>
-              <Palette className="h-4 w-4 shrink-0" />
-              Colour SVG
-            </Button>
-            <Button onClick={exportStl} variant="outline" className={`${ACTION_BTN} bg-background/60 shadow-sm ring-1 ring-primary/15`}>
-              <Box className="h-4 w-4 shrink-0" />
-              3D Print (STL)
-            </Button>
-          </div>
-        </section>
-
-        {/* Share */}
-        {onPost && (
-          <section aria-labelledby="share-heading" className={`${CARD_BASE} flex flex-col bg-gradient-to-br from-primary/20 via-card/75 to-transparent shadow-primary/10`}>
-            <h2 id="share-heading" className={CARD_HEADING}>
-              <span className={CARD_BADGE}>
-                <Globe className="h-4 w-4" />
-              </span>
-              Share
-            </h2>
-            <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-              Send your artwork in for a quick review. Approved pieces appear on the public
-              Gallery page for creators everywhere to see.
-            </p>
-            <Button
-              onClick={requestPost}
-              disabled={!hasArtwork}
-              variant={justPosted ? "secondary" : "default"}
-              className="mt-auto h-12 w-full justify-center gap-2 rounded-2xl text-sm font-medium"
-            >
-              {justPosted ? <Check className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-              {justPosted ? "Sent for review!" : "Send to Gallery"}
-            </Button>
-          </section>
-        )}
-
-        {/* Keyboard reference — collapsed by default; it's the single
-            tallest block in this sidebar and most people don't need it
-            open all the time, so tucking it away keeps the whole sidebar
-            closer in height to the canvas next to it. */}
-        <section aria-labelledby="kbd-heading" className={`${CARD_BASE} bg-gradient-to-br from-secondary/30 via-card/75 to-transparent shadow-secondary/10 text-sm text-muted-foreground sm:col-span-2 lg:col-span-3 2xl:col-span-2`}>
-          <button
-            type="button"
-            onClick={() => setKeyboardPanelOpen((o) => !o)}
-            aria-expanded={keyboardPanelOpen}
-            aria-controls="kbd-list"
-            className="flex w-full items-center gap-2.5 text-base font-semibold text-foreground"
-          >
-            <span className={CARD_BADGE}><Keyboard className="h-4 w-4" /></span> Keyboard shortcuts
-            <ChevronRight className={`ml-auto h-5 w-5 text-primary transition-transform ${keyboardPanelOpen ? "rotate-90" : ""}`} />
-          </button>
-          {keyboardPanelOpen && (
-            <ul id="kbd-list" className="mt-4 grid gap-x-6 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-3">
-              <li>Arrows — move brush (Shift = ×3)</li>
-              <li>Space / D — toggle drawing</li>
-              <li>S — toggle sound</li>
-              <li>C — clear canvas</li>
-              <li>Q / E — cycle colour</li>
-              <li>[ / ] — thickness</li>
-              <li>, / . — opacity</li>
-              <li>T — cycle texture</li>
-              <li>G — open / close guides</li>
-              <li>Esc — stop active guide</li>
-              <li>X — toggle visual aids</li>
-            </ul>
-          )}
-        </section>
-
-        {/* New feature callout — Public Gallery. Placed right under the
-            canvas so it's clearly visible without digging into the
-            sidebar's Export/Share card. */}
-        <div className={`${CARD_BASE} flex flex-col items-start gap-4 bg-gradient-to-br from-accent/25 via-card/80 to-primary/15 shadow-accent/10 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between lg:col-span-3 2xl:col-span-2`}>
-          <div className="flex items-start gap-3">
-            <span className={`${CARD_BADGE} mt-0.5`}>
-              <Globe className="h-4 w-4" />
-            </span>
-            <div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
-                New
-              </span>
-              <p className="mt-1 text-base font-semibold text-foreground">The Public Gallery is here</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">
-                Finish a drawing and send it in for review — approved pieces get featured on the
-                Gallery page for creators everywhere to see.
-              </p>
-            </div>
-          </div>
-          <Button asChild variant="outline" className="h-12 w-full shrink-0 rounded-full bg-card/60 px-5 text-sm font-medium backdrop-blur-sm sm:w-auto">
-            <Link to="/gallery" className="gap-1.5">
-              <Globe className="h-4 w-4" /> View Gallery
-            </Link>
-          </Button>
-        </div>
-      </aside>
 
       <div aria-live="assertive" role="status" className="sr-only">{announce}</div>
 
