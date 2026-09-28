@@ -237,101 +237,176 @@ function Index() {
         </div>
       </section>
 
-            {/* Community features / press marquee */}
+             {/* Community / featured showcase */}
       <section className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="rounded-[2rem] bg-card py-8 shadow-sm ring-1 ring-primary/15 sm:py-10">
-          <div className="px-6 text-center sm:px-10">
-            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary ring-1 ring-primary/20">
-              <Sparkles className="h-3.5 w-3.5" />
-              In the community
-            </span>
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary/25 via-card to-accent/25 p-1.5 shadow-2xl shadow-primary/10 ring-1 ring-white/40 sm:p-2">
+          <div className="relative overflow-hidden rounded-[2.15rem] bg-background/90 py-10 backdrop-blur-xl sm:py-14">
+            {/* Decorative background */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+              <div className="absolute -left-32 top-0 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
+              <div className="absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-accent/20 blur-3xl" />
 
-            <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-              Perceive in the community
-            </h2>
+              <span className="absolute -right-8 top-0 select-none text-[7rem] font-black tracking-tighter text-foreground/[0.025] sm:text-[10rem]">
+                FEATURED
+              </span>
+            </div>
 
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              We're grateful to have Perceive featured across conversations,
-              shows, podcasts, and publications.
-            </p>
-          </div>
-
-          {/* Scrolling feature strip */}
-          <div className="relative mt-9 overflow-hidden">
-            {/* Edge fades */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-card to-transparent sm:w-24"
-            />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-card to-transparent sm:w-24"
-            />
-
-            <div className="group flex w-max animate-marquee hover:[animation-play-state:paused]">
-              {[
-                {
-                  title: "Raq the Boat Show",
-                  subtitle: "Featured on the show",
-                },
-                {
-                  title: "Professor Kev Show",
-                  subtitle: "Featured on the show",
-                },
-                {
-                  title: "Simple Acts, Big Impact",
-                  subtitle: "Podcast • Upcoming 9/30",
-                },
-                {
-                  title: "Innovation Insider",
-                  subtitle: "September 2026 edition",
-                },
-
-                // Duplicate set for seamless looping
-                {
-                  title: "Raq the Boat Show",
-                  subtitle: "Featured on the show",
-                },
-                {
-                  title: "Professor Kev Show",
-                  subtitle: "Featured on the show",
-                },
-                {
-                  title: "Simple Acts, Big Impact",
-                  subtitle: "Podcast • Upcoming 9/30",
-                },
-                {
-                  title: "Innovation Insider",
-                  subtitle: "September 2026 edition",
-                },
-              ].map(({ title, subtitle }, i) => (
-                <div
-                  key={`${title}-${i}`}
-                  className="mx-2 flex h-24 w-[230px] shrink-0 items-center rounded-2xl border border-black/[0.06] bg-background/80 px-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md sm:w-[270px]"
-                >
-                  <div className="flex min-w-0 items-center gap-4">
-                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
-                      <Star className="h-5 w-5" />
-                    </div>
-
-                    <div className="min-w-0">
-                      <h3 className="truncate text-sm font-semibold text-foreground">
-                        {title}
-                      </h3>
-
-                      <p className="mt-1 truncate text-xs text-muted-foreground">
-                        {subtitle}
-                      </p>
-                    </div>
+            {/* Heading */}
+            <div className="relative z-10 px-7 sm:px-12">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <div className="mb-4 flex items-center gap-3">
+                    <span className="h-px w-8 bg-primary" />
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
+                      In the community
+                    </span>
                   </div>
+
+                  <h2 className="max-w-2xl text-3xl font-bold tracking-tight sm:text-5xl">
+                    Perceive, out in the world.
+                  </h2>
+
+                  <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+                    From podcasts and conversations to publications and community
+                    features, here are a few places Perceive has been shared.
+                  </p>
                 </div>
-              ))}
+
+                <div className="hidden shrink-0 sm:block">
+                  <span className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground/60">
+                    2026 · Selected features
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Scrolling showcase */}
+            <div className="relative z-10 mt-10 overflow-hidden sm:mt-12">
+              {/* Edge fades */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 left-0 z-20 w-16 bg-gradient-to-r from-background via-background/80 to-transparent sm:w-28"
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 right-0 z-20 w-16 bg-gradient-to-l from-background via-background/80 to-transparent sm:w-28"
+              />
+
+              <div className="group flex w-max animate-marquee">
+                {[
+                  {
+                    title: "Raq the Boat Show",
+                    type: "Video",
+                    meta: "Featured conversation",
+                    image: "/YOUR-IMAGE-HERE.jpg",
+                  },
+                  {
+                    title: "Professor Kev Show",
+                    type: "Video",
+                    meta: "Featured conversation",
+                    image: "/YOUR-IMAGE-HERE.jpg",
+                  },
+                  {
+                    title: "Simple Acts, Big Impact",
+                    type: "Podcast",
+                    meta: "Upcoming · September 30",
+                    image: "/YOUR-IMAGE-HERE.jpg",
+                  },
+                  {
+                    title: "Innovation Insider",
+                    type: "Publication",
+                    meta: "September 2026 edition",
+                    image: "/YOUR-IMAGE-HERE.jpg",
+                  },
+
+                  // Duplicate set for seamless scrolling
+                  {
+                    title: "Raq the Boat Show",
+                    type: "Video",
+                    meta: "Featured conversation",
+                    image: "/YOUR-IMAGE-HERE.jpg",
+                  },
+                  {
+                    title: "Professor Kev Show",
+                    type: "Video",
+                    meta: "Featured conversation",
+                    image: "/YOUR-IMAGE-HERE.jpg",
+                  },
+                  {
+                    title: "Simple Acts, Big Impact",
+                    type: "Podcast",
+                    meta: "Upcoming · September 30",
+                    image: "/YOUR-IMAGE-HERE.jpg",
+                  },
+                  {
+                    title: "Innovation Insider",
+                    type: "Publication",
+                    meta: "September 2026 edition",
+                    image: "/YOUR-IMAGE-HERE.jpg",
+                  },
+                ].map(({ title, type, meta, image }, i) => (
+                  <a
+                    key={`${title}-${i}`}
+                    href="#"
+                    className="group/card mx-2 w-[290px] shrink-0 sm:w-[360px]"
+                  >
+                    <article className="overflow-hidden rounded-[1.5rem] border border-white/50 bg-card/70 shadow-lg shadow-black/[0.04] ring-1 ring-primary/10 backdrop-blur-xl transition-all duration-300 group-hover/card:-translate-y-1 group-hover/card:shadow-xl group-hover/card:ring-primary/25">
+                      {/* Image */}
+                      <div className="relative aspect-[16/10] overflow-hidden bg-muted">
+                        <img
+                          src={image}
+                          alt=""
+                          className="h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-[1.04]"
+                        />
+
+                        {/* Glass type badge */}
+                        <div className="absolute left-4 top-4">
+                          <span className="inline-flex items-center rounded-full border border-white/50 bg-white/70 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-foreground shadow-sm backdrop-blur-md">
+                            {type}
+                          </span>
+                        </div>
+
+                        {/* Play indicator */}
+                        {type === "Video" && (
+                          <div className="absolute bottom-4 right-4 grid h-10 w-10 place-items-center rounded-full border border-white/60 bg-white/75 text-foreground shadow-lg backdrop-blur-md transition-transform duration-300 group-hover/card:scale-110">
+                            <ArrowRight className="h-4 w-4" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Card content */}
+                      <div className="p-5 sm:p-6">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <h3 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
+                              {title}
+                            </h3>
+                            <p className="mt-1.5 text-xs text-muted-foreground sm:text-sm">
+                              {meta}
+                            </p>
+                          </div>
+
+                          <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground/50 transition-all duration-300 group-hover/card:translate-x-1 group-hover/card:text-primary" />
+                        </div>
+                      </div>
+                    </article>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom detail */}
+            <div className="relative z-10 mt-9 flex items-center justify-between px-7 sm:px-12">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                More features coming soon
+              </div>
+
+              <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/50">
+                Scroll · Discover · Share
+              </span>
             </div>
           </div>
-
-          <p className="mt-6 text-center text-[11px] text-muted-foreground/60">
-            Hover to pause
-          </p>
         </div>
       </section>
 
