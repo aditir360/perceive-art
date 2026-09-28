@@ -112,7 +112,7 @@ const TUTORIAL_STEPS = [
 function TutorialVideo() {
   if (!TUTORIAL_VIDEO_URL) {
     return (
-      <div className="relative mx-auto grid aspect-video w-full max-w-3xl place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary/25 via-card to-accent/25 ring-1 ring-primary/20">
+      <div className="relative mx-auto grid aspect-video w-full max-w-3xl place-items-center overflow-hidden rounded-2xl border border-white/60 bg-gradient-to-br from-primary/25 via-card to-accent/25 shadow-[0_12px_40px_-12px_hsl(var(--primary)/0.35)] ring-1 ring-primary/20 backdrop-blur-sm">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
@@ -144,7 +144,7 @@ function TutorialVideo() {
   const { kind, src } = toEmbed(TUTORIAL_VIDEO_URL);
 
   return (
-    <div className="mx-auto aspect-video w-full max-w-3xl overflow-hidden rounded-2xl bg-black shadow-lg ring-1 ring-primary/20">
+    <div className="mx-auto aspect-video w-full max-w-3xl overflow-hidden rounded-2xl border border-white/50 bg-black shadow-[0_12px_40px_-12px_hsl(var(--primary)/0.35)] ring-1 ring-primary/20 backdrop-blur-sm">
       {kind === "iframe" ? (
         <iframe
           src={src}
@@ -320,7 +320,9 @@ function StudioPage() {
             </div>
           </div>
 
-          <Sketchpad onPost={handlePost} />
+          <div className="rounded-[2rem] border border-white/60 bg-gradient-to-br from-card/90 via-card/75 to-primary/10 p-2 shadow-[0_18px_55px_-18px_hsl(var(--primary)/0.4)] ring-1 ring-primary/15 backdrop-blur-md sm:p-3">
+            <Sketchpad onPost={handlePost} />
+          </div>
         </section>
       </main>
 
