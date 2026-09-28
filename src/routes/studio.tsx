@@ -112,8 +112,8 @@ function StudioPage() {
   aria-labelledby="tutorial-heading"
   className="mx-auto mb-12 max-w-5xl rounded-3xl bg-gradient-to-br from-primary/10 via-card/80 to-accent/10 p-4 shadow-sm ring-1 ring-primary/15 sm:p-7"
 >
-  <div className="mx-auto max-w-3xl">
-    <div className="mb-5 flex items-center gap-2">
+  <div className="mx-auto max-w-3xl text-center">
+    <div className="mb-5 flex justify-center">
       <span className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
         <Play className="h-3.5 w-3.5" />
         Tutorial
@@ -130,45 +130,14 @@ function StudioPage() {
         New here? Start with this.
       </h1>
 
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
+      <p className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
         A quick walkthrough of how to draw with sound. It works with or
         without a screen.
       </p>
     </div>
 
-    <ol className="mt-6 grid gap-3 sm:grid-cols-2">
-      {TUTORIAL_STEPS.map(({ icon: Icon, title, body }, i) => (
-        <li
-          key={title}
-          className="flex items-start gap-3 rounded-2xl bg-card/80 p-4 ring-1 ring-primary/10 transition-colors hover:bg-card"
-        >
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
-            <Icon className="h-5 w-5" />
-          </span>
-
-          <div>
-            <p className="text-sm font-semibold text-foreground">
-              {i + 1}. {title}
-            </p>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              {body}
-            </p>
-          </div>
-        </li>
-      ))}
-    </ol>
-
-    <Button
-      asChild
-      size="lg"
-      variant="outline"
-      className="mt-6 h-11 rounded-full px-6 text-sm"
-    >
-      <a href="#studio" className="gap-2">
-        Skip to the canvas
-        <ArrowDown className="h-4 w-4" />
-      </a>
-    </Button>
+    {/* steps */}
+    ...
   </div>
 </section>
         {/* Studio */}
