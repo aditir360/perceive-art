@@ -107,40 +107,70 @@ function StudioPage() {
       <SiteHeader wide />
 
       <main className="mx-auto max-w-[1680px] px-6 pb-20 pt-8 sm:pt-10">
-        {/* Tutorial */}
-        <section aria-labelledby="tutorial-heading" className="mb-10 rounded-3xl bg-gradient-to-br from-primary/10 via-card/60 to-accent/10 p-5 shadow-sm ring-1 ring-primary/15 sm:p-8">
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-            <TutorialVideo />
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
-                <Play className="h-3.5 w-3.5" /> Tutorial
-              </span>
-              <h1 id="tutorial-heading" className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-                New here? Start with this.
-              </h1>
-              <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-                A quick walkthrough of how to draw with sound. It works with or without a screen.
-              </p>
-              <ol className="mt-5 grid gap-3">
-                {TUTORIAL_STEPS.map(({ icon: Icon, title, body }, i) => (
-                  <li key={title} className="flex items-start gap-3">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{i + 1}. {title}</p>
-                      <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{body}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-              <Button asChild size="lg" variant="outline" className="mt-6 h-12 rounded-full px-6 text-sm">
-                <a href="#studio" className="gap-2">Skip to the canvas <ArrowDown className="h-4 w-4" /></a>
-              </Button>
-            </div>
-          </div>
-        </section>
+        {/* Tutorial */}{/* Tutorial */}
+<section
+  aria-labelledby="tutorial-heading"
+  className="mx-auto mb-12 max-w-5xl rounded-3xl bg-gradient-to-br from-primary/10 via-card/80 to-accent/10 p-4 shadow-sm ring-1 ring-primary/15 sm:p-7"
+>
+  <div className="mx-auto max-w-3xl">
+    <div className="mb-5 flex items-center gap-2">
+      <span className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
+        <Play className="h-3.5 w-3.5" />
+        Tutorial
+      </span>
+    </div>
 
+    <TutorialVideo />
+
+    <div className="mt-6">
+      <h1
+        id="tutorial-heading"
+        className="text-3xl font-bold tracking-tight sm:text-4xl"
+      >
+        New here? Start with this.
+      </h1>
+
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
+        A quick walkthrough of how to draw with sound. It works with or
+        without a screen.
+      </p>
+    </div>
+
+    <ol className="mt-6 grid gap-3 sm:grid-cols-2">
+      {TUTORIAL_STEPS.map(({ icon: Icon, title, body }, i) => (
+        <li
+          key={title}
+          className="flex items-start gap-3 rounded-2xl bg-card/80 p-4 ring-1 ring-primary/10 transition-colors hover:bg-card"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
+            <Icon className="h-5 w-5" />
+          </span>
+
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              {i + 1}. {title}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              {body}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ol>
+
+    <Button
+      asChild
+      size="lg"
+      variant="outline"
+      className="mt-6 h-11 rounded-full px-6 text-sm"
+    >
+      <a href="#studio" className="gap-2">
+        Skip to the canvas
+        <ArrowDown className="h-4 w-4" />
+      </a>
+    </Button>
+  </div>
+</section>
         {/* Studio */}
         <section id="studio" aria-labelledby="studio-heading" className="scroll-mt-28">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4 rounded-3xl bg-gradient-to-br from-primary/10 via-transparent to-accent/10 p-6 ring-1 ring-primary/10 sm:p-8">
