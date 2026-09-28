@@ -237,44 +237,101 @@ function Index() {
         </div>
       </section>
 
-      {/* Features */}
+            {/* Community features / press marquee */}
       <section className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="rounded-3xl bg-card p-8 shadow-sm ring-1 ring-primary/15 sm:p-10">
-          <div className="text-center">
+        <div className="rounded-[2rem] bg-card py-8 shadow-sm ring-1 ring-primary/15 sm:py-10">
+          <div className="px-6 text-center sm:px-10">
             <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary ring-1 ring-primary/20">
-              <Sparkles className="h-3.5 w-3.5" /> Features!
+              <Sparkles className="h-3.5 w-3.5" />
+              In the community
             </span>
+
             <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
               Perceive in the community
             </h2>
+
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              We’re grateful to have Perceive featured across conversations, shows, podcasts, and publications.
+              We're grateful to have Perceive featured across conversations,
+              shows, podcasts, and publications.
             </p>
           </div>
 
-          <div className="mx-auto mt-8 grid max-w-5xl gap-4 sm:grid-cols-2">
-            {[
-              { title: "Raq the Boat Show", body: "Featured on the show." },
-              { title: "Professor Kev Show", body: "Featured on the show." },
-              { title: "Simple Acts, Big Impact Podcast", body: "Upcoming on 9/30." },
-              { title: "Innovation Insider Magazine", body: "Featured in the September 2026 edition." },
-            ].map(({ title, body }) => (
-              <div
-                key={title}
-                className="rounded-2xl bg-background/70 p-5 text-left shadow-sm ring-1 ring-primary/10 transition-all hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
-                    <Star className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{body}</p>
+          {/* Scrolling feature strip */}
+          <div className="relative mt-9 overflow-hidden">
+            {/* Edge fades */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-card to-transparent sm:w-24"
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-card to-transparent sm:w-24"
+            />
+
+            <div className="group flex w-max animate-marquee hover:[animation-play-state:paused]">
+              {[
+                {
+                  title: "Raq the Boat Show",
+                  subtitle: "Featured on the show",
+                },
+                {
+                  title: "Professor Kev Show",
+                  subtitle: "Featured on the show",
+                },
+                {
+                  title: "Simple Acts, Big Impact",
+                  subtitle: "Podcast • Upcoming 9/30",
+                },
+                {
+                  title: "Innovation Insider",
+                  subtitle: "September 2026 edition",
+                },
+
+                // Duplicate set for seamless looping
+                {
+                  title: "Raq the Boat Show",
+                  subtitle: "Featured on the show",
+                },
+                {
+                  title: "Professor Kev Show",
+                  subtitle: "Featured on the show",
+                },
+                {
+                  title: "Simple Acts, Big Impact",
+                  subtitle: "Podcast • Upcoming 9/30",
+                },
+                {
+                  title: "Innovation Insider",
+                  subtitle: "September 2026 edition",
+                },
+              ].map(({ title, subtitle }, i) => (
+                <div
+                  key={`${title}-${i}`}
+                  className="mx-2 flex h-24 w-[230px] shrink-0 items-center rounded-2xl border border-black/[0.06] bg-background/80 px-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md sm:w-[270px]"
+                >
+                  <div className="flex min-w-0 items-center gap-4">
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
+                      <Star className="h-5 w-5" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <h3 className="truncate text-sm font-semibold text-foreground">
+                        {title}
+                      </h3>
+
+                      <p className="mt-1 truncate text-xs text-muted-foreground">
+                        {subtitle}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+
+          <p className="mt-6 text-center text-[11px] text-muted-foreground/60">
+            Hover to pause
+          </p>
         </div>
       </section>
 
