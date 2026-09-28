@@ -1530,12 +1530,12 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   return (
     <div className="w-full">
       <div className="overflow-hidden rounded-[2rem] bg-card/70 shadow-2xl shadow-primary/15 ring-1 ring-white/60 backdrop-blur-xl">
-        <div className="grid xl:grid-cols-[288px_minmax(0,1fr)_340px]">
+        <div className="grid xl:grid-cols-[264px_minmax(0,1fr)_316px] xl:grid-rows-[auto_1fr]">
 
           {/* ───────── LEFT: tools, color, brush ───────── */}
           <aside
             aria-label="Drawing tools"
-            className="order-2 grid divide-y divide-border/70 border-t border-border/70 md:grid-cols-3 md:divide-x md:divide-y-0 xl:order-1 xl:block xl:divide-x-0 xl:divide-y xl:border-r xl:border-t-0"
+            className="order-2 divide-y divide-border/70 border-t border-border/70 xl:col-start-1 xl:row-span-2 xl:row-start-1 xl:border-r xl:border-t-0"
           >
             {/* 01 / Tools */}
             <section aria-labelledby="tools-heading" className="p-5">
@@ -1692,20 +1692,57 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 </Button>
               </div>
             </section>
+
+          {/* 04 / Shortcuts (left column) */}
+          <section aria-labelledby="kbd-heading" className="p-5">
+            <SectionLabel id="kbd-heading" n="04" title="Shortcuts" Icon={Keyboard} />
+            <h3 className="mt-4 text-xl font-black tracking-tight">
+              Keys for <span className={`${ACCENT} text-[1.15em]`}>speed.</span>
+            </h3>
+            <button
+              type="button"
+              onClick={() => setKeyboardPanelOpen((o) => !o)}
+              aria-expanded={keyboardPanelOpen}
+              aria-controls="kbd-list"
+              className="mt-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-primary"
+            >
+              {keyboardPanelOpen ? "Hide shortcuts" : "Show shortcuts"}
+              <ChevronRight className={`h-4 w-4 transition-transform ${keyboardPanelOpen ? "rotate-90" : ""}`} />
+            </button>
+            {keyboardPanelOpen && (
+              <ul id="kbd-list" className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                <li>Arrows: move brush (Shift = ×3)</li>
+                <li>Space / D: toggle drawing</li>
+                <li>S: toggle sound</li>
+                <li>C: clear canvas</li>
+                <li>Q / E: cycle colour</li>
+                <li>[ / ]: thickness</li>
+                <li>, / .: opacity</li>
+                <li>T: cycle texture</li>
+                <li>V / R / B: draw, eraser, blend</li>
+                <li>G: open / close guides</li>
+                <li>Esc: stop active guide</li>
+                <li>X: toggle visual aids</li>
+              </ul>
+            )}
+          </section>
           </aside>
 
           {/* ───────── CENTER: the canvas ───────── */}
-          <section aria-label="Canvas" className="order-1 min-w-0 p-5 xl:order-2">
+          <section aria-label="Canvas" className="order-1 min-w-0 p-5 pb-3 xl:col-start-2 xl:row-start-1">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3 text-[11px] font-bold uppercase tracking-[0.18em]">
                 <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-[oklch(0.58_0.13_150)]" />
                 <span className="truncate text-foreground">Untitled canvas</span>
                 <span className="hidden font-medium normal-case tracking-normal text-muted-foreground sm:inline">{WIDTH} × {HEIGHT}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <button onClick={undo} aria-label="Undo last line" className={ICON_BTN}><Undo2 className="h-4 w-4" /></button>
-                <span aria-hidden className="h-5 w-px bg-border" />
-                <button onClick={clearCanvas} aria-label="Clear canvas (C)" className={ICON_BTN}><Eraser className="h-4 w-4" /></button>
+              <div className="flex items-center gap-2">
+                <button onClick={undo} className="flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium text-foreground ring-1 ring-border/70 transition-colors hover:bg-primary/10">
+                  <Undo2 className="h-4 w-4" /> Undo
+                </button>
+                <button onClick={clearCanvas} className="flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium text-foreground ring-1 ring-border/70 transition-colors hover:bg-primary/10">
+                  <Eraser className="h-4 w-4" /> Clear <span className="text-xs opacity-60">C</span>
+                </button>
               </div>
             </div>
 
@@ -1913,34 +1950,107 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             </p>
           </section>
 
+          {/* ───────── CENTER, ROW 2: session, how it sounds, keep your art ───────── */}
+          <div className="order-4 flex min-w-0 flex-col gap-4 p-5 pt-2 xl:col-start-2 xl:row-start-2">
+            {/* Live session strip */}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-secondary/40 px-4 py-3 text-sm ring-1 ring-border/70">
+              <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Session</span>
+              <span className="flex items-center gap-2">
+                <span aria-hidden className="h-4 w-4 rounded-full ring-1 ring-border" style={{ backgroundColor: color }} />
+                {activeColorName}
+              </span>
+              <span>{tool === "draw" ? `${TEXTURE_LABELS[texture]} · ${penWidth}px · ${Math.round(penOpacity * 100)}%` : tool === "eraser" ? `Eraser · ${eraserSize}px` : `Blend · ${blendSize}px`}</span>
+              <span>Sound {soundOn ? "on" : "off"}</span>
+              <span>{voiceOn ? `${VOICE_PERSONA_LABELS[voicePersona]} guiding` : "Narration off"}</span>
+              <span className="ml-auto text-muted-foreground">{statusText}</span>
+            </div>
+
+            {/* How it sounds */}
+            <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-2 px-1">
+              <p className="text-2xl font-black leading-tight tracking-tight sm:text-3xl">
+                Left and right <span className={`${ACCENT} text-[1.15em]`}>pans.</span>{" "}
+                Up and down <span className={`${ACCENT} text-[1.15em]`}>sings.</span>
+              </p>
+              <p className="max-w-xs text-sm text-muted-foreground">
+                Move across the canvas to sweep the sound between your ears. Move higher for a higher note.
+              </p>
+            </div>
+
+            {/* 07 Export + 08 Share */}
+            <div className="grid flex-1 items-stretch gap-4 md:grid-cols-2">
+              <section aria-labelledby="export-heading" className="flex flex-col rounded-2xl p-5 ring-1 ring-border/70">
+                <SectionLabel id="export-heading" n="08" title="Export" Icon={Box} />
+                <h3 className="mt-4 text-xl font-black tracking-tight">
+                  Hold it in your <span className={`${ACCENT} text-[1.15em]`}>hands.</span>
+                </h3>
+                <div className="mt-4 grid gap-2">
+                  <Button onClick={exportSwell} className={`${ACTION_BTN} shadow-md`}>
+                    <Waves className="h-4 w-4 shrink-0" /> Swell Paper SVG
+                  </Button>
+                  <Button onClick={exportColor} variant="secondary" className={`${ACTION_BTN} shadow-sm`}>
+                    <Palette className="h-4 w-4 shrink-0" /> Colour SVG
+                  </Button>
+                  <Button onClick={exportStl} variant="outline" className={`${ACTION_BTN} bg-background/60 ring-1 ring-primary/15`}>
+                    <Box className="h-4 w-4 shrink-0" /> 3D Print (STL)
+                  </Button>
+                </div>
+              </section>
+
+              <section aria-labelledby="share-heading" className="flex flex-col rounded-2xl p-5 ring-1 ring-border/70">
+                <SectionLabel id="share-heading" n="09" title="Share" Icon={Globe} />
+                <h3 className="mt-4 flex flex-wrap items-center gap-2 text-xl font-black tracking-tight">
+                  Let the world <span className={`${ACCENT} text-[1.15em]`}>see it.</span>
+                  <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">New</span>
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  The Public Gallery is here. Send your artwork in for a quick review and approved pieces are featured for creators everywhere to see.
+                </p>
+                <div className="mt-auto grid gap-2 pt-4">
+                  {onPost && (
+                    <Button
+                      onClick={requestPost}
+                      disabled={!hasArtwork}
+                      variant={justPosted ? "secondary" : "default"}
+                      className="h-12 w-full justify-center gap-2 rounded-2xl text-sm font-medium"
+                    >
+                      {justPosted ? <Check className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+                      {justPosted ? "Sent for review!" : "Send to Gallery"}
+                    </Button>
+                  )}
+                  <Button asChild variant="outline" className="h-12 w-full rounded-2xl bg-card/60 text-sm font-medium">
+                    <Link to="/gallery" className="gap-2"><Globe className="h-4 w-4" /> View Gallery</Link>
+                  </Button>
+                </div>
+              </section>
+            </div>
+          </div>
+
           {/* ───────── RIGHT: sound, guide voice, inspiration ───────── */}
           <aside
             aria-label="Sound and inspiration"
-            className="order-3 grid divide-y divide-border/70 border-t border-border/70 md:grid-cols-3 md:divide-x md:divide-y-0 xl:block xl:divide-x-0 xl:divide-y xl:border-l xl:border-t-0"
+            className="order-3 divide-y divide-border/70 border-t border-border/70 xl:col-start-3 xl:row-span-2 xl:row-start-1 xl:border-l xl:border-t-0"
           >
             {/* 04 / Sound */}
             <section aria-labelledby="sound-heading" className="p-5">
-              <SectionLabel id="sound-heading" n="04" title="Sound" Icon={Volume2} />
-              <div className="mt-4 flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-2xl font-black leading-tight tracking-tight">
-                    Give it a <span className={`${ACCENT} text-[1.15em]`}>voice.</span>
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">Every movement can make music.</p>
-                </div>
-                <button
-                  onClick={toggleSound}
-                  aria-pressed={soundOn}
-                  aria-label={soundOn ? "Turn sound off (S)" : "Turn sound on (S)"}
-                  className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl ring-1 transition-colors ${
-                    soundOn ? "bg-primary text-primary-foreground ring-primary shadow-md" : "bg-card text-foreground ring-border hover:bg-primary/10"
-                  }`}
-                >
-                  {soundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-                </button>
-              </div>
+              <SectionLabel id="sound-heading" n="05" title="Sound" Icon={Volume2} />
+              <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight">
+                Give it a <span className={`${ACCENT} text-[1.15em]`}>voice.</span>
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">Every movement can make music.</p>
 
-              <div className="mt-4 space-y-1.5">
+              <button
+                onClick={toggleSound}
+                aria-pressed={soundOn}
+                className={`mt-4 flex h-12 w-full items-center gap-3 rounded-xl px-3.5 text-sm font-semibold transition-colors ${
+                  soundOn ? "bg-primary text-primary-foreground shadow-md" : "bg-card text-foreground ring-1 ring-border hover:bg-primary/10"
+                }`}
+              >
+                {soundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+                {soundOn ? "Sound on" : "Sound off"}
+                <span className="ml-auto text-xs opacity-70">S</span>
+              </button>
+
+              <div className="mt-2 grid grid-cols-2 gap-2">
                 {SOUND_STYLE_ORDER.map((st) => {
                   const StyleIcon = SOUND_STYLE_ICONS[st];
                   const active = soundStyle === st;
@@ -1949,10 +2059,12 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                       key={st}
                       onClick={() => { setSoundStyle(st); say(`${SOUND_STYLE_LABELS[st]} sound.`); }}
                       aria-pressed={active}
-                      className={`${ROW_BTN} ${active ? "bg-primary/15 ring-1 ring-primary/40" : "ring-1 ring-border/70 hover:bg-primary/10"}`}
+                      className={`flex h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-2 text-sm font-medium transition-colors ${
+                        active ? "bg-primary/15 ring-1 ring-primary/40" : "ring-1 ring-border/70 hover:bg-primary/10"
+                      }`}
                     >
                       <StyleIcon className="h-4 w-4 shrink-0" />
-                      {SOUND_STYLE_LABELS[st]}
+                      <span className="truncate">{SOUND_STYLE_LABELS[st]}</span>
                     </button>
                   );
                 })}
@@ -1982,7 +2094,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
             {/* 05 / Guide voice */}
             <section aria-labelledby="voice-heading" className="p-5">
-              <SectionLabel id="voice-heading" n="05" title="Guide voice" Icon={Mic} />
+              <SectionLabel id="voice-heading" n="06" title="Guide voice" Icon={Mic} />
               <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight">
                 Pick your <span className={`${ACCENT} text-[1.15em]`}>guide.</span>
               </h3>
@@ -2021,7 +2133,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
             {/* 06 / Inspiration */}
             <section aria-labelledby="guides-heading" className="p-5">
-              <SectionLabel id="guides-heading" n="06" title="Inspiration" Icon={Map} />
+              <SectionLabel id="guides-heading" n="07" title="Inspiration" Icon={Map} />
               <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight">
                 Need a place <span className={`${ACCENT} text-[1.15em]`}>to start?</span>
               </h3>
@@ -2074,88 +2186,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           </aside>
         </div>
 
-        {/* ───────── BOTTOM BAND: keep your art ───────── */}
-        <div className="grid divide-y divide-border/70 border-t border-border/70 md:grid-cols-3 md:divide-x md:divide-y-0">
-          {/* 07 / Export */}
-          <section aria-labelledby="export-heading" className="p-5">
-            <SectionLabel id="export-heading" n="07" title="Export" Icon={Box} />
-            <h3 className="mt-4 text-xl font-black tracking-tight">
-              Hold it in your <span className={`${ACCENT} text-[1.15em]`}>hands.</span>
-            </h3>
-            <div className="mt-4 grid gap-2">
-              <Button onClick={exportSwell} className={`${ACTION_BTN} shadow-md`}>
-                <Waves className="h-4 w-4 shrink-0" /> Swell Paper SVG
-              </Button>
-              <Button onClick={exportColor} variant="secondary" className={`${ACTION_BTN} shadow-sm`}>
-                <Palette className="h-4 w-4 shrink-0" /> Colour SVG
-              </Button>
-              <Button onClick={exportStl} variant="outline" className={`${ACTION_BTN} bg-background/60 ring-1 ring-primary/15`}>
-                <Box className="h-4 w-4 shrink-0" /> 3D Print (STL)
-              </Button>
-            </div>
-          </section>
-
-          {/* 08 / Share */}
-          <section aria-labelledby="share-heading" className="flex flex-col p-5">
-            <SectionLabel id="share-heading" n="08" title="Share" Icon={Globe} />
-            <h3 className="mt-4 text-xl font-black tracking-tight">
-              Let the world <span className={`${ACCENT} text-[1.15em]`}>see it.</span>
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Send your artwork in for a quick review. Approved pieces appear on the public Gallery for creators everywhere to see.
-            </p>
-            <div className="mt-auto grid gap-2 pt-4">
-              {onPost && (
-                <Button
-                  onClick={requestPost}
-                  disabled={!hasArtwork}
-                  variant={justPosted ? "secondary" : "default"}
-                  className="h-12 w-full justify-center gap-2 rounded-2xl text-sm font-medium"
-                >
-                  {justPosted ? <Check className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-                  {justPosted ? "Sent for review!" : "Send to Gallery"}
-                </Button>
-              )}
-              <Button asChild variant="outline" className="h-12 w-full rounded-2xl bg-card/60 text-sm font-medium">
-                <Link to="/gallery" className="gap-2"><Globe className="h-4 w-4" /> View Gallery</Link>
-              </Button>
-            </div>
-          </section>
-
-          {/* 09 / Shortcuts */}
-          <section aria-labelledby="kbd-heading" className="p-5">
-            <SectionLabel id="kbd-heading" n="09" title="Shortcuts" Icon={Keyboard} />
-            <h3 className="mt-4 text-xl font-black tracking-tight">
-              Keys for <span className={`${ACCENT} text-[1.15em]`}>speed.</span>
-            </h3>
-            <button
-              type="button"
-              onClick={() => setKeyboardPanelOpen((o) => !o)}
-              aria-expanded={keyboardPanelOpen}
-              aria-controls="kbd-list"
-              className="mt-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-primary"
-            >
-              {keyboardPanelOpen ? "Hide shortcuts" : "Show shortcuts"}
-              <ChevronRight className={`h-4 w-4 transition-transform ${keyboardPanelOpen ? "rotate-90" : ""}`} />
-            </button>
-            {keyboardPanelOpen && (
-              <ul id="kbd-list" className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-                <li>Arrows: move brush (Shift = ×3)</li>
-                <li>Space / D: toggle drawing</li>
-                <li>S: toggle sound</li>
-                <li>C: clear canvas</li>
-                <li>Q / E: cycle colour</li>
-                <li>[ / ]: thickness</li>
-                <li>, / .: opacity</li>
-                <li>T: cycle texture</li>
-                <li>V / R / B: draw, eraser, blend</li>
-                <li>G: open / close guides</li>
-                <li>Esc: stop active guide</li>
-                <li>X: toggle visual aids</li>
-              </ul>
-            )}
-          </section>
-        </div>
       </div>
 
       <div aria-live="assertive" role="status" className="sr-only">{announce}</div>
