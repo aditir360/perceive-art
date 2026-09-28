@@ -162,18 +162,24 @@ function Index() {
 
       {/* Studio: entry point to the /studio page */}
       <section id="studio" className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-br from-primary/15 via-card to-accent/15 p-8 shadow-sm ring-1 ring-primary/20 sm:p-12">
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary/30 via-card to-accent/25 p-2 shadow-xl ring-2 ring-primary/30 sm:p-3">
+          <div className="relative overflow-hidden rounded-[2.15rem] bg-background/90 p-7 backdrop-blur-sm sm:p-11">
           <div aria-hidden className="pointer-events-none absolute inset-0">
             <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
             <div className="absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-accent/25 blur-3xl" />
           </div>
 
           <div className="relative grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
-                <Palette className="h-3.5 w-3.5" /> Live audio canvas
-              </span>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+            <div className="rounded-[2rem] border border-primary/25 bg-card p-6 shadow-lg ring-1 ring-primary/10 sm:p-8">
+              <div className="mb-5 flex flex-wrap items-center gap-3">
+                <span className="inline-flex items-center gap-2 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm">
+                  <Palette className="h-3.5 w-3.5" /> Our main product
+                </span>
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary ring-1 ring-primary/20">
+                  Live audio canvas
+                </span>
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
                 Step into the Studio
               </h2>
               <HoverListen
@@ -226,6 +232,7 @@ function Index() {
                 </li>
               ))}
             </ul>
+          </div>
           </div>
         </div>
       </section>
