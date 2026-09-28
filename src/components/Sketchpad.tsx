@@ -168,6 +168,23 @@ const COLORS = [
   { name: "Slate",    value: "#5c6b7a", tone: 493.88 },
 ];
 
+/* ── One size scale for every studio control ─────────────────────────────
+   Keep these in sync: every card, heading, option button, slider and
+   stepper in the studio uses these, so nothing looks bigger or smaller
+   than its neighbours. */
+const CARD_BASE     = "rounded-3xl p-4 shadow-lg sm:p-5 ring-1 ring-white/50 backdrop-blur-md";
+const CARD_HEADING  = "mb-4 flex items-center gap-2.5 text-base font-semibold";
+const CARD_BADGE    = "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm";
+const CARD_HINT     = "ml-auto rounded-full bg-background/60 px-2.5 py-1 text-xs font-normal text-muted-foreground";
+const OPTION_BTN    = "flex h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-2xl px-2.5 text-sm font-medium shadow-sm transition-all";
+const OPTION_ON     = "bg-primary text-primary-foreground shadow-md";
+const OPTION_OFF    = "bg-card/60 text-foreground ring-1 ring-white/50 backdrop-blur-sm hover:bg-primary/10";
+const STEP_BTN      = "h-11 w-11 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm";
+const SLIDER_CLASS  = "h-3 min-w-0 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary";
+const LABEL_ROW     = "flex items-center justify-between text-sm font-medium text-muted-foreground";
+const KBD_CHIP      = "rounded-full bg-background/60 px-2 py-0.5 text-xs";
+const ACTION_BTN    = "h-12 justify-start gap-3 rounded-2xl px-4 text-sm font-medium";
+
 const WIDTH  = 900;
 const HEIGHT = 560;
 const GRID   = 60;
@@ -734,7 +751,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const penOpacity = textureSettings[texture].opacity;
   const [guideKey,   setGuideKey]   = useState<string | null>(null);
   const [guidesPanelOpen, setGuidesPanelOpen] = useState(true);
-  const [keyboardPanelOpen, setKeyboardPanelOpen] = useState(false);
+  const [keyboardPanelOpen, setKeyboardPanelOpen] = useState(true);
   const [visualAids, setVisualAids] = useState(true);
   const [postConfirmOpen, setPostConfirmOpen] = useState(false);
   const [justPosted, setJustPosted] = useState(false);
@@ -1486,7 +1503,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const activeGuide = guideKey ? SHAPE_GUIDES[guideKey] : null;
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[1fr_336px]">
+    <div className="mx-auto grid w-full max-w-[1080px] grid-cols-[minmax(0,1fr)] items-start gap-6 2xl:max-w-none 2xl:grid-cols-[minmax(0,1fr)_680px]">
 
       {/* ── Canvas area ── */}
       <div className="relative overflow-visible rounded-3xl bg-gradient-to-br from-primary/20 via-card/80 to-accent/20 p-1.5 shadow-2xl shadow-primary/15 ring-1 ring-white/50 backdrop-blur-xl sm:p-2">
@@ -1494,8 +1511,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
 
         {/* Top bar */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2 rounded-full bg-card/70 px-3.5 py-2 text-xs font-bold text-primary ring-1 ring-white/60 shadow-sm backdrop-blur-sm">
-            <Sparkles className="h-3.5 w-3.5" />
+          <div className="inline-flex h-12 items-center gap-2 rounded-full bg-card/70 px-4 text-sm font-bold text-primary ring-1 ring-white/60 shadow-sm backdrop-blur-sm">
+            <Sparkles className="h-4 w-4" />
             {stats.data == null
               ? "Counting canvas drawings…"
               : `${stats.data.toLocaleString()} drawings created worldwide`}
@@ -1505,10 +1522,10 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             <div
               role="group"
               aria-label="Guide voice"
-              className="inline-flex items-center gap-1 rounded-full bg-card/70 p-1 ring-1 ring-white/60 shadow-sm backdrop-blur-sm"
+              className="inline-flex min-h-12 max-w-full flex-wrap items-center gap-1 rounded-full bg-card/70 p-1 ring-1 ring-white/60 shadow-sm backdrop-blur-sm"
             >
-              <span className="flex items-center gap-1 pl-2 pr-1 text-[11px] font-semibold text-muted-foreground">
-                <Volume2 className="h-3.5 w-3.5 text-primary" /> Voice
+              <span className="flex items-center gap-1.5 pl-3 pr-1 text-sm font-semibold text-muted-foreground">
+                <Volume2 className="h-4 w-4 text-primary" /> Voice
               </span>
               {VOICE_PERSONA_ORDER.map((v) => {
                 const active = voicePersona === v;
@@ -1518,7 +1535,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                     type="button"
                     onClick={() => chooseVoicePersona(v)}
                     aria-pressed={active}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                    className={`h-10 rounded-full px-4 text-sm font-semibold transition-all ${
                       active
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : "text-foreground hover:bg-primary/10"
@@ -1534,13 +1551,13 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 onClick={toggleVoiceOn}
                 aria-pressed={voiceOn}
                 aria-label={voiceOn ? "Turn narration voice off" : "Turn narration voice on"}
-                className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                className={`flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-all ${
                   voiceOn
                     ? "text-foreground hover:bg-primary/10"
                     : "bg-muted text-muted-foreground ring-1 ring-border"
                 }`}
               >
-                {voiceOn ? <Mic className="h-3.5 w-3.5 text-primary" /> : <MicOff className="h-3.5 w-3.5" />}
+                {voiceOn ? <Mic className="h-4 w-4 text-primary" /> : <MicOff className="h-4 w-4" />}
                 {voiceOn ? "Narration on" : "Narration off"}
               </button>
             </div>
@@ -1548,58 +1565,57 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               onClick={toggleVisualAids}
               variant={visualAids ? "default" : "outline"}
               aria-pressed={visualAids}
-              size="sm"
               className={
                 visualAids
-                  ? "gap-1.5 rounded-full shadow-sm"
-                  : "gap-1.5 rounded-full border-2 border-primary/50 bg-card font-semibold text-primary shadow-sm hover:bg-primary/10 hover:text-primary"
+                  ? "h-12 gap-2 rounded-full px-5 text-sm font-medium shadow-sm"
+                  : "h-12 gap-2 rounded-full border-2 border-primary/50 bg-card px-5 text-sm font-semibold text-primary shadow-sm hover:bg-primary/10 hover:text-primary"
               }
             >
-              <Eye className="h-3.5 w-3.5" /> Visual aids
-              <kbd className="ml-0.5 rounded bg-background/40 px-1 py-0.5 text-[10px]">X</kbd>
+              <Eye className="h-4 w-4" /> Visual aids
+              <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">X</kbd>
             </Button>
           </div>
         </div>
 
         {/* Controls */}
-        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-2xl bg-gradient-to-br from-primary/10 via-background/40 to-accent/10 p-2 shadow-inner ring-1 ring-white/50 backdrop-blur-sm">
-          <Button onClick={toggleSound} variant={soundOn ? "default" : "secondary"} aria-pressed={soundOn} className="gap-2 rounded-xl shadow-sm">
+        <div className="mb-2 grid grid-cols-2 gap-2 rounded-2xl bg-gradient-to-br from-primary/10 via-background/40 to-accent/10 p-2 shadow-inner ring-1 ring-white/50 backdrop-blur-sm sm:grid-cols-4">
+          <Button onClick={toggleSound} variant={soundOn ? "default" : "secondary"} aria-pressed={soundOn} className="h-12 min-w-0 gap-2 rounded-2xl px-3 text-sm font-medium shadow-sm">
             {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             {soundOn ? "Sound On" : "Sound Off"}
-            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">S</kbd>
+            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">S</kbd>
           </Button>
-          <Button onClick={toggleDrawing} variant={drawing ? "default" : "secondary"} aria-pressed={drawing} className="gap-2 rounded-xl shadow-sm">
+          <Button onClick={toggleDrawing} variant={drawing ? "default" : "secondary"} aria-pressed={drawing} className="h-12 min-w-0 gap-2 rounded-2xl px-3 text-sm font-medium shadow-sm">
             {drawing ? <Pencil className="h-4 w-4" /> : <Hand className="h-4 w-4" />}
             {drawing ? "Drawing" : "Idle"}
-            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">Space</kbd>
+            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">Space</kbd>
           </Button>
-          <Button onClick={() => selectTool("draw")} variant={tool === "draw" ? "default" : "secondary"} className="gap-2 rounded-xl shadow-sm">
-            <Pencil className="h-4 w-4" /> Draw <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">V</kbd>
+          <Button onClick={() => selectTool("draw")} variant={tool === "draw" ? "default" : "secondary"} className="h-12 min-w-0 gap-2 rounded-2xl px-3 text-sm font-medium shadow-sm">
+            <Pencil className="h-4 w-4" /> Draw <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">V</kbd>
           </Button>
-          <Button onClick={() => selectTool("eraser")} variant={tool === "eraser" ? "default" : "secondary"} className="gap-2 rounded-xl shadow-sm">
-            <Eraser className="h-4 w-4" /> Eraser <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">R</kbd>
+          <Button onClick={() => selectTool("eraser")} variant={tool === "eraser" ? "default" : "secondary"} className="h-12 min-w-0 gap-2 rounded-2xl px-3 text-sm font-medium shadow-sm">
+            <Eraser className="h-4 w-4" /> Eraser <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">R</kbd>
           </Button>
-          <Button onClick={() => selectTool("blend")} variant={tool === "blend" ? "default" : "secondary"} className="gap-2 rounded-xl shadow-sm">
-            <Waves className="h-4 w-4" /> Blend <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">B</kbd>
+          <Button onClick={() => selectTool("blend")} variant={tool === "blend" ? "default" : "secondary"} className="h-12 min-w-0 gap-2 rounded-2xl px-3 text-sm font-medium shadow-sm">
+            <Waves className="h-4 w-4" /> Blend <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">B</kbd>
           </Button>
-          <Button onClick={undo}        variant="outline" className="gap-2 rounded-xl bg-card/70 shadow-sm ring-1 ring-white/50"><Undo2 className="h-4 w-4" /> Undo</Button>
-          <Button onClick={clearCanvas} variant="outline" className="gap-2 rounded-xl bg-card/70 shadow-sm ring-1 ring-white/50">
+          <Button onClick={undo}        variant="outline" className="h-12 min-w-0 gap-2 rounded-2xl bg-card/70 px-3 text-sm font-medium shadow-sm ring-1 ring-white/50"><Undo2 className="h-4 w-4" /> Undo</Button>
+          <Button onClick={clearCanvas} variant="outline" className="h-12 min-w-0 gap-2 rounded-2xl bg-card/70 px-3 text-sm font-medium shadow-sm ring-1 ring-white/50">
             <Eraser className="h-4 w-4" /> Clear
-            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">C</kbd>
+            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">C</kbd>
           </Button>
           {tool !== "draw" && (
-            <label className="flex min-w-[190px] items-center gap-2 rounded-xl bg-card/70 px-3 py-2 text-xs font-semibold text-primary ring-1 ring-white/50">
-              <span className="w-14">{tool === "eraser" ? "Eraser" : "Blend"} size</span>
+            <label className="col-span-2 flex h-12 min-w-0 items-center gap-3 rounded-2xl bg-card/70 px-4 text-sm font-semibold text-primary ring-1 ring-white/50 sm:col-span-2">
+              <span className="shrink-0">{tool === "eraser" ? "Eraser" : "Blend"} size</span>
               <input type="range" min="4" max="100" step="1" value={tool === "eraser" ? eraserSize : blendSize}
-                onChange={(e) => changeToolSize(Number(e.target.value))} className="w-24 accent-primary"
+                onChange={(e) => changeToolSize(Number(e.target.value))} className="min-w-0 flex-1 accent-primary"
                 aria-label={`${tool === "eraser" ? "Eraser" : "Blend"} size`} />
-              <span className="w-7 text-right">{tool === "eraser" ? eraserSize : blendSize}</span>
+              <span className="w-8 text-right">{tool === "eraser" ? eraserSize : blendSize}</span>
             </label>
           )}
           {guideKey && (
-            <Button onClick={stopGuide} variant="destructive" size="sm" className="gap-1.5 rounded-xl shadow-sm">
-              <X className="h-3.5 w-3.5" /> Stop guide
-              <kbd className="ml-0.5 rounded bg-background/40 px-1 py-0.5 text-[10px]">Esc</kbd>
+            <Button onClick={stopGuide} variant="destructive" className="h-12 min-w-0 gap-2 rounded-2xl px-3 text-sm font-medium shadow-sm">
+              <X className="h-4 w-4" /> Stop guide
+              <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">Esc</kbd>
             </Button>
           )}
         </div>
@@ -1798,35 +1814,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           </div>
         </div>
 
-        <p className="mt-3 rounded-xl bg-background/35 px-3 py-2 text-xs text-muted-foreground ring-1 ring-white/40">
+        <p className="mt-4 rounded-2xl bg-background/35 px-4 py-3 text-sm leading-relaxed text-muted-foreground ring-1 ring-white/40">
           Left/right pans sound · Up/down changes pitch · Q/E colours · [ ] thickness · , . opacity · T texture · V draw · R eraser · B blend
         </p>
-
-        {/* New feature callout — Public Gallery. Placed right under the
-            canvas so it's clearly visible without digging into the
-            sidebar's Export/Share card. */}
-        <div className="mt-4 flex flex-col items-start gap-3 rounded-2xl bg-gradient-to-br from-accent/25 via-card/80 to-primary/15 p-4 shadow-md ring-1 ring-white/50 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
-              <Globe className="h-4 w-4" />
-            </span>
-            <div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
-                New
-              </span>
-              <p className="mt-1 text-sm font-semibold text-foreground">The Public Gallery is here</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Finish a drawing and send it in for review — approved pieces get featured on the
-                Gallery page for creators everywhere to see.
-              </p>
-            </div>
-          </div>
-          <Button asChild variant="outline" size="sm" className="w-full shrink-0 rounded-full bg-card/60 backdrop-blur-sm sm:w-auto">
-            <Link to="/gallery" className="gap-1.5">
-              <Globe className="h-3.5 w-3.5" /> View Gallery
-            </Link>
-          </Button>
-        </div>
 
         {/* Audio Guides — moved here from the sidebar so this card doesn't sit
             half-empty next to the taller settings column */}
@@ -1834,13 +1824,13 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           <button
             id="guides-heading"
             onClick={() => setGuidesPanelOpen((o) => !o)}
-            className="mb-1 flex w-full items-center justify-between text-sm font-semibold"
+            className="mb-2 flex w-full items-center justify-between text-base font-semibold"
             aria-expanded={guidesPanelOpen}
           >
             <span className="flex items-center gap-2">
-              <Map className="h-4 w-4 text-primary" />
+              <Map className="h-5 w-5 text-primary" />
               Audio guides
-              <kbd className="rounded bg-muted px-1 py-0.5 text-[10px] font-normal text-muted-foreground">G</kbd>
+              <kbd className="rounded bg-muted px-1.5 py-0.5 text-xs font-normal text-muted-foreground">G</kbd>
             </span>
             <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${guidesPanelOpen ? "rotate-90" : ""}`} />
           </button>
@@ -1852,7 +1842,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           )}
 
           {guidesPanelOpen && (
-            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {Object.entries(SHAPE_GUIDES).map(([key, guide]) => {
                 const { Icon, color } = GUIDE_ICONS[key];
                 return (
@@ -1866,17 +1856,17 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                     }`}
                   >
                     <span
-                      className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
                       style={{ backgroundColor: `${color}26` }}
                     >
                       <Icon className="h-4 w-4" style={{ color }} />
                     </span>
                     <div>
-                      <div className="text-sm font-medium leading-tight">
+                      <div className="text-base font-medium leading-tight">
                         {guide.name}
-                        {guideKey === key && <span className="ml-1.5 text-[10px] font-normal opacity-70">(active — press to stop)</span>}
+                        {guideKey === key && <span className="ml-1.5 text-xs font-normal opacity-70">(active — press to stop)</span>}
                       </div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground leading-snug">{guide.description}</div>
+                      <div className="mt-1 text-sm text-muted-foreground leading-snug">{guide.description}</div>
                     </div>
                   </button>
                 );
@@ -1888,32 +1878,32 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       </div>
 
       {/* ── Sidebar ── */}
-      <aside className="space-y-4">
+      <aside className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-2">
 
         {/* Palette */}
-        <section aria-labelledby="colors-heading" className="rounded-3xl bg-gradient-to-br from-primary/20 via-card/75 to-transparent p-4 shadow-lg shadow-primary/10 ring-1 ring-white/50 backdrop-blur-md">
-          <h2 id="colors-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
-              <Palette className="h-3.5 w-3.5" />
+        <section aria-labelledby="colors-heading" className={`${CARD_BASE} bg-gradient-to-br from-primary/20 via-card/75 to-transparent shadow-primary/10`}>
+          <h2 id="colors-heading" className={CARD_HEADING}>
+            <span className={CARD_BADGE}>
+              <Palette className="h-4 w-4" />
             </span>
             Palette
-            <span className="ml-auto rounded-full bg-background/60 px-2 py-0.5 text-[10px] font-normal text-muted-foreground">Q / E to cycle</span>
+            <span className={CARD_HINT}>Q / E to cycle</span>
           </h2>
-          <div className="flex flex-wrap gap-4">
+          <div className="grid grid-cols-6 gap-2">
             {COLORS.map((c) => (
               <button
                 key={c.value}
                 onClick={() => pickColor(c)}
                 aria-label={`Color ${c.name}`}
                 aria-pressed={color === c.value}
-                className={`relative h-[3.375rem] w-[3.375rem] rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
+                className={`relative aspect-square w-full max-w-11 justify-self-center rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
                   color === c.value ? "scale-110 ring-foreground" : "ring-transparent"
                 }`}
                 style={{ backgroundColor: c.value }}
               >
                 {color === c.value && (
                   <Check
-                    className="absolute inset-0 m-auto h-6 w-6 drop-shadow"
+                    className="absolute inset-0 m-auto h-[1.125rem] w-[1.125rem] drop-shadow"
                     style={{ color: ["#f5a623", "#e0b04f", "#f9a8a8", "#ffffff"].includes(c.value) ? "#3a1f2b" : "#fff" }}
                   />
                 )}
@@ -1923,15 +1913,15 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         </section>
 
         {/* Texture */}
-        <section aria-labelledby="texture-heading" className="rounded-3xl bg-gradient-to-br from-accent/30 via-card/75 to-transparent p-4 shadow-lg shadow-accent/10 ring-1 ring-white/50 backdrop-blur-md">
-          <h2 id="texture-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
-              <Pencil className="h-3.5 w-3.5" />
+        <section aria-labelledby="texture-heading" className={`${CARD_BASE} bg-gradient-to-br from-accent/30 via-card/75 to-transparent shadow-accent/10`}>
+          <h2 id="texture-heading" className={CARD_HEADING}>
+            <span className={CARD_BADGE}>
+              <Pencil className="h-4 w-4" />
             </span>
             Texture
-            <span className="ml-auto rounded-full bg-background/60 px-2 py-0.5 text-[10px] font-normal text-muted-foreground">T to cycle</span>
+            <span className={CARD_HINT}>T to cycle</span>
           </h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             {TEXTURE_ORDER.map((t) => {
               const TextureIcon = TEXTURE_ICONS[t];
               const active = texture === t;
@@ -1940,13 +1930,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                   key={t}
                   onClick={() => changeTexture(t)}
                   aria-pressed={active}
-                  className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-medium shadow-sm transition-all ${
-                    active
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "bg-card/60 text-foreground ring-1 ring-white/50 backdrop-blur-sm hover:bg-primary/10"
-                  }`}
+                  className={`${OPTION_BTN} ${active ? OPTION_ON : OPTION_OFF}`}
                 >
-                  <TextureIcon className="h-5 w-5" />
+                  <TextureIcon className="h-4 w-4 shrink-0" />
                   {TEXTURE_LABELS[t]}
                 </button>
               );
@@ -1957,30 +1943,30 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         {/* Thickness + Opacity (per active texture) — merged into one card;
             two sliders under one header take noticeably less vertical
             space than two separate cards each with their own header/ring. */}
-        <section aria-labelledby="pen-heading" className="rounded-3xl bg-gradient-to-br from-secondary/40 via-card/75 to-transparent p-4 shadow-lg shadow-secondary/10 ring-1 ring-white/50 backdrop-blur-md">
-          <h2 id="pen-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
-              <Pencil className="h-3.5 w-3.5" />
+        <section aria-labelledby="pen-heading" className={`${CARD_BASE} bg-gradient-to-br from-secondary/40 via-card/75 to-transparent shadow-secondary/10`}>
+          <h2 id="pen-heading" className={CARD_HEADING}>
+            <span className={CARD_BADGE}>
+              <Pencil className="h-4 w-4" />
             </span>
             {TEXTURE_LABELS[texture]} settings
           </h2>
 
-          <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+          <div className={LABEL_ROW}>
             <span>Thickness</span>
             <span className="flex items-center gap-1.5">
               <span className="font-semibold text-foreground">{penWidth}px</span>
-              <span className="rounded-full bg-background/60 px-2 py-0.5 text-[10px]">[ / ]</span>
+              <span className={KBD_CHIP}>[ / ]</span>
             </span>
           </div>
-          <div className="mt-1.5 flex items-center gap-2.5">
+          <div className="mt-2 flex items-center gap-3">
             <Button
               onClick={() => changePenWidth(penWidth - 1)}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
+              className={STEP_BTN}
               aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}
             >
-              <Minus className="h-3.5 w-3.5" />
+              <Minus className="h-4 w-4" />
             </Button>
             <input
               type="range"
@@ -1993,7 +1979,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               aria-valuemin={MIN_PEN_WIDTH}
               aria-valuemax={MAX_PEN_WIDTH}
               aria-valuenow={penWidth}
-              className="h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"
+              className={SLIDER_CLASS}
               style={{
                 background: `linear-gradient(to right, oklch(0.58 0.15 20) ${((penWidth - MIN_PEN_WIDTH) / (MAX_PEN_WIDTH - MIN_PEN_WIDTH)) * 100}%, oklch(0.58 0.15 20 / 0.18) ${((penWidth - MIN_PEN_WIDTH) / (MAX_PEN_WIDTH - MIN_PEN_WIDTH)) * 100}%)`,
               }}
@@ -2002,29 +1988,29 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               onClick={() => changePenWidth(penWidth + 1)}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
+              className={STEP_BTN}
               aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="mt-4 flex items-center justify-between text-xs font-medium text-muted-foreground">
+          <div className={`mt-5 ${LABEL_ROW}`}>
             <span>Opacity</span>
             <span className="flex items-center gap-1.5">
               <span className="font-semibold text-foreground">{Math.round(penOpacity * 100)}%</span>
-              <span className="rounded-full bg-background/60 px-2 py-0.5 text-[10px]">, / .</span>
+              <span className={KBD_CHIP}>, / .</span>
             </span>
           </div>
-          <div className="mt-1.5 flex items-center gap-2.5">
+          <div className="mt-2 flex items-center gap-3">
             <Button
               onClick={() => changePenOpacity(penOpacity - OPACITY_STEP)}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
+              className={STEP_BTN}
               aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}
             >
-              <Minus className="h-3.5 w-3.5" />
+              <Minus className="h-4 w-4" />
             </Button>
             <input
               type="range"
@@ -2037,7 +2023,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               aria-valuemin={OPACITY_RANGE[texture].min}
               aria-valuemax={OPACITY_RANGE[texture].max}
               aria-valuenow={penOpacity}
-              className="h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"
+              className={SLIDER_CLASS}
               style={{
                 background: `linear-gradient(to right, oklch(0.58 0.15 20) ${((penOpacity - OPACITY_RANGE[texture].min) / (OPACITY_RANGE[texture].max - OPACITY_RANGE[texture].min)) * 100}%, oklch(0.58 0.15 20 / 0.18) ${((penOpacity - OPACITY_RANGE[texture].min) / (OPACITY_RANGE[texture].max - OPACITY_RANGE[texture].min)) * 100}%)`,
               }}
@@ -2046,23 +2032,23 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               onClick={() => changePenOpacity(penOpacity + OPACITY_STEP)}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
+              className={STEP_BTN}
               aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-4 w-4" />
             </Button>
           </div>
         </section>
 
         {/* Canvas Sound */}
-        <section aria-labelledby="canvas-sound-heading" className="rounded-3xl bg-gradient-to-br from-primary/20 via-card/75 to-transparent p-4 shadow-lg shadow-primary/10 ring-1 ring-white/50 backdrop-blur-md">
-          <h2 id="canvas-sound-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
-              <Volume2 className="h-3.5 w-3.5" />
+        <section aria-labelledby="canvas-sound-heading" className={`${CARD_BASE} bg-gradient-to-br from-primary/20 via-card/75 to-transparent shadow-primary/10`}>
+          <h2 id="canvas-sound-heading" className={CARD_HEADING}>
+            <span className={CARD_BADGE}>
+              <Volume2 className="h-4 w-4" />
             </span>
             Canvas sound
           </h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             {SOUND_STYLE_ORDER.map((s) => {
               const StyleIcon = SOUND_STYLE_ICONS[s];
               const active = soundStyle === s;
@@ -2071,27 +2057,23 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                   key={s}
                   onClick={() => { setSoundStyle(s); say(`${SOUND_STYLE_LABELS[s]} sound.`); }}
                   aria-pressed={active}
-                  className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-medium shadow-sm transition-all ${
-                    active
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "bg-card/60 text-foreground ring-1 ring-white/50 backdrop-blur-sm hover:bg-primary/10"
-                  }`}
+                  className={`${OPTION_BTN} ${active ? OPTION_ON : OPTION_OFF}`}
                 >
-                  <StyleIcon className="h-5 w-5" />
+                  <StyleIcon className="h-4 w-4 shrink-0" />
                   {SOUND_STYLE_LABELS[s]}
                 </button>
               );
             })}
           </div>
-          <div className="mt-3 flex items-center gap-3">
+          <div className="mt-4 flex items-center gap-3">
             <Button
               onClick={() => setSoundVolume((v) => Math.max(0, +(v - 0.1).toFixed(2)))}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
+              className={STEP_BTN}
               aria-label="Decrease canvas sound volume"
             >
-              <Minus className="h-3.5 w-3.5" />
+              <Minus className="h-4 w-4" />
             </Button>
             <input
               type="range"
@@ -2101,96 +2083,90 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               value={soundVolume}
               onChange={(e) => setSoundVolume(Number(e.target.value))}
               aria-label="Canvas sound volume"
-              className="h-2 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"
+              className={SLIDER_CLASS}
               style={{ background: `linear-gradient(to right, oklch(0.58 0.15 20) ${soundVolume * 100}%, oklch(0.58 0.15 20 / 0.18) ${soundVolume * 100}%)` }}
             />
             <Button
               onClick={() => setSoundVolume((v) => Math.min(1, +(v + 0.1).toFixed(2)))}
               variant="outline"
               size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
+              className={STEP_BTN}
               aria-label="Increase canvas sound volume"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-4 w-4" />
             </Button>
           </div>
-          <div className="mt-2.5 rounded-full bg-background/50 py-1.5 text-center text-xs font-medium text-muted-foreground">
+          <p className="mt-2 text-center text-sm font-medium text-muted-foreground">
             {Math.round(soundVolume * 100)}% volume
-          </div>
+          </p>
         </section>
 
-        {/* Export & Share — merged into one card */}
-        <section aria-labelledby="export-heading" className="rounded-3xl bg-gradient-to-br from-accent/25 via-card/75 to-transparent p-4 shadow-lg shadow-accent/10 ring-1 ring-white/50 backdrop-blur-md">
-          <h2 id="export-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
-              <Sparkles className="h-3.5 w-3.5" />
+        {/* Export */}
+        <section aria-labelledby="export-heading" className={`${CARD_BASE} bg-gradient-to-br from-accent/25 via-card/75 to-transparent shadow-accent/10`}>
+          <h2 id="export-heading" className={CARD_HEADING}>
+            <span className={CARD_BADGE}>
+              <Sparkles className="h-4 w-4" />
             </span>
             Export
           </h2>
-          <div className="grid gap-2">
-            <Button onClick={exportSwell} className="justify-start gap-3 rounded-2xl py-4 shadow-md">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-foreground/20">
-                <Waves className="h-4 w-4" />
-              </span>
+          <div className="grid gap-2.5">
+            <Button onClick={exportSwell} className={`${ACTION_BTN} shadow-md`}>
+              <Waves className="h-4 w-4 shrink-0" />
               Swell Paper SVG
             </Button>
-            <Button onClick={exportColor} variant="secondary" className="justify-start gap-3 rounded-2xl py-4 shadow-sm">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground/10">
-                <Palette className="h-4 w-4" />
-              </span>
+            <Button onClick={exportColor} variant="secondary" className={`${ACTION_BTN} shadow-sm`}>
+              <Palette className="h-4 w-4 shrink-0" />
               Colour SVG
             </Button>
-            <Button onClick={exportStl} variant="outline" className="justify-start gap-3 rounded-2xl bg-background/60 py-4 shadow-sm ring-1 ring-primary/15">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
-                <Box className="h-4 w-4" />
-              </span>
+            <Button onClick={exportStl} variant="outline" className={`${ACTION_BTN} bg-background/60 shadow-sm ring-1 ring-primary/15`}>
+              <Box className="h-4 w-4 shrink-0" />
               3D Print (STL)
             </Button>
           </div>
-
-          {onPost && (
-            <>
-              <div className="my-4 border-t border-primary/10" />
-              <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
-                  <Globe className="h-3.5 w-3.5" />
-                </span>
-                Share
-              </h2>
-              <p className="mb-3 text-xs text-muted-foreground">
-                Send your artwork in for a quick review — approved pieces appear on the public
-                Gallery page for creators everywhere to see.
-              </p>
-              <Button
-                onClick={requestPost}
-                disabled={!hasArtwork}
-                variant={justPosted ? "secondary" : "default"}
-                className="w-full justify-center gap-2 rounded-full"
-              >
-                {justPosted ? <Check className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-                {justPosted ? "Sent for review!" : "Send to Gallery"}
-              </Button>
-            </>
-          )}
         </section>
+
+        {/* Share */}
+        {onPost && (
+          <section aria-labelledby="share-heading" className={`${CARD_BASE} flex flex-col bg-gradient-to-br from-primary/20 via-card/75 to-transparent shadow-primary/10`}>
+            <h2 id="share-heading" className={CARD_HEADING}>
+              <span className={CARD_BADGE}>
+                <Globe className="h-4 w-4" />
+              </span>
+              Share
+            </h2>
+            <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+              Send your artwork in for a quick review. Approved pieces appear on the public
+              Gallery page for creators everywhere to see.
+            </p>
+            <Button
+              onClick={requestPost}
+              disabled={!hasArtwork}
+              variant={justPosted ? "secondary" : "default"}
+              className="mt-auto h-12 w-full justify-center gap-2 rounded-2xl text-sm font-medium"
+            >
+              {justPosted ? <Check className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+              {justPosted ? "Sent for review!" : "Send to Gallery"}
+            </Button>
+          </section>
+        )}
 
         {/* Keyboard reference — collapsed by default; it's the single
             tallest block in this sidebar and most people don't need it
             open all the time, so tucking it away keeps the whole sidebar
             closer in height to the canvas next to it. */}
-        <section aria-labelledby="kbd-heading" className="rounded-3xl bg-gradient-to-br from-secondary/30 via-card/75 to-transparent p-4 shadow-lg shadow-secondary/10 ring-1 ring-white/50 backdrop-blur-md text-xs text-muted-foreground">
+        <section aria-labelledby="kbd-heading" className={`${CARD_BASE} bg-gradient-to-br from-secondary/30 via-card/75 to-transparent shadow-secondary/10 text-sm text-muted-foreground sm:col-span-2 lg:col-span-3 2xl:col-span-2`}>
           <button
             type="button"
             onClick={() => setKeyboardPanelOpen((o) => !o)}
             aria-expanded={keyboardPanelOpen}
             aria-controls="kbd-list"
-            className="flex w-full items-center gap-2 text-sm font-semibold text-foreground"
+            className="flex w-full items-center gap-2.5 text-base font-semibold text-foreground"
           >
-            <Keyboard className="h-4 w-4 text-primary" /> Keyboard shortcuts
-            <ChevronRight className={`ml-auto h-4 w-4 text-primary transition-transform ${keyboardPanelOpen ? "rotate-90" : ""}`} />
+            <span className={CARD_BADGE}><Keyboard className="h-4 w-4" /></span> Keyboard shortcuts
+            <ChevronRight className={`ml-auto h-5 w-5 text-primary transition-transform ${keyboardPanelOpen ? "rotate-90" : ""}`} />
           </button>
           {keyboardPanelOpen && (
-            <ul id="kbd-list" className="mt-3 space-y-1">
+            <ul id="kbd-list" className="mt-4 grid gap-x-6 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-3">
               <li>Arrows — move brush (Shift = ×3)</li>
               <li>Space / D — toggle drawing</li>
               <li>S — toggle sound</li>
@@ -2205,6 +2181,32 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             </ul>
           )}
         </section>
+
+        {/* New feature callout — Public Gallery. Placed right under the
+            canvas so it's clearly visible without digging into the
+            sidebar's Export/Share card. */}
+        <div className={`${CARD_BASE} flex flex-col items-start gap-4 bg-gradient-to-br from-accent/25 via-card/80 to-primary/15 shadow-accent/10 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between lg:col-span-3 2xl:col-span-2`}>
+          <div className="flex items-start gap-3">
+            <span className={`${CARD_BADGE} mt-0.5`}>
+              <Globe className="h-4 w-4" />
+            </span>
+            <div>
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
+                New
+              </span>
+              <p className="mt-1 text-base font-semibold text-foreground">The Public Gallery is here</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Finish a drawing and send it in for review — approved pieces get featured on the
+                Gallery page for creators everywhere to see.
+              </p>
+            </div>
+          </div>
+          <Button asChild variant="outline" className="h-12 w-full shrink-0 rounded-full bg-card/60 px-5 text-sm font-medium backdrop-blur-sm sm:w-auto">
+            <Link to="/gallery" className="gap-1.5">
+              <Globe className="h-4 w-4" /> View Gallery
+            </Link>
+          </Button>
+        </div>
       </aside>
 
       <div aria-live="assertive" role="status" className="sr-only">{announce}</div>
