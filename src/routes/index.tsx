@@ -1,12 +1,9 @@
-import { useCallback } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sketchpad } from "@/components/Sketchpad";
 import { RollingStats } from "@/components/RollingStats";
 import { StudioPreviewCards } from "@/components/StudioPreviewCards";
 import { HoverListen } from "@/components/ListenButton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useCanvasClicks } from "@/lib/usage";
-import { saveArtwork } from "@/lib/gallery-storage";
 import bearPeek from "@/assets/bear-peek-cropped.png";
 import { Ear, Hand, Printer, Heart, Sparkles, ArrowRight, Music, Music2, Star, Palette, Headphones, Mail, Instagram, Linkedin, Rocket, Users2, Smartphone, Wand2, Handshake, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,9 +14,6 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const stats = useCanvasClicks();
-const handlePost = useCallback(async ({ svg }: { svg: string }) => {
-  await saveArtwork(svg);
-}, []);
 
   return (
     <div className="min-h-screen">
@@ -75,7 +69,7 @@ const handlePost = useCallback(async ({ svg }: { svg: string }) => {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Button asChild size="lg" className="rounded-full">
-            <a href="#studio" className="gap-2">Start creating <ArrowRight className="h-4 w-4" /></a>
+            <Link to="/studio" className="gap-2">Start creating <ArrowRight className="h-4 w-4" /></Link>
           </Button>
           <Button asChild size="lg" variant="secondary" className="rounded-full">
             <a href="#mission">Our mission</a>
@@ -166,25 +160,75 @@ const handlePost = useCallback(async ({ svg }: { svg: string }) => {
         </div>
       </section>
 
-      {/* Studio */}
+      {/* Studio: entry point to the /studio page */}
       <section id="studio" className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4 rounded-3xl bg-gradient-to-br from-primary/10 via-transparent to-accent/10 p-6 ring-1 ring-primary/10 sm:p-8">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
-              <Palette className="h-3.5 w-3.5" /> Live audio canvas
-            </span>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">The Studio</h2>
-            <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Turn on sound, pick a color, and start a line. Every move plays back to you.
-            </p>
+        <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-br from-primary/15 via-card to-accent/15 p-8 shadow-sm ring-1 ring-primary/20 sm:p-12">
+          <div aria-hidden className="pointer-events-none absolute inset-0">
+            <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
+            <div className="absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-accent/25 blur-3xl" />
+          </div>
+
+          <div className="relative grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
+                <Palette className="h-3.5 w-3.5" /> Live audio canvas
+              </span>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+                Step into the Studio
+              </h2>
+              <HoverListen
+                text="Step into the Studio. The Studio is where Perceive comes to life. Turn on sound, pick a color, and start a line. Every move you make plays back to you as pitch and pan, so you can hear exactly where your brush is. When you're done, export your piece for swell paper or a 3D print, or send it to the gallery. Headphones recommended."
+                label="the studio"
+                className="mt-4 block"
+              >
+                <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
+                  The Studio is where Perceive comes to life. Turn on sound, pick a color, and start
+                  a line. Every move you make plays back to you as pitch and pan, so you can hear
+                  exactly where your brush is. When you're done, export your piece for swell paper or
+                  a 3D print, or send it to the gallery for others to see.
+                </p>
+              </HoverListen>
+
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <Button asChild size="lg" className="group rounded-full shadow-md">
+                  <Link to="/studio" className="gap-2">
+                    Go to the Studio
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="rounded-full">
+                  <Link to="/gallery">Browse the gallery</Link>
+                </Button>
+              </div>
+              <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+                <Headphones className="h-3.5 w-3.5 text-primary" />
+                Best with headphones. No account or download needed.
+              </p>
+            </div>
+
+            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              {[
+                { icon: Ear, title: "Hear where you are", body: "Left and right pans the sound. Up and down changes the pitch." },
+                { icon: Hand, title: "Keyboard friendly", body: "Arrow keys to move, Space to draw, S for sound. No mouse needed." },
+                { icon: Printer, title: "Make it real", body: "Export a swell paper SVG or a ready-to-print STL." },
+              ].map(({ icon: Icon, title, body }) => (
+                <li
+                  key={title}
+                  className="flex items-start gap-4 rounded-2xl bg-card/80 p-4 shadow-sm ring-1 ring-primary/15 backdrop-blur-sm transition-transform hover:-translate-y-0.5"
+                >
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{body}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-        <div>
-          <Sketchpad onPost={handlePost} />
-        </div>
       </section>
-
-  
 
       {/* Coming soon */}
       <section className="mx-auto max-w-6xl px-6 pb-20">
