@@ -301,31 +301,38 @@ function StudioPage() {
           aria-labelledby="studio-heading"
           className="scroll-mt-28 rounded-[2rem] border border-white/70 bg-gradient-to-br from-card/95 via-card/80 to-primary/10 p-2 shadow-[0_22px_70px_-22px_hsl(var(--primary)/0.5)] ring-1 ring-primary/20 backdrop-blur-md sm:p-3"
         >
-          <div className="rounded-[1.7rem] bg-gradient-to-br from-primary/10 via-card/90 to-accent/10 p-5 sm:p-8">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
-                <Palette className="h-3.5 w-3.5" />
-                Live audio canvas
-              </span>
+          <div className="relative rounded-[1.7rem] border border-white/70 bg-gradient-to-br from-primary/15 via-card/90 to-accent/15 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-8">
+            <div aria-hidden className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
+            <div aria-hidden className="pointer-events-none absolute -bottom-16 -right-12 h-56 w-56 rounded-full bg-accent/25 blur-3xl" />
 
-              <h2
-                id="studio-heading"
-                className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl"
-              >
-                The Studio
-              </h2>
+            <div className="relative mb-7 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-card/75 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide text-primary shadow-md ring-1 ring-primary/20 backdrop-blur-md">
+                  <Palette className="h-3.5 w-3.5" />
+                  Our main product
+                </span>
 
-              <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-                Turn on sound, pick a color, and start a line. Every move
-                plays back to you.
-              </p>
+                <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary ring-1 ring-primary/20">
+                  Live audio canvas
+                </span>
+
+                <h2
+                  id="studio-heading"
+                  className="mt-3 text-4xl font-black tracking-tight text-foreground drop-shadow-sm sm:text-5xl"
+                >
+                  The Studio
+                </h2>
+
+                <p className="mt-2 max-w-xl text-sm font-medium leading-relaxed text-foreground/75">
+                  Turn on sound, pick a color, and start a line. Every move
+                  plays back to you.
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="rounded-[1.5rem] border border-white/60 bg-card/70 p-2 shadow-inner ring-1 ring-primary/10 backdrop-blur-sm sm:p-3">
-            <Sketchpad onPost={handlePost} />
-          </div>
+            <div className="relative rounded-[1.55rem] border border-white/70 bg-white/25 p-2 shadow-[0_18px_55px_-22px_hsl(var(--primary)/0.5)] ring-1 ring-primary/15 backdrop-blur-md sm:p-3">
+              <Sketchpad onPost={handlePost} />
+            </div>
           </div>
         </section>
       </main>
