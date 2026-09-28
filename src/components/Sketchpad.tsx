@@ -1506,8 +1506,19 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     <div className="mx-auto grid w-full max-w-[1080px] grid-cols-[minmax(0,1fr)] items-start gap-6 2xl:max-w-none 2xl:grid-cols-[minmax(0,1fr)_680px]">
 
       {/* ── Canvas area ── */}
-      <div className="relative overflow-visible rounded-3xl bg-gradient-to-br from-primary/20 via-card/80 to-accent/20 p-1.5 shadow-2xl shadow-primary/15 ring-1 ring-white/50 backdrop-blur-xl sm:p-2">
-        <div className="relative overflow-visible rounded-[1.35rem] bg-card/75 p-4 backdrop-blur-md sm:p-5">
+      <div className="relative overflow-visible rounded-[2rem] border border-white/70 bg-gradient-to-br from-primary/30 via-card/85 to-accent/30 p-1.5 shadow-[0_28px_80px_-28px_hsl(var(--primary)/0.65)] ring-1 ring-primary/20 backdrop-blur-xl sm:p-2.5">
+        <div className="relative overflow-visible rounded-[1.7rem] border border-white/60 bg-gradient-to-br from-card/90 via-card/75 to-primary/5 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md sm:p-5">
+
+        {/* Main product badge */}
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-card/85 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-primary shadow-md ring-1 ring-primary/20 backdrop-blur-md">
+            <Sparkles className="h-3.5 w-3.5" />
+            Our main product
+          </span>
+          <span className="rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary ring-1 ring-primary/15">
+            Draw · Listen · Create
+          </span>
+        </div>
 
         {/* Top bar */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -1604,7 +1615,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-xs">C</kbd>
           </Button>
           {tool !== "draw" && (
-            <label className="col-span-2 flex h-12 min-w-0 items-center gap-3 rounded-2xl bg-card/70 px-4 text-sm font-semibold text-primary ring-1 ring-white/50 sm:col-span-2">
+            <label className="col-span-2 flex h-12 min-w-0 items-center gap-3 rounded-2xl border border-white/50 bg-card/70 px-4 text-sm font-semibold text-primary shadow-sm ring-1 ring-primary/10 backdrop-blur-sm sm:col-span-2">
               <span className="shrink-0">{tool === "eraser" ? "Eraser" : "Blend"} size</span>
               <input type="range" min="4" max="100" step="1" value={tool === "eraser" ? eraserSize : blendSize}
                 onChange={(e) => changeToolSize(Number(e.target.value))} className="min-w-0 flex-1 accent-primary"
