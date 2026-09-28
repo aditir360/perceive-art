@@ -223,9 +223,10 @@ function StudioPage() {
         {/* Tutorial */}
         <section
           aria-labelledby="tutorial-heading"
-          className="mx-auto mb-12 w-full max-w-4xl rounded-3xl bg-gradient-to-br from-primary/10 via-card/80 to-accent/10 p-5 shadow-sm ring-1 ring-primary/15 sm:p-8"
+          className="mx-auto mb-12 w-full max-w-5xl rounded-[2rem] border border-white/70 bg-gradient-to-br from-card/95 via-card/80 to-primary/10 p-2 shadow-[0_22px_70px_-22px_hsl(var(--primary)/0.45)] ring-1 ring-primary/20 backdrop-blur-md sm:p-3"
         >
-          <div className="text-center">
+          <div className="rounded-[1.7rem] bg-gradient-to-br from-primary/10 via-card/90 to-accent/10 p-5 sm:p-8">
+            <div className="text-center">
             {/* Tutorial label */}
             <div className="mb-6 flex justify-center">
               <span className="inline-flex items-center gap-2 rounded-full bg-card px-3.5 py-1.5 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
@@ -290,6 +291,7 @@ function StudioPage() {
                 <ArrowDown className="h-4 w-4" />
               </a>
             </Button>
+            </div>
           </div>
         </section>
 
@@ -297,9 +299,10 @@ function StudioPage() {
         <section
           id="studio"
           aria-labelledby="studio-heading"
-          className="scroll-mt-28"
+          className="scroll-mt-28 rounded-[2rem] border border-white/70 bg-gradient-to-br from-card/95 via-card/80 to-primary/10 p-2 shadow-[0_22px_70px_-22px_hsl(var(--primary)/0.5)] ring-1 ring-primary/20 backdrop-blur-md sm:p-3"
         >
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4 rounded-3xl bg-gradient-to-br from-primary/10 via-transparent to-accent/10 p-6 ring-1 ring-primary/10 sm:p-8">
+          <div className="rounded-[1.7rem] bg-gradient-to-br from-primary/10 via-card/90 to-accent/10 p-5 sm:p-8">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
                 <Palette className="h-3.5 w-3.5" />
@@ -320,8 +323,9 @@ function StudioPage() {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-white/60 bg-gradient-to-br from-card/90 via-card/75 to-primary/10 p-2 shadow-[0_18px_55px_-18px_hsl(var(--primary)/0.4)] ring-1 ring-primary/15 backdrop-blur-md sm:p-3">
+          <div className="rounded-[1.5rem] border border-white/60 bg-card/70 p-2 shadow-inner ring-1 ring-primary/10 backdrop-blur-sm sm:p-3">
             <Sketchpad onPost={handlePost} />
+          </div>
           </div>
         </section>
       </main>
