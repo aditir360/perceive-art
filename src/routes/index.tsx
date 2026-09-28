@@ -230,6 +230,47 @@ function Index() {
         </div>
       </section>
 
+      {/* Features */}
+      <section className="mx-auto max-w-6xl px-6 pb-20">
+        <div className="rounded-3xl bg-card p-8 shadow-sm ring-1 ring-primary/15 sm:p-10">
+          <div className="text-center">
+            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary ring-1 ring-primary/20">
+              <Sparkles className="h-3.5 w-3.5" /> Features!
+            </span>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+              Perceive in the community
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+              We’re grateful to have Perceive featured across conversations, shows, podcasts, and publications.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-8 grid max-w-5xl gap-4 sm:grid-cols-2">
+            {[
+              { title: "Raq the Boat Show", body: "Featured on the show." },
+              { title: "Professor Kev Show", body: "Featured on the show." },
+              { title: "Simple Acts, Big Impact Podcast", body: "Upcoming on 9/30." },
+              { title: "Innovation Insider Magazine", body: "Featured in the September 2026 edition." },
+            ].map(({ title, body }) => (
+              <div
+                key={title}
+                className="rounded-2xl bg-background/70 p-5 text-left shadow-sm ring-1 ring-primary/10 transition-all hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
+                    <Star className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{body}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Coming soon */}
       <section className="mx-auto max-w-6xl px-6 pb-20">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-card to-accent/15 p-10 text-center shadow-sm ring-1 ring-primary/20 sm:p-14">
