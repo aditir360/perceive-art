@@ -41,6 +41,8 @@ import {
   Bell,
   Music2,
   Wind,
+  Mic,
+  MicOff,
 } from "lucide-react";
 
 type SoundStyle = "sine" | "pad" | "chime" | "marimba";
@@ -709,6 +711,10 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   // callback always reads the latest choice without needing to be recreated.
   const [voicePersona, setVoicePersona] = useState<VoicePersona>("bear");
   const voicePersonaRef = useRef<VoicePersona>("bear");
+  // Master switch for spoken narration. When off, nothing is spoken aloud,
+  // but the on-screen/screen-reader announcement text still updates.
+  const [voiceOn, setVoiceOn] = useState(true);
+  const voiceOnRef = useRef(true);
   const lastPluckAt  = useRef(0);
   const lastPluckPos = useRef<Point | null>(null);
   const [announce,  setAnnounce]  = useState(
@@ -787,7 +793,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     // Real spoken narration — independent of the Sound On/Off toggle (that
     // switch only controls the pitch/pan sonification voice). Cancel any
     // utterance in flight so rapid checkpoints don't queue up and stack.
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+    if (voiceOnRef.current && typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(msg);
       if (voicePersonaRef.current === "lady") {
@@ -816,6 +822,19 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         ? "Hi there! I'm your lady guide. I'll help you find your way around the canvas."
         : "Hey, Bennett here! Let's make some art together."
     );
+  }, [say]);
+
+  const toggleVoiceOn = useCallback(() => {
+    const next = !voiceOnRef.current;
+    voiceOnRef.current = next;
+    setVoiceOn(next);
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    // Turning off: stay silent (update the announcement text only).
+    // Turning on: confirm out loud.
+    if (next) say("Narration is back on.");
+    else setAnnounce("Narration is off.");
   }, [say]);
 
   const maybePraiseEveryTenthLine = useCallback(() => {
@@ -1509,6 +1528,21 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                   </button>
                 );
               })}
+              <span aria-hidden className="mx-0.5 h-4 w-px bg-border" />
+              <button
+                type="button"
+                onClick={toggleVoiceOn}
+                aria-pressed={voiceOn}
+                aria-label={voiceOn ? "Turn narration voice off" : "Turn narration voice on"}
+                className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                  voiceOn
+                    ? "text-foreground hover:bg-primary/10"
+                    : "bg-muted text-muted-foreground ring-1 ring-border"
+                }`}
+              >
+                {voiceOn ? <Mic className="h-3.5 w-3.5 text-primary" /> : <MicOff className="h-3.5 w-3.5" />}
+                {voiceOn ? "Narration on" : "Narration off"}
+              </button>
             </div>
             <Button
               onClick={toggleVisualAids}
