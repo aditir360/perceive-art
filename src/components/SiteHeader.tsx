@@ -9,7 +9,7 @@ const scrollLinks = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 px-4 pt-4 sm:px-6">
+    <header className="relative z-40 px-4 pt-4 sm:sticky sm:top-0 sm:px-6">
       <div className="mx-auto max-w-6xl rounded-[2rem] bg-card/80 px-4 py-3 shadow-lg ring-1 ring-primary/15 backdrop-blur-md sm:px-6">
         <div className="flex items-center justify-between gap-3">
           <Link to="/" className="group flex items-center gap-2.5 transition-transform duration-150 hover:scale-[1.02] sm:gap-3">
