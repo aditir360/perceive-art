@@ -50,13 +50,14 @@ const communityFeatures = [
     href: "https://www.youtube.com/watch?v=rpw-0-8PfTI&t=51s",
     image: "https://img.youtube.com/vi/rpw-0-8PfTI/maxresdefault.jpg",
   },
-  {
-    title: "Innovation Insider",
-    type: "Publication",
-    meta: "September 2026 edition",
-    href: "https://innovationworld.org/books/innovation-insider-september-2026/",
-    image: null,
-  },
+ {
+  title: "Innovation Insider",
+  type: "Publication",
+  meta: "September 2026 edition",
+  href: "https://innovationworld.org/books/innovation-insider-september-2026/",
+  image:
+    "https://media.licdn.com/dms/image/v2/D4E22AQEsK9-0Ho8S0g/feedshare-shrink_800/B4EaC..3K3KEAg-/0/1789910545413?e=2147483647&v=beta&t=yAtLL-UbWS2BLYfrPU32qxT8rh0itS5pk2t4Y2gH4Xw",
+},
 ];
 
 function Index() {
