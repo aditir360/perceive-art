@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sketchpad } from "@/components/Sketchpad";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -10,10 +10,15 @@ import {
   Mail,
   Instagram,
   Linkedin,
+  Sparkles,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const TUTORIAL_VIDEO_URL = "";
+
+// Italic serif accent for the occasional cursive word in headings.
+const ACCENT = "font-['Instrument_Serif',Georgia,serif] font-normal italic tracking-tight";
 
 function toEmbed(
   url: string,
@@ -169,6 +174,7 @@ export const Route = createFileRoute("/studio")({
 });
 
 function StudioPage() {
+  const [showIntro, setShowIntro] = useState(true);
   const handlePost = useCallback(
     async ({ svg }: { svg: string }) => {
       await saveArtwork(svg);
@@ -188,7 +194,7 @@ function StudioPage() {
         <div className="absolute bottom-0 left-1/2 h-80 w-[42rem] -translate-x-1/2 rounded-full bg-secondary/20 blur-3xl" />
       </div>
 
-      <SiteHeader wide />
+      <SiteHeader />
 
       <main className="mx-auto w-full max-w-[1440px] px-4 pb-20 pt-6 sm:px-6 sm:pt-8 lg:px-8">
         {/* ─────────────────────────────────────────
@@ -230,7 +236,7 @@ function StudioPage() {
                 >
                   New here?
                   <br />
-                  Start with this.
+                  Start <span className={`${ACCENT} text-[1.12em]`}>with this.</span>
                 </h1>
 
                 <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
@@ -283,30 +289,63 @@ function StudioPage() {
           aria-labelledby="studio-heading"
           className="scroll-mt-24"
         >
-          {/* Simple editorial heading. NO giant enclosing rim. */}
-          <div className="mb-7 flex flex-col gap-4 border-b border-border/70 pb-6 sm:flex-row sm:items-end sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
-                The creative workspace
-              </p>
-
-              <h2
-                id="studio-heading"
-                className="mt-2 text-4xl font-black tracking-[-0.04em] text-foreground sm:text-5xl"
-              >
-                The Studio
-              </h2>
-
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                Draw, listen, experiment, and turn your artwork into something
-                tactile.
-              </p>
+          {/* Editorial header */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+              <span aria-hidden className="h-px w-8 bg-primary/60" />
+              An open creative space
+              <span className="text-muted-foreground">/ 01</span>
             </div>
 
-            <span className="shrink-0 self-start rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary sm:self-auto">
-              Live audio canvas
-            </span>
+            <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+              <div className="min-w-0">
+                <h2
+                  id="studio-heading"
+                  className="text-5xl font-black tracking-[-0.04em] text-foreground sm:text-7xl"
+                >
+                  The <span className={`${ACCENT} text-[1.12em]`}>Studio.</span>
+                </h2>
+                <p className="mt-3 text-base text-muted-foreground sm:text-lg">
+                  Draw a line. Hear what happens.
+                </p>
+              </div>
+
+              <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                <span aria-hidden className="h-2 w-2 rounded-full bg-[oklch(0.58_0.13_150)]" />
+                Your canvas is ready
+              </span>
+            </div>
           </div>
+
+          {showIntro && (
+            <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-4 rounded-2xl bg-secondary/40 px-5 py-4 ring-1 ring-border/70">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-card text-primary shadow-sm ring-1 ring-border/70">
+                <Sparkles className="h-5 w-5" />
+              </span>
+              <div className="min-w-[200px] flex-1">
+                <p className="text-base font-semibold text-foreground">First time here?</p>
+                <p className="text-sm text-muted-foreground">
+                  Start with a blank canvas. The rest is up to you.
+                </p>
+              </div>
+              <ol className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-foreground">
+                {["Pick a color", "Make a mark", "Turn on sound"].map((t, i) => (
+                  <li key={t}>
+                    <span className="mr-2 text-xs font-bold text-primary">0{i + 1}</span>
+                    {t}
+                  </li>
+                ))}
+              </ol>
+              <button
+                type="button"
+                onClick={() => setShowIntro(false)}
+                aria-label="Dismiss intro"
+                className="grid h-10 w-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          )}
 
           {/* Sketchpad owns its own layout. */}
           <Sketchpad onPost={handlePost} />
