@@ -165,7 +165,7 @@ useEffect(() => {
                 : "Be the first — head to the Studio and post your artwork."}
             </p>
             <Button asChild className="mt-5 rounded-full">
-              <Link to="/#studio">Go to the Studio</Link>
+              <Link to="/studio">Go to the Studio</Link>
             </Button>
           </div>
         ) : (
@@ -201,7 +201,7 @@ useEffect(() => {
       <footer className="border-t border-primary/10 bg-card/50 py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-xs text-muted-foreground sm:flex-row">
           <span>© {new Date().getFullYear()} Perceive</span>
-          <Link to="/" className="font-medium text-primary underline-offset-2 hover:underline">
+          <Link to="/studio" className="font-medium text-primary underline-offset-2 hover:underline">
             Back to the studio
           </Link>
         </div>
