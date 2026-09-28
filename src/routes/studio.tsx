@@ -15,6 +15,8 @@ import {
   Move,
   PenLine,
   Download,
+  ArrowUpRight,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -22,7 +24,7 @@ import { Button } from "@/components/ui/button";
   ─────────────────────────────────────────────────────────────────────
   TUTORIAL VIDEO
 
-  Paste your link between the quotes and it will show up.
+  Paste your link between the quotes.
 
   Works with:
   - YouTube link
@@ -88,53 +90,61 @@ function toEmbed(
 
 const TUTORIAL_STEPS = [
   {
+    number: "01",
     icon: Headphones,
     title: "Turn on sound",
     body: "Put on headphones and press S. You will hear a tone that follows your brush.",
   },
   {
+    number: "02",
     icon: Move,
     title: "Move around",
-    body: "Left and right pans the sound. Up and down changes the pitch. Use the arrow keys or your mouse.",
+    body: "Left and right pans the sound. Up and down changes the pitch.",
   },
   {
+    number: "03",
     icon: PenLine,
     title: "Start drawing",
-    body: "Press Space to start a line and Space again to stop. Try a new texture or color any time.",
+    body: "Press Space to start a line and Space again to stop. Try different textures or colors.",
   },
   {
+    number: "04",
     icon: Download,
     title: "Keep your art",
-    body: "Export a swell paper SVG or a 3D print file, or send it to the gallery.",
+    body: "Export your work as swell paper SVG or a 3D print file, or send it to the gallery.",
   },
 ];
 
 function TutorialVideo() {
   if (!TUTORIAL_VIDEO_URL) {
     return (
-      <div className="relative mx-auto grid aspect-video w-full max-w-3xl place-items-center overflow-hidden rounded-2xl border border-white/60 bg-gradient-to-br from-primary/25 via-card to-accent/25 shadow-[0_12px_40px_-12px_hsl(var(--primary)/0.35)] ring-1 ring-primary/20 backdrop-blur-sm">
+      <div className="relative mx-auto grid aspect-video w-full max-w-4xl place-items-center overflow-hidden rounded-[1.5rem] border border-primary/15 bg-card shadow-[0_20px_60px_-30px_hsl(var(--primary)/0.35)]">
+        {/* subtle editorial background */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
         >
-          <div className="absolute -left-10 -top-16 h-56 w-56 rounded-full bg-primary/25 blur-3xl" />
-          <div className="absolute -bottom-16 -right-10 h-56 w-56 rounded-full bg-accent/30 blur-3xl" />
+          <div className="absolute -left-24 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-accent/15 blur-3xl" />
+
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.06),transparent_55%)]" />
         </div>
 
-        <div className="relative text-center">
-          <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-card text-primary shadow-lg ring-1 ring-primary/20">
+        <div className="relative z-10 px-6 text-center">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-primary/20 bg-background shadow-lg">
             <Play
-              className="h-7 w-7 translate-x-0.5"
+              className="ml-0.5 h-7 w-7 text-primary"
               fill="currentColor"
             />
-          </span>
+          </div>
 
-          <p className="mt-4 text-base font-semibold text-foreground">
+          <p className="mt-5 text-base font-semibold tracking-tight text-foreground sm:text-lg">
             Tutorial video coming soon
           </p>
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            Until then, the four steps below are all you need.
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+            Until then, the four steps below are all you need to start
+            creating.
           </p>
         </div>
       </div>
@@ -144,7 +154,7 @@ function TutorialVideo() {
   const { kind, src } = toEmbed(TUTORIAL_VIDEO_URL);
 
   return (
-    <div className="mx-auto aspect-video w-full max-w-3xl overflow-hidden rounded-2xl border border-white/50 bg-black shadow-[0_12px_40px_-12px_hsl(var(--primary)/0.35)] ring-1 ring-primary/20 backdrop-blur-sm">
+    <div className="mx-auto aspect-video w-full max-w-4xl overflow-hidden rounded-[1.5rem] border border-primary/15 bg-black shadow-[0_20px_60px_-30px_hsl(var(--primary)/0.4)]">
       {kind === "iframe" ? (
         <iframe
           src={src}
@@ -206,149 +216,209 @@ function StudioPage() {
   );
 
   return (
-    <div className="min-h-screen">
-      {/* Soft blush background glows */}
+    <div className="min-h-screen overflow-x-clip bg-background">
+      {/* Background atmosphere */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
       >
-        <div className="absolute -left-32 -top-40 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute -right-32 top-1/3 h-96 w-96 rounded-full bg-accent/30 blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-secondary/30 blur-3xl" />
+        <div className="absolute -left-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -right-40 top-[35%] h-[28rem] w-[28rem] rounded-full bg-accent/10 blur-3xl" />
+        <div className="absolute bottom-0 left-1/2 h-72 w-[40rem] -translate-x-1/2 rounded-full bg-secondary/15 blur-3xl" />
       </div>
 
       <SiteHeader wide />
 
-      <main className="mx-auto max-w-7xl px-6 pb-20 pt-8 sm:pt-10">
-        {/* Tutorial */}
+      <main className="mx-auto w-full max-w-7xl min-w-0 px-4 pb-24 pt-8 sm:px-6 sm:pt-12 lg:px-8">
+        {/* ─────────────────────────────────────────────────────────────
+            INTRO / TUTORIAL
+        ───────────────────────────────────────────────────────────── */}
         <section
           aria-labelledby="tutorial-heading"
-          className="mx-auto mb-12 w-full max-w-5xl rounded-[2rem] border border-white/70 bg-gradient-to-br from-card/95 via-card/80 to-primary/10 p-2 shadow-[0_22px_70px_-22px_hsl(var(--primary)/0.45)] ring-1 ring-primary/20 backdrop-blur-md sm:p-3"
+          className="mx-auto w-full max-w-6xl min-w-0"
         >
-          <div className="rounded-[1.7rem] bg-gradient-to-br from-primary/10 via-card/90 to-accent/10 p-5 sm:p-8">
-            <div className="text-center">
-            {/* Tutorial label */}
-            <div className="mb-6 flex justify-center">
-              <span className="inline-flex items-center gap-2 rounded-full bg-card px-3.5 py-1.5 text-xs font-medium text-primary shadow-sm ring-1 ring-primary/20">
-                <Play className="h-3.5 w-3.5" />
-                Tutorial
-              </span>
-            </div>
+          {/* Small editorial header */}
+          <div className="mb-7 flex min-w-0 flex-col gap-4 sm:mb-9 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <div className="mb-4 flex items-center gap-3">
+                <span className="h-px w-8 shrink-0 bg-primary" />
 
-            {/* Demo video */}
-            <TutorialVideo />
+                <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary sm:text-[11px]">
+                  Getting started
+                </span>
+              </div>
 
-            {/* Heading + description */}
-            <div className="mx-auto mt-7 max-w-2xl">
               <h1
                 id="tutorial-heading"
-                className="text-3xl font-bold tracking-tight sm:text-4xl"
+                className="max-w-3xl text-3xl font-black tracking-[-0.035em] text-foreground sm:text-4xl lg:text-5xl"
               >
                 New here? Start with this.
               </h1>
 
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                A quick walkthrough of how to draw with sound. It works with
-                or without a screen.
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
+                A quick introduction to drawing with sound. You can use the
+                Studio with or without a screen.
               </p>
             </div>
 
-            {/* Tutorial steps */}
-            <ol className="mx-auto mt-7 grid max-w-2xl gap-3 text-left sm:grid-cols-2">
-              {TUTORIAL_STEPS.map(
-                ({ icon: Icon, title, body }, i) => (
-                  <li
-                    key={title}
-                    className="flex items-start gap-3 rounded-2xl bg-card/80 p-4 ring-1 ring-primary/10 transition-colors hover:bg-card"
-                  >
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
-                      <Icon className="h-5 w-5" />
+            <div className="hidden shrink-0 pb-1 text-right sm:block">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/50">
+                Perceive Studio
+              </span>
+              <p className="mt-1 text-xs text-muted-foreground/60">
+                Hear · Draw · Feel
+              </p>
+            </div>
+          </div>
+
+          {/* Video */}
+          <TutorialVideo />
+
+          {/* Steps */}
+          <ol className="mt-8 grid w-full min-w-0 grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+            {TUTORIAL_STEPS.map(
+              ({ number, icon: Icon, title, body }) => (
+                <li
+                  key={number}
+                  className="group min-w-0 rounded-2xl border border-primary/10 bg-card/70 p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-[10px] font-bold tracking-[0.2em] text-primary/60">
+                      {number}
                     </span>
 
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {i + 1}. {title}
-                      </p>
+                    <Icon className="h-4 w-4 shrink-0 text-primary/60 transition-transform duration-300 group-hover:scale-110" />
+                  </div>
 
-                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                        {body}
-                      </p>
-                    </div>
-                  </li>
-                ),
-              )}
-            </ol>
+                  <h2 className="mt-7 text-sm font-bold tracking-tight text-foreground">
+                    {title}
+                  </h2>
 
-            {/* Skip button */}
+                  <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                    {body}
+                  </p>
+                </li>
+              ),
+            )}
+          </ol>
+
+          <div className="mt-7 flex justify-center">
             <Button
               asChild
-              size="lg"
-              variant="outline"
-              className="mt-7 h-11 rounded-full px-6 text-sm"
+              variant="ghost"
+              className="h-10 rounded-full px-5 text-sm font-medium text-muted-foreground hover:bg-primary/5 hover:text-primary"
             >
               <a href="#studio" className="gap-2">
                 Skip to the canvas
                 <ArrowDown className="h-4 w-4" />
               </a>
             </Button>
-            </div>
           </div>
         </section>
 
-        {/* Studio */}
+        {/* ─────────────────────────────────────────────────────────────
+            DIVIDER
+        ───────────────────────────────────────────────────────────── */}
+        <div
+          aria-hidden
+          className="mx-auto my-16 flex max-w-6xl items-center gap-4 sm:my-20"
+        >
+          <span className="h-px flex-1 bg-border/70" />
+          <Sparkles className="h-4 w-4 shrink-0 text-primary/40" />
+          <span className="h-px flex-1 bg-border/70" />
+        </div>
+
+        {/* ─────────────────────────────────────────────────────────────
+            STUDIO
+        ───────────────────────────────────────────────────────────── */}
         <section
           id="studio"
           aria-labelledby="studio-heading"
-          className="scroll-mt-28 rounded-[2rem] border border-white/70 bg-gradient-to-br from-card/95 via-card/80 to-primary/10 p-2 shadow-[0_22px_70px_-22px_hsl(var(--primary)/0.5)] ring-1 ring-primary/20 backdrop-blur-md sm:p-3"
+          className="mx-auto w-full max-w-6xl min-w-0 scroll-mt-28"
         >
-          <div className="relative rounded-[1.7rem] border border-white/70 bg-gradient-to-br from-primary/15 via-card/90 to-accent/15 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-8">
-            <div aria-hidden className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
-            <div aria-hidden className="pointer-events-none absolute -bottom-16 -right-12 h-56 w-56 rounded-full bg-accent/25 blur-3xl" />
-
-            <div className="relative mb-7 flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-card/75 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide text-primary shadow-md ring-1 ring-primary/20 backdrop-blur-md">
+          {/* Studio header */}
+          <div className="mb-8 flex min-w-0 flex-col gap-6 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
                   <Palette className="h-3.5 w-3.5" />
-                  Our main product
+                  The Studio
                 </span>
 
-                <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary ring-1 ring-primary/20">
+                <span className="rounded-full bg-foreground/[0.035] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
                   Live audio canvas
                 </span>
+              </div>
 
-                <h2
-                  id="studio-heading"
-                  className="mt-3 text-4xl font-black tracking-tight text-foreground drop-shadow-sm sm:text-5xl"
-                >
-                  The Studio
-                </h2>
+              <h2
+                id="studio-heading"
+                className="text-4xl font-black tracking-[-0.045em] text-foreground sm:text-5xl lg:text-6xl"
+              >
+                Make something
+                <br className="hidden sm:block" /> you can hear.
+              </h2>
 
-                <p className="mt-2 max-w-xl text-sm font-medium leading-relaxed text-foreground/75">
-                  Turn on sound, pick a color, and start a line. Every move
-                  plays back to you.
-                </p>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
+                Turn on sound, choose a color, and draw. Your movement becomes
+                pitch, position becomes space, and every line becomes part of
+                the composition.
+              </p>
+            </div>
+
+            <div className="shrink-0 sm:pb-1">
+              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-primary" />
+                Ready to create
               </div>
             </div>
+          </div>
 
-            <div className="relative rounded-[1.55rem] border border-white/70 bg-white/25 p-2 shadow-[0_18px_55px_-22px_hsl(var(--primary)/0.5)] ring-1 ring-primary/15 backdrop-blur-md sm:p-3">
-              <Sketchpad onPost={handlePost} />
+          {/* Canvas container */}
+          <div className="w-full min-w-0 rounded-[1.75rem] border border-primary/15 bg-card p-2 shadow-[0_20px_60px_-35px_hsl(var(--primary)/0.4)] sm:p-3">
+            <div className="w-full min-w-0 overflow-hidden rounded-[1.35rem] border border-border/60 bg-background">
+              <div className="w-full min-w-0 p-2 sm:p-3 lg:p-4">
+                <Sketchpad onPost={handlePost} />
+              </div>
             </div>
+          </div>
+
+          {/* Bottom studio note */}
+          <div className="mt-5 flex min-w-0 flex-col gap-3 rounded-2xl border border-border/60 bg-card/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                <Headphones className="h-4 w-4" />
+              </div>
+
+              <p className="min-w-0 text-xs leading-5 text-muted-foreground">
+                For the full experience, we recommend headphones.
+              </p>
+            </div>
+
+            <Link
+              to="/gallery"
+              className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-primary transition-colors hover:text-primary/70"
+            >
+              Explore the gallery
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-primary/10 bg-card/50 py-8">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 text-xs text-muted-foreground sm:flex-row">
-          <div className="flex items-center gap-2 text-center sm:text-left">
+      {/* Footer */}
+      <footer className="border-t border-border/60 bg-card/30 py-8">
+        <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col items-center justify-between gap-5 px-4 text-xs text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-2 text-center sm:text-left">
             <Heart className="h-3.5 w-3.5 shrink-0 text-primary" />
+
             <span>Made with care for accessible creativity.</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <a
               href="mailto:contact.perceive.art@gmail.com"
               aria-label="Email Perceive"
-              className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/5 text-primary transition-colors hover:bg-primary/10"
             >
               <Mail className="h-4 w-4" />
             </a>
@@ -358,7 +428,7 @@ function StudioPage() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Perceive on Instagram"
-              className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/5 text-primary transition-colors hover:bg-primary/10"
             >
               <Instagram className="h-4 w-4" />
             </a>
@@ -368,7 +438,7 @@ function StudioPage() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Perceive on LinkedIn"
-              className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary/5 text-primary transition-colors hover:bg-primary/10"
             >
               <Linkedin className="h-4 w-4" />
             </a>
@@ -376,9 +446,10 @@ function StudioPage() {
 
           <Link
             to="/gallery"
-            className="font-medium text-primary underline-offset-2 hover:underline"
+            className="inline-flex items-center gap-1.5 font-medium text-primary underline-offset-2 hover:underline"
           >
             Browse the gallery
+            <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </footer>
