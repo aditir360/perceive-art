@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const TUTORIAL_VIDEO_URL = "";
+const TUTORIAL_VIDEO_URL = "https://youtu.be/Jj1eap0iMVA";
 
 // Italic serif accent for the occasional cursive word in headings.
 const ACCENT = "font-['Instrument_Serif',Georgia,serif] font-normal italic tracking-tight";
