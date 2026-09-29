@@ -43,6 +43,7 @@ import {
   Wind,
   Mic,
   MicOff,
+  HelpCircle,
 } from "lucide-react";
 
 type SoundStyle = "sine" | "pad" | "chime" | "marimba";
@@ -752,7 +753,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const lastPluckAt  = useRef(0);
   const lastPluckPos = useRef<Point | null>(null);
   const [announce,  setAnnounce]  = useState(
-    "Hey, Bennett here! Press S for sound, Space to start drawing, and the arrow keys to move me around the canvas."
+    "Hey, Bennett here! Press H any time for a full spoken walkthrough of the studio, S for sound, Space to start drawing, and the arrow keys to move me around the canvas."
   );
   const [colorIndex, setColorIndex] = useState(0);
   const [texture, setTexture] = useState<Texture>("pen");
@@ -856,6 +857,27 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         ? "Hi there! I'm your lady guide. I'll help you find your way around the canvas."
         : "Hey, Bennett here! Let's make some art together."
     );
+  }, [say]);
+
+  // A full spoken walkthrough of the studio — every feature and how to use
+  // it — for anyone who can't see the layout. One long utterance rather
+  // than several short ones so it reads smoothly without being interrupted
+  // partway through by anything else calling `say`.
+  const explainStudio = useCallback(() => {
+    const wasVoiceOn = voiceOnRef.current;
+    if (!wasVoiceOn) {
+      voiceOnRef.current = true;
+      setVoiceOn(true);
+    }
+    const lines = [
+      "Here's a tour of the studio.",
+      "In the middle is the canvas, 900 by 560. Drag anywhere on it to draw, or use the arrow keys to move the brush and Space or D to start and stop drawing.",
+      "On the left: Tools has Draw, Eraser, and Blend, plus pen up or down and visual aids. Color has eighteen swatches — press Q or E to cycle through them. Brush lets you pick pen, pencil, highlighter, or paintbrush, and set its size and opacity.",
+      "On the right: Sound turns on movement-based music — left and right pans it, up and down changes the pitch — and lets you choose warm tone, soft pad, wind chime, or marimba. Guide voice switches the narrator between Bennett the bear and a lady voice, and can turn narration fully on or off. Inspiration shows shape guides — circle, heart, star, and more — that talk you through drawing them step by step.",
+      "Below the canvas: Export saves your drawing as swell paper, a colour SVG, or a 3D-printable file. Share sends it to the public gallery for review.",
+      "Press H any time to hear this again.",
+    ];
+    say(lines.join(" "));
   }, [say]);
 
   const toggleVoiceOn = useCallback(() => {
@@ -1397,6 +1419,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       else if (e.key.toLowerCase() === "s") { e.preventDefault(); toggleSound(); }
       else if (e.key.toLowerCase() === "c") { e.preventDefault(); clearCanvas(); }
       else if (e.key.toLowerCase() === "x") { e.preventDefault(); toggleVisualAids(); }
+      else if (e.key.toLowerCase() === "h") { e.preventDefault(); explainStudio(); }
       else if (e.key.toLowerCase() === "g") {
         e.preventDefault();
         setGuidesPanelOpen((o) => {
@@ -1419,7 +1442,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, penWidth, changePenWidth, penOpacity, changePenOpacity, cycleTexture, selectTool, guideKey, stopGuide, say, postConfirmOpen, cancelPost, confirmPost]);
+  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, penWidth, changePenWidth, penOpacity, changePenOpacity, cycleTexture, selectTool, guideKey, stopGuide, say, explainStudio, postConfirmOpen, cancelPost, confirmPost]);
 
   // ── Pointer ───────────────────────────────────────────────────────────────
   const pointerDrawing = useRef(false);
@@ -1584,21 +1607,21 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             {/* 02 / Color */}
             <section aria-labelledby="colors-heading" className="p-5">
               <SectionLabel id="colors-heading" n="02" title="Color" Icon={Palette} />
-              <div className="mt-3 grid grid-cols-8 gap-1.5 sm:mt-4 sm:grid-cols-6 sm:gap-2.5">
+              <div className="mt-4 grid grid-cols-6 gap-2.5">
                 {COLORS.map((c) => (
                   <button
                     key={c.value}
                     onClick={() => pickColor(c)}
                     aria-label={`Color ${c.name}`}
                     aria-pressed={color === c.value}
-                    className={`relative aspect-square w-full rounded-full shadow-sm ring-2 ring-offset-1 ring-offset-card transition-all duration-150 hover:scale-110 sm:ring-offset-2 ${
+                    className={`relative aspect-square w-full rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
                       color === c.value ? "scale-105 ring-foreground" : "ring-border/60"
                     }`}
                     style={{ backgroundColor: c.value }}
                   >
                     {color === c.value && (
                       <Check
-                        className="absolute inset-0 m-auto h-3.5 w-3.5 drop-shadow sm:h-4 sm:w-4"
+                        className="absolute inset-0 m-auto h-4 w-4 drop-shadow"
                         style={{ color: ["#f5a623", "#e0b04f", "#f9a8a8", "#ffffff"].includes(c.value) ? "#3a1f2b" : "#fff" }}
                       />
                     )}
@@ -1722,6 +1745,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 <li>V / R / B: draw, eraser, blend</li>
                 <li>G: open / close guides</li>
                 <li>Esc: stop active guide</li>
+                <li>H: explain this page out loud</li>
                 <li>X: toggle visual aids</li>
               </ul>
             )}
@@ -1737,6 +1761,13 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 <span className="hidden font-medium normal-case tracking-normal text-muted-foreground sm:inline">{WIDTH} × {HEIGHT}</span>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={explainStudio}
+                  className="flex h-10 items-center gap-2 rounded-full bg-primary/15 px-3.5 text-sm font-semibold text-foreground ring-1 ring-primary/40 transition-colors hover:bg-primary/25"
+                  aria-label="Explain this page out loud: what every feature is and how to use it"
+                >
+                  <HelpCircle className="h-4 w-4 text-primary" /> Explain this page <span className="text-xs opacity-60">H</span>
+                </button>
                 <button onClick={undo} className="flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium text-foreground ring-1 ring-border/70 transition-colors hover:bg-primary/10">
                   <Undo2 className="h-4 w-4" /> Undo
                 </button>
