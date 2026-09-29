@@ -1584,21 +1584,21 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             {/* 02 / Color */}
             <section aria-labelledby="colors-heading" className="p-5">
               <SectionLabel id="colors-heading" n="02" title="Color" Icon={Palette} />
-              <div className="mt-4 grid grid-cols-6 gap-2.5">
+              <div className="mt-3 grid grid-cols-8 gap-1.5 sm:mt-4 sm:grid-cols-6 sm:gap-2.5">
                 {COLORS.map((c) => (
                   <button
                     key={c.value}
                     onClick={() => pickColor(c)}
                     aria-label={`Color ${c.name}`}
                     aria-pressed={color === c.value}
-                    className={`relative aspect-square w-full rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
+                    className={`relative aspect-square w-full rounded-full shadow-sm ring-2 ring-offset-1 ring-offset-card transition-all duration-150 hover:scale-110 sm:ring-offset-2 ${
                       color === c.value ? "scale-105 ring-foreground" : "ring-border/60"
                     }`}
                     style={{ backgroundColor: c.value }}
                   >
                     {color === c.value && (
                       <Check
-                        className="absolute inset-0 m-auto h-4 w-4 drop-shadow"
+                        className="absolute inset-0 m-auto h-3.5 w-3.5 drop-shadow sm:h-4 sm:w-4"
                         style={{ color: ["#f5a623", "#e0b04f", "#f9a8a8", "#ffffff"].includes(c.value) ? "#3a1f2b" : "#fff" }}
                       />
                     )}
