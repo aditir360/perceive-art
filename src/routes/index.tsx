@@ -273,10 +273,10 @@ function Index() {
             src={bearPeek}
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-14 z-10 h-56 w-56 -translate-x-1/2 select-none object-contain object-bottom drop-shadow-xl sm:top-8 sm:h-72 sm:w-72"
+            className="pointer-events-none absolute left-1/2 top-6 z-10 h-52 w-52 -translate-x-1/2 select-none object-contain object-bottom drop-shadow-xl sm:top-4 sm:h-56 sm:w-56 md:top-3 md:h-60 md:w-60 lg:top-5 lg:h-64 lg:w-64"
           />
 
-          <div className="rounded-3xl bg-card px-8 pb-8 pt-10 shadow-sm ring-1 ring-primary/15 sm:px-12 sm:pb-12 sm:pt-12">
+          <div className="relative z-20 rounded-3xl bg-card px-8 pb-8 pt-10 shadow-sm ring-1 ring-primary/15 sm:px-12 sm:pb-12 sm:pt-12">
             <div className="flex items-center gap-3">
               <Heart className="h-5 w-5 text-primary" />
               <span className="text-sm font-semibold uppercase tracking-widest text-primary">
