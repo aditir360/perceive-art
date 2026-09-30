@@ -41,6 +41,9 @@ import {
   Bell,
   Music2,
   Wind,
+  Mic,
+  MicOff,
+  HelpCircle,
 } from "lucide-react";
 
 type SoundStyle = "sine" | "pad" | "chime" | "marimba";
@@ -58,6 +61,20 @@ const SOUND_STYLE_ICONS: Record<SoundStyle, typeof Bell> = {
   marimba: Music2,
 };
 
+// Which narrator reads the spoken guidance. Bennett the bear is the default;
+// the lady voice is a brighter, adult female narrator.
+type VoicePersona = "bear" | "lady";
+const VOICE_PERSONA_ORDER: VoicePersona[] = ["bear", "lady"];
+const VOICE_PERSONA_LABELS: Record<VoicePersona, string> = {
+  bear: "Bennett",
+  lady: "Lady",
+};
+const LADY_VOICE_HINTS = [
+  "female", "samantha", "victoria", "zira", "jenny", "aria", "susan",
+  "karen", "moira", "tessa", "fiona", "google us english", "google uk english female",
+  "hazel", "libby", "sonia", "shelley", "allison",
+];
+
 const TEXTURE_ICONS: Record<Texture, typeof PenLine> = {
   pen: PenLine,
   pencil: Pencil,
@@ -65,6 +82,7 @@ const TEXTURE_ICONS: Record<Texture, typeof PenLine> = {
   paintbrush: Paintbrush,
 };
 
+// Hi :D
 // Icon + colour badge per guide, reusing the same swatches from the palette
 // below (Rose, Gold, Sky, etc.) instead of introducing new colours or emoji.
 const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
@@ -87,7 +105,14 @@ const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
 
 type Point = { x: number; y: number };
 type Texture = "pen" | "pencil" | "highlighter" | "paintbrush";
-type Stroke = { color: string; width: number; opacity: number; texture: Texture; points: Point[] };
+type Stroke = {
+  color: string;
+  width: number;
+  opacity: number;
+  texture: Texture;
+  points: Point[];
+  mode?: "draw" | "blend";
+};
 
 // Shared thickness range across all four textures — one slider, applied to
 // whichever texture is currently selected (each texture remembers its own
@@ -124,6 +149,8 @@ const DEFAULT_TEXTURE_SETTINGS: Record<Texture, { width: number; opacity: number
 };
 
 const COLORS = [
+  { name: "Black",    value: "#000000", tone: 220.00 },
+  { name: "White",    value: "#ffffff", tone: 880.00 },
   { name: "Rose",     value: "#e88aab", tone: 523.25 },
   { name: "Peach",    value: "#f9a8a8", tone: 587.33 },
   { name: "Sun",      value: "#f5a623", tone: 659.25 },
@@ -141,6 +168,40 @@ const COLORS = [
   { name: "Indigo",   value: "#5b5ea6", tone: 466.16 },
   { name: "Slate",    value: "#5c6b7a", tone: 493.88 },
 ];
+
+/* ── One size scale for every studio control ─────────────────────────────
+   Keep these in sync: every card, heading, option button, slider and
+   stepper in the studio uses these, so nothing looks bigger or smaller
+   than its neighbours. */
+const CARD_BASE     = "rounded-3xl p-4 shadow-lg sm:p-5 ring-1 ring-white/50 backdrop-blur-md";
+const CARD_HEADING  = "mb-4 flex items-center gap-2.5 text-base font-semibold";
+const CARD_BADGE    = "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm";
+const CARD_HINT     = "ml-auto rounded-full bg-background/60 px-2.5 py-1 text-xs font-normal text-muted-foreground";
+const OPTION_BTN    = "flex h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-2xl px-2.5 text-sm font-medium shadow-sm transition-all";
+const OPTION_ON     = "bg-primary text-primary-foreground shadow-md";
+const OPTION_OFF    = "bg-card/60 text-foreground ring-1 ring-white/50 backdrop-blur-sm hover:bg-primary/10";
+const STEP_BTN      = "h-11 w-11 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm";
+const SLIDER_CLASS  = "h-3 min-w-0 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary";
+const LABEL_ROW     = "flex items-center justify-between text-sm font-medium text-muted-foreground";
+const KBD_CHIP      = "rounded-full bg-background/60 px-2 py-0.5 text-xs";
+const ACTION_BTN    = "h-12 justify-start gap-3 rounded-2xl px-4 text-sm font-medium";
+
+// ── Studio layout helpers (editorial three-column workspace) ─────────────────
+// Italic serif accent used for the occasional cursive word in headings.
+const ACCENT = "font-['Instrument_Serif',Georgia,serif] font-normal italic tracking-tight";
+const ROW_BTN = "flex h-11 w-full items-center gap-3 rounded-xl px-3.5 text-sm font-medium transition-colors";
+const ROW_ON  = "bg-foreground text-background shadow-md";
+const ROW_OFF = "text-foreground hover:bg-primary/10";
+const ICON_BTN = "grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground";
+
+function SectionLabel({ id, n, title, Icon }: { id: string; n: string; title: string; Icon: typeof Circle }) {
+  return (
+    <h2 id={id} className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+      <span><span className="text-primary">{n}</span> / {title}</span>
+      <Icon className="h-4 w-4 opacity-70" aria-hidden />
+    </h2>
+  );
+}
 
 const WIDTH  = 900;
 const HEIGHT = 560;
@@ -681,14 +742,25 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const soundVolumeRef = useRef(soundVolume);
   useEffect(() => { soundStyleRef.current = soundStyle; }, [soundStyle]);
   useEffect(() => { soundVolumeRef.current = soundVolume; }, [soundVolume]);
+  // Which narrator speaks. The ref mirrors the state so the stable `say`
+  // callback always reads the latest choice without needing to be recreated.
+  const [voicePersona, setVoicePersona] = useState<VoicePersona>("bear");
+  const voicePersonaRef = useRef<VoicePersona>("bear");
+  // Master switch for spoken narration. When off, nothing is spoken aloud,
+  // but the on-screen/screen-reader announcement text still updates.
+  const [voiceOn, setVoiceOn] = useState(true);
+  const voiceOnRef = useRef(true);
   const lastPluckAt  = useRef(0);
   const lastPluckPos = useRef<Point | null>(null);
   const [announce,  setAnnounce]  = useState(
-    "Hey, Bennett here! Press S for sound, Space to start drawing, and the arrow keys to move me around the canvas."
+    "Hey, Bennett here! Press H any time for a full spoken walkthrough of the studio, S for sound, Space to start drawing, and the arrow keys to move me around the canvas."
   );
   const [colorIndex, setColorIndex] = useState(0);
   const [texture, setTexture] = useState<Texture>("pen");
   const [textureSettings, setTextureSettings] = useState(DEFAULT_TEXTURE_SETTINGS);
+  const [tool, setTool] = useState<"draw" | "eraser" | "blend">("draw");
+  const [eraserSize, setEraserSize] = useState(28);
+  const [blendSize, setBlendSize] = useState(36);
   // Derived, not stored directly: always reflects whichever texture is
   // currently selected, so every existing thickness/opacity usage below
   // (sliders, stroke creation, cursor preview) automatically applies to the
@@ -697,7 +769,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const penOpacity = textureSettings[texture].opacity;
   const [guideKey,   setGuideKey]   = useState<string | null>(null);
   const [guidesPanelOpen, setGuidesPanelOpen] = useState(true);
-  const [keyboardPanelOpen, setKeyboardPanelOpen] = useState(false);
+  const [keyboardPanelOpen, setKeyboardPanelOpen] = useState(true);
   const [visualAids, setVisualAids] = useState(true);
   const [postConfirmOpen, setPostConfirmOpen] = useState(false);
   const [justPosted, setJustPosted] = useState(false);
@@ -714,32 +786,41 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const lastBackOnTrackLine = useRef("");
   const lastPraiseLine = useRef("");
   const guideCompletedRef = useRef(false);
+  const completedLineCountRef = useRef(0);
 
   const stats = useCanvasClicks();
 
-  // Try to find a more youthful/cheerful system voice for Bennett. Voice
-  // lists load asynchronously in most browsers, so we grab them once now
-  // and again on the voiceschanged event, then cache the pick in a ref.
+  // Pick a system voice for each narrator. Voice lists load asynchronously in
+  // most browsers, so we grab them once now and again on the voiceschanged
+  // event, then cache both picks in refs.
   const bennettVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
+  const ladyVoiceRef    = useRef<SpeechSynthesisVoice | null>(null);
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    const pickVoice = () => {
+    const pickVoices = () => {
       const voices = window.speechSynthesis.getVoices();
       if (!voices.length) return;
-      // Prefer anything explicitly child/kid-like, then a light/cheerful-
-      // sounding named voice, then just fall back to the first English voice
-      // — pitch/rate below do most of the "cute bear" work regardless.
+      // Bennett: prefer anything explicitly child/kid-like, then a light/
+      // cheerful-sounding named voice, then the first English voice — the
+      // pitch/rate in `say` do most of the "cute bear" work regardless.
       const byName = (re: RegExp) => voices.find((v) => re.test(v.name));
-      const pick =
+      bennettVoiceRef.current =
         byName(/child|kid|junior/i) ||
         byName(/samantha|karen|moira|tessa|fiona|veena/i) ||
         voices.find((v) => v.lang.startsWith("en")) ||
-        voices[0];
-      bennettVoiceRef.current = pick ?? null;
+        voices[0] ||
+        null;
+      // Lady: a clearly female English voice, falling back to any English one.
+      const english = voices.filter((v) => v.lang?.toLowerCase().startsWith("en"));
+      const pool = english.length ? english : voices;
+      ladyVoiceRef.current =
+        pool.find((v) => LADY_VOICE_HINTS.some((h) => v.name.toLowerCase().includes(h))) ||
+        pool[0] ||
+        null;
     };
-    pickVoice();
-    window.speechSynthesis.addEventListener("voiceschanged", pickVoice);
-    return () => window.speechSynthesis.removeEventListener("voiceschanged", pickVoice);
+    pickVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", pickVoices);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", pickVoices);
   }, []);
 
   const say = useCallback((msg: string) => {
@@ -747,19 +828,77 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     // Real spoken narration — independent of the Sound On/Off toggle (that
     // switch only controls the pitch/pan sonification voice). Cancel any
     // utterance in flight so rapid checkpoints don't queue up and stack.
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+    if (voiceOnRef.current && typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(msg);
-      if (bennettVoiceRef.current) utter.voice = bennettVoiceRef.current;
-      // Higher pitch reads as "small, cheerful bear cub", but pushing it too
-      // far (or speaking too fast) starts to hurt intelligibility — dialed
-      // both back slightly so it's still clearly Bennett, just easier to
-      // make out.
-      utter.rate  = 1.0;
-      utter.pitch = 1.4;
+      if (voicePersonaRef.current === "lady") {
+        // Bright, friendly adult lady-guide.
+        if (ladyVoiceRef.current) utter.voice = ladyVoiceRef.current;
+        utter.rate  = 1.05;
+        utter.pitch = 1.3;
+      } else {
+        // Higher pitch reads as "small, cheerful bear cub", but pushing it too
+        // far (or speaking too fast) starts to hurt intelligibility — dialed
+        // both back slightly so it's still clearly Bennett, just easier to
+        // make out.
+        if (bennettVoiceRef.current) utter.voice = bennettVoiceRef.current;
+        utter.rate  = 1.0;
+        utter.pitch = 1.4;
+      }
       window.speechSynthesis.speak(utter);
     }
   }, []);
+
+  const chooseVoicePersona = useCallback((next: VoicePersona) => {
+    voicePersonaRef.current = next;
+    setVoicePersona(next);
+    say(
+      next === "lady"
+        ? "Hi there! I'm your lady guide. I'll help you find your way around the canvas."
+        : "Hey, Bennett here! Let's make some art together."
+    );
+  }, [say]);
+
+  // A full spoken walkthrough of the studio — every feature and how to use
+  // it — for anyone who can't see the layout. One long utterance rather
+  // than several short ones so it reads smoothly without being interrupted
+  // partway through by anything else calling `say`.
+  const explainStudio = useCallback(() => {
+    const wasVoiceOn = voiceOnRef.current;
+    if (!wasVoiceOn) {
+      voiceOnRef.current = true;
+      setVoiceOn(true);
+    }
+    const lines = [
+      "Here's a tour of the studio.",
+      "In the middle is the canvas, 900 by 560. Drag anywhere on it to draw, or use the arrow keys to move the brush and Space or D to start and stop drawing.",
+      "On the left: Tools has Draw, Eraser, and Blend, plus pen up or down and visual aids. Color has eighteen swatches — press Q or E to cycle through them. Brush lets you pick pen, pencil, highlighter, or paintbrush, and set its size and opacity.",
+      "On the right: Sound turns on movement-based music — left and right pans it, up and down changes the pitch — and lets you choose warm tone, soft pad, wind chime, or marimba. Guide voice switches the narrator between Bennett the bear and a lady voice, and can turn narration fully on or off. Inspiration shows shape guides — circle, heart, star, and more — that talk you through drawing them step by step.",
+      "Below the canvas: Export saves your drawing as swell paper, a colour SVG, or a 3D-printable file. Share sends it to the public gallery for review.",
+      "Press H any time to hear this again.",
+    ];
+    say(lines.join(" "));
+  }, [say]);
+
+  const toggleVoiceOn = useCallback(() => {
+    const next = !voiceOnRef.current;
+    voiceOnRef.current = next;
+    setVoiceOn(next);
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    // Turning off: stay silent (update the announcement text only).
+    // Turning on: confirm out loud.
+    if (next) say("Narration is back on.");
+    else setAnnounce("Narration is off.");
+  }, [say]);
+
+  const maybePraiseEveryTenthLine = useCallback(() => {
+    completedLineCountRef.current += 1;
+    if (completedLineCountRef.current % 10 === 0) {
+      say("Great line! Saved it.");
+    }
+  }, [say]);
 
   useEffect(() => {
     return () => {
@@ -935,7 +1074,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     const guide = SHAPE_GUIDES[key];
     if (audioRef.current) playGuideStart(audioRef.current.ctx, 392);
     say(`Let's trace a ${guide.name.toLowerCase()} together! ${guide.checkpoints[0].say} Get close to the glowing line and I'll hum louder the closer you get.`);
-    trackClick();
   }, [startGuideTone, stopGuideTone, say]);
 
   const stopGuide = useCallback(() => {
@@ -944,7 +1082,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     offCourseRef.current = false;
     say("Guide stopped — nice tracing!");
     setGuideKey(null);
-    trackClick();
   }, [guideKey, stopGuideTone, say]);
 
   // ── Movement ─────────────────────────────────────────────────────────────
@@ -966,7 +1103,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       say("Whoa, that's the edge!");
     }
 
-    if (drawing) {
+    if (drawing && tool === "draw") {
       setCurrent((c) => {
         if (!c) return { color, width: penWidth, opacity: penOpacity, texture, points: [p] };
         const start = c.points[0];
@@ -977,11 +1114,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         return { ...c, points: [...c.points, p] };
       });
     }
-  }, [drawing, color, penWidth, penOpacity, texture, updateAudio, trackGuide, say]);
+  }, [drawing, tool, color, penWidth, penOpacity, texture, updateAudio, trackGuide, say]);
 
   // ── Drawing toggle ────────────────────────────────────────────────────────
   const toggleDrawing = useCallback(() => {
-    trackClick();
+    if (tool !== "draw") {
+      say("Switch to Draw before using the drawing toggle.");
+      return;
+    }
     setDrawing((d) => {
       const next = !d;
       if (next) {
@@ -989,20 +1129,22 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         if (audioRef.current) playSineNote(audioRef.current.ctx, 659, 0.15, 0.12);
         say("Drawing on — go ahead, I'm right here with you.");
       } else {
+        const finishedLine = current;
         setCurrent((c) => {
           if (c && c.points.length > 1) setStrokes((s) => [...s, c]);
           return null;
         });
+        if (finishedLine && finishedLine.points.length > 1) {
+          maybePraiseEveryTenthLine();
+        }
         if (audioRef.current) playSineNote(audioRef.current.ctx, 392, 0.18, 0.10);
-        say("Great line! Saved it.");
       }
       return next;
     });
-  }, [color, cursor, penWidth, penOpacity, texture, say]);
+  }, [tool, color, cursor, penWidth, penOpacity, texture, current, maybePraiseEveryTenthLine, say]);
 
   // ── Sound toggle ──────────────────────────────────────────────────────────
   const toggleSound = useCallback(() => {
-    trackClick();
     setSoundOn((s) => {
       const next = !s;
       if (next) {
@@ -1029,7 +1171,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       say(`${c.name}`);
       return next;
     });
-    trackClick();
   }, [say]);
 
   const pickColor = useCallback((c: typeof COLORS[0]) => {
@@ -1037,7 +1178,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setColorIndex(COLORS.indexOf(c));
     if (audioRef.current) playSineNote(audioRef.current.ctx, c.tone, 0.2, 0.11, true);
     say(`Color: ${c.name}`);
-    trackClick();
   }, [say]);
 
   // ── Pen thickness (applies to whichever texture is active) ─────────────────
@@ -1053,7 +1193,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       say(`${TEXTURE_LABELS[texture]} thickness ${clamped}`);
       return { ...prev, [texture]: { ...prev[texture], width: clamped } };
     });
-    trackClick();
   }, [texture, say]);
 
   // ── Pen opacity (applies to whichever texture is active) ───────────────────
@@ -1071,7 +1210,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       say(`${TEXTURE_LABELS[texture]} opacity ${Math.round(clamped * 100)} percent`);
       return { ...prev, [texture]: { ...prev[texture], opacity: clamped } };
     });
-    trackClick();
   }, [texture, say]);
 
   // ── Texture ──────────────────────────────────────────────────────────────
@@ -1082,7 +1220,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       say(`${TEXTURE_LABELS[next]} selected`);
       return next;
     });
-    trackClick();
   }, [say]);
 
   const cycleTexture = useCallback(() => {
@@ -1090,9 +1227,88 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     changeTexture(TEXTURE_ORDER[(i + 1) % TEXTURE_ORDER.length]);
   }, [texture, changeTexture]);
 
+  // ── Eraser + blend helpers ────────────────────────────────────────────────
+  const pointToSegmentDistance = (p: Point, a: Point, b: Point): number => {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    if (len2 === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
+    return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+  };
+
+  const eraseAt = useCallback((p: Point) => {
+    const radius = eraserSize / 2;
+    setStrokes((prev) => {
+      const next: Stroke[] = [];
+      for (const stroke of prev) {
+        let segment: Point[] = [];
+        const flush = () => {
+          if (segment.length > 1) next.push({ ...stroke, points: segment });
+          segment = [];
+        };
+        for (let i = 0; i < stroke.points.length; i++) {
+          const pt = stroke.points[i];
+          const near = i === 0
+            ? Math.hypot(pt.x - p.x, pt.y - p.y) <= radius + stroke.width / 2
+            : pointToSegmentDistance(p, stroke.points[i - 1], pt) <= radius + stroke.width / 2;
+          if (near) flush();
+          else segment.push(pt);
+        }
+        flush();
+      }
+      return next;
+    });
+  }, [eraserSize]);
+
+  const hexRgb = (hex: string) => {
+    const n = parseInt(hex.replace("#", ""), 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  };
+
+  const rgbHex = (r: number, g: number, b: number) =>
+    `#${[r, g, b].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("")}`;
+
+  const blendColorAt = useCallback((p: Point) => {
+    const radius = blendSize / 2 + 12;
+    const colors: { r: number; g: number; b: number; weight: number }[] = [];
+    for (const stroke of strokes) {
+      for (let i = 1; i < stroke.points.length; i++) {
+        const d = pointToSegmentDistance(p, stroke.points[i - 1], stroke.points[i]);
+        if (d <= radius + stroke.width / 2) {
+          const c = hexRgb(stroke.color);
+          colors.push({ ...c, weight: Math.max(0.1, 1 - d / radius) });
+          break;
+        }
+      }
+    }
+    if (!colors.length) return color;
+    const total = colors.reduce((sum, c) => sum + c.weight, 0);
+    return rgbHex(
+      colors.reduce((sum, c) => sum + c.r * c.weight, 0) / total,
+      colors.reduce((sum, c) => sum + c.g * c.weight, 0) / total,
+      colors.reduce((sum, c) => sum + c.b * c.weight, 0) / total,
+    );
+  }, [blendSize, color, strokes]);
+
+  const changeToolSize = useCallback((next: number) => {
+    const clamped = Math.max(4, Math.min(100, Math.round(next)));
+    if (tool === "eraser") setEraserSize(clamped);
+    else if (tool === "blend") setBlendSize(clamped);
+    else changePenWidth(clamped);
+  }, [tool, changePenWidth]);
+
   // ── Canvas ops ────────────────────────────────────────────────────────────
+  const selectTool = useCallback((next: "draw" | "eraser" | "blend") => {
+    setTool(next);
+    setDrawing(false);
+    setCurrent(null);
+    const label = next === "draw" ? "Drawing tool selected" : next === "eraser" ? `Eraser selected, size ${eraserSize}` : `Blend tool selected, size ${blendSize}`;
+    say(label);
+  }, [eraserSize, blendSize, say]);
+
   const clearCanvas = useCallback(() => {
     setStrokes([]);
+    completedLineCountRef.current = 0;
     setCurrent(null);
     setDrawing(false);
     if (audioRef.current) {
@@ -1100,22 +1316,19 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       setTimeout(() => audioRef.current && playSineNote(audioRef.current.ctx, 196, 0.25, 0.06), 120);
     }
     say("All clear! Ready for a fresh drawing.");
-    trackClick();
   }, [say]);
 
   const undo = useCallback(() => {
     setStrokes((s) => s.slice(0, -1));
     if (audioRef.current) playSineNote(audioRef.current.ctx, 330, 0.18, 0.09);
     say("Oops, undone! Let's try that again.");
-    trackClick();
   }, [say]);
 
   const toggleVisualAids = useCallback(() => {
     setVisualAids((v) => {
       const next = !v;
       say(next ? "Visual aids are on! I've got you." : "Visual aids off — I'll guide you by sound.");
-      trackClick();
-      return next;
+        return next;
     });
   }, [say]);
 
@@ -1159,8 +1372,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     a.click();
   };
 
-  const exportSwell = () => { dl("sonic-bear-swell.svg", buildSvgString(true),  "image/svg+xml"); say("There you go — your swell paper SVG is downloading."); trackClick(); };
-  const exportColor = () => { dl("sonic-bear-color.svg", buildSvgString(false), "image/svg+xml"); say("Nice! Your color SVG is downloading.");       trackClick(); };
+  const exportSwell = () => { dl("sonic-bear-swell.svg", buildSvgString(true),  "image/svg+xml"); say("There you go — your swell paper SVG is downloading."); };
+  const exportColor = () => { dl("sonic-bear-color.svg", buildSvgString(false), "image/svg+xml"); say("Nice! Your color SVG is downloading.");       };
 
   // ── Post to Gallery ──────────────────────────────────────────────────────
   const hasArtwork = strokes.length > 0 || (!!current && current.points.length > 1);
@@ -1171,7 +1384,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       return;
     }
     setPostConfirmOpen(true);
-    trackClick();
   }, [hasArtwork, say]);
 
   const cancelPost = useCallback(() => {
@@ -1187,7 +1399,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setTimeout(() => setJustPosted(false), 2200);
     if (audioRef.current) playCompleteChime(audioRef.current.ctx);
     say("Yay! Sent it in for review — it'll go live on the gallery once approved.");
-    trackClick();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onPost, strokes, current, say]);
 
@@ -1208,6 +1419,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       else if (e.key.toLowerCase() === "s") { e.preventDefault(); toggleSound(); }
       else if (e.key.toLowerCase() === "c") { e.preventDefault(); clearCanvas(); }
       else if (e.key.toLowerCase() === "x") { e.preventDefault(); toggleVisualAids(); }
+      else if (e.key.toLowerCase() === "h") { e.preventDefault(); explainStudio(); }
       else if (e.key.toLowerCase() === "g") {
         e.preventDefault();
         setGuidesPanelOpen((o) => {
@@ -1223,11 +1435,14 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       else if (e.key === ",") { e.preventDefault(); changePenOpacity(penOpacity - OPACITY_STEP); }
       else if (e.key === ".") { e.preventDefault(); changePenOpacity(penOpacity + OPACITY_STEP); }
       else if (e.key.toLowerCase() === "t") { e.preventDefault(); cycleTexture(); }
+      else if (e.key.toLowerCase() === "r") { e.preventDefault(); selectTool("eraser"); }
+      else if (e.key.toLowerCase() === "b") { e.preventDefault(); selectTool("blend"); }
+      else if (e.key.toLowerCase() === "v") { e.preventDefault(); selectTool("draw"); }
       else if (e.key.toLowerCase() === "escape" && guideKey) { e.preventDefault(); stopGuide(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, penWidth, changePenWidth, penOpacity, changePenOpacity, cycleTexture, guideKey, stopGuide, say, postConfirmOpen, cancelPost, confirmPost]);
+  }, [cursor, moveTo, toggleDrawing, toggleSound, clearCanvas, toggleVisualAids, cycleColor, penWidth, changePenWidth, penOpacity, changePenOpacity, cycleTexture, selectTool, guideKey, stopGuide, say, explainStudio, postConfirmOpen, cancelPost, confirmPost]);
 
   // ── Pointer ───────────────────────────────────────────────────────────────
   const pointerDrawing = useRef(false);
@@ -1243,12 +1458,24 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     (e.target as Element).setPointerCapture?.(e.pointerId);
     pointerDrawing.current = true;
+    trackClick();
     const p = svgPoint(e);
     setCursor(p);
     setDrawing(true);
-    setCurrent({ color, width: penWidth, opacity: penOpacity, texture, points: [p] });
+    if (tool === "eraser") {
+      eraseAt(p);
+    } else {
+      const blend = tool === "blend";
+      setCurrent({
+        color: blend ? blendColorAt(p) : color,
+        width: blend ? blendSize : penWidth,
+        opacity: blend ? 0.42 : penOpacity,
+        texture: blend ? "paintbrush" : texture,
+        mode: blend ? "blend" : "draw",
+        points: [p],
+      });
+    }
     updateAudio(p);
-    trackClick();
   };
 
   const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -1256,20 +1483,33 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     setCursor(p);
     updateAudio(p);
     trackGuide(p);
-    if (pointerDrawing.current) {
-      setCurrent((c) => c ? { ...c, points: [...c.points, p] } : { color, width: penWidth, opacity: penOpacity, texture, points: [p] });
+    if (!pointerDrawing.current) return;
+    if (tool === "eraser") {
+      eraseAt(p);
+      return;
     }
+    setCurrent((c) => c ? { ...c, points: [...c.points, p] } : null);
   };
 
   const onPointerUp = () => {
     if (!pointerDrawing.current) return;
     pointerDrawing.current = false;
     setDrawing(false);
-    setCurrent((c) => {
-      if (c && c.points.length > 1) setStrokes((s) => [...s, c]);
-      return null;
-    });
-    say("Great line! Saved it.");
+    if (tool !== "eraser") {
+      const finishedLine = current;
+      setCurrent((c) => {
+        if (c && c.points.length > 1) setStrokes((st) => [...st, c]);
+        return null;
+      });
+      if (tool === "blend") {
+        say("Colors blended together.");
+      } else if (finishedLine && finishedLine.points.length > 1) {
+        maybePraiseEveryTenthLine();
+      }
+    } else {
+      setCurrent(null);
+      say("Erased that part.");
+    }
   };
 
   const exportStl = () => {
@@ -1294,7 +1534,6 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
         box(s.points[i-1].x*scale,(HEIGHT-s.points[i-1].y)*scale,s.points[i].x*scale,(HEIGHT-s.points[i].y)*scale);
     dl("sonic-bear.stl", `solid sb\n${facets.join("\n")}\nendsolid sb`, "model/stl");
     say("Your 3D file is ready — happy printing!");
-    trackClick();
   };
 
   // Trail
@@ -1303,79 +1542,242 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   // Guide path rendered on canvas
   const activeGuide = guideKey ? SHAPE_GUIDES[guideKey] : null;
 
+  const activeColorName = COLORS.find((c) => c.value === color)?.name ?? "";
+  const statusText = drawing
+    ? "Drawing"
+    : strokes.length === 0
+      ? "A fresh start"
+      : `${strokes.length} ${strokes.length === 1 ? "line" : "lines"} drawn`;
+  const sizeValue = tool === "eraser" ? eraserSize : blendSize;
+
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[1fr_336px]">
+    <div className="w-full">
+      <div className="overflow-hidden rounded-[2rem] bg-card/70 shadow-2xl shadow-primary/15 ring-1 ring-white/60 backdrop-blur-xl">
+        <div className="grid xl:grid-cols-[264px_minmax(0,1fr)_316px] xl:grid-rows-[auto_1fr]">
 
-      {/* ── Canvas area ── */}
-      <div className="relative overflow-visible rounded-3xl bg-gradient-to-br from-primary/20 via-card/80 to-accent/20 p-1.5 shadow-2xl shadow-primary/15 ring-1 ring-white/50 backdrop-blur-xl sm:p-2">
-        <div className="relative overflow-visible rounded-[1.35rem] bg-card/75 p-4 backdrop-blur-md sm:p-5">
-
-        {/* Top bar */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2 rounded-full bg-card/70 px-3.5 py-2 text-xs font-bold text-primary ring-1 ring-white/60 shadow-sm backdrop-blur-sm">
-            <Sparkles className="h-3.5 w-3.5" />
-            {stats.data == null
-              ? "Counting canvas drawings…"
-              : `${stats.data.toLocaleString()} drawings created worldwide`}
-          </div>
-          <Button
-            onClick={toggleVisualAids}
-            variant={visualAids ? "default" : "outline"}
-            aria-pressed={visualAids}
-            size="sm"
-            className={
-              visualAids
-                ? "gap-1.5 rounded-full shadow-sm"
-                : "gap-1.5 rounded-full border-2 border-primary/50 bg-card font-semibold text-primary shadow-sm hover:bg-primary/10 hover:text-primary"
-            }
+          {/* ───────── LEFT: tools, color, brush ───────── */}
+          <aside
+            aria-label="Drawing tools"
+            className="order-2 divide-y divide-border/70 border-t border-border/70 xl:col-start-1 xl:row-span-2 xl:row-start-1 xl:border-r xl:border-t-0"
           >
-            <Eye className="h-3.5 w-3.5" /> Visual aids
-            <kbd className="ml-0.5 rounded bg-background/40 px-1 py-0.5 text-[10px]">X</kbd>
-          </Button>
-        </div>
+            {/* 01 / Tools */}
+            <section aria-labelledby="tools-heading" className="p-5">
+              <SectionLabel id="tools-heading" n="01" title="Tools" Icon={Hand} />
+              <div className="mt-4 space-y-1.5">
+                <button onClick={() => selectTool("draw")} aria-pressed={tool === "draw"} className={`${ROW_BTN} ${tool === "draw" ? ROW_ON : ROW_OFF}`}>
+                  <Pencil className="h-4 w-4 shrink-0" /> Draw <span className="ml-auto text-xs opacity-60">V</span>
+                </button>
+                <button onClick={() => selectTool("eraser")} aria-pressed={tool === "eraser"} className={`${ROW_BTN} ${tool === "eraser" ? ROW_ON : ROW_OFF}`}>
+                  <Eraser className="h-4 w-4 shrink-0" /> Eraser <span className="ml-auto text-xs opacity-60">R</span>
+                </button>
+                <button onClick={() => selectTool("blend")} aria-pressed={tool === "blend"} className={`${ROW_BTN} ${tool === "blend" ? ROW_ON : ROW_OFF}`}>
+                  <Waves className="h-4 w-4 shrink-0" /> Blend <span className="ml-auto text-xs opacity-60">B</span>
+                </button>
+              </div>
 
-        {/* Controls */}
-        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-2xl bg-gradient-to-br from-primary/10 via-background/40 to-accent/10 p-2 shadow-inner ring-1 ring-white/50 backdrop-blur-sm">
-          <Button onClick={toggleSound} variant={soundOn ? "default" : "secondary"} aria-pressed={soundOn} className="gap-2 rounded-xl shadow-sm">
-            {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            {soundOn ? "Sound On" : "Sound Off"}
-            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">S</kbd>
-          </Button>
-          <Button onClick={toggleDrawing} variant={drawing ? "default" : "secondary"} aria-pressed={drawing} className="gap-2 rounded-xl shadow-sm">
-            {drawing ? <Pencil className="h-4 w-4" /> : <Hand className="h-4 w-4" />}
-            {drawing ? "Drawing" : "Idle"}
-            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">Space</kbd>
-          </Button>
-          <Button onClick={undo}        variant="outline" className="gap-2 rounded-xl bg-card/70 shadow-sm ring-1 ring-white/50"><Undo2 className="h-4 w-4" /> Undo</Button>
-          <Button onClick={clearCanvas} variant="outline" className="gap-2 rounded-xl bg-card/70 shadow-sm ring-1 ring-white/50">
-            <Eraser className="h-4 w-4" /> Clear
-            <kbd className="ml-1 rounded bg-background/40 px-1.5 py-0.5 text-[10px]">C</kbd>
-          </Button>
-          {guideKey && (
-            <Button onClick={stopGuide} variant="destructive" size="sm" className="gap-1.5 rounded-xl shadow-sm">
-              <X className="h-3.5 w-3.5" /> Stop guide
-              <kbd className="ml-0.5 rounded bg-background/40 px-1 py-0.5 text-[10px]">Esc</kbd>
-            </Button>
-          )}
-        </div>
+              {tool !== "draw" && (
+                <label className="mt-3 flex items-center gap-3 text-sm font-medium text-muted-foreground">
+                  <span className="shrink-0">{tool === "eraser" ? "Eraser" : "Blend"} size</span>
+                  <input
+                    type="range" min="4" max="100" step="1" value={sizeValue}
+                    onChange={(e) => changeToolSize(Number(e.target.value))}
+                    className="min-w-0 flex-1 accent-primary"
+                    aria-label={`${tool === "eraser" ? "Eraser" : "Blend"} size`}
+                  />
+                  <span className="w-8 text-right text-foreground">{sizeValue}</span>
+                </label>
+              )}
 
-        {/* SVG Canvas + bear companion. The bear is pinned to the canvas
-            frame's own top-right corner (not floating in the gap above the
-            controls), so its position is completely independent of the
-            controls row above — it cannot ever overlap those buttons. */}
-        <div className="relative mt-2 rounded-[1.75rem] bg-gradient-to-br from-primary/15 via-background/60 to-accent/15 p-2 pt-3 shadow-inner ring-1 ring-primary/20 sm:p-2.5 sm:pt-3.5">
-          <div className="pointer-events-none absolute -top-12 right-2 z-10 rotate-[6deg] sm:-top-16 sm:right-4">
-            <img
-              src={drawing ? bearDrawing : bearSleeping}
-              alt=""
-              aria-hidden="true"
-              className="h-20 w-20 select-none object-contain drop-shadow-[0_6px_10px_rgba(58,31,43,0.25)] sm:h-28 sm:w-28"
-            />
-          </div>
-          {/* Double ring "mat frame" — a slim gold hairline just inside the
-              soft outer shadow gives the canvas a gallery-framed feel
-              instead of a flat rectangle. */}
-          <div className="overflow-hidden rounded-2xl bg-[oklch(0.98_0.02_15)] shadow-xl shadow-primary/10 ring-1 ring-[oklch(0.7_0.09_75)]/40">
+              <div className="mt-4 space-y-1.5 border-t border-border/70 pt-4">
+                <button onClick={toggleDrawing} aria-pressed={drawing} className={`${ROW_BTN} ${drawing ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : ROW_OFF}`}>
+                  {drawing ? <Pencil className="h-4 w-4 shrink-0 text-primary" /> : <Hand className="h-4 w-4 shrink-0" />}
+                  {drawing ? "Pen down" : "Pen up"} <span className="ml-auto text-xs opacity-60">Space</span>
+                </button>
+                <button onClick={toggleVisualAids} aria-pressed={visualAids} className={`${ROW_BTN} ${visualAids ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : ROW_OFF}`}>
+                  <Eye className="h-4 w-4 shrink-0" /> Visual aids <span className="ml-auto text-xs opacity-60">X</span>
+                </button>
+                {guideKey && (
+                  <button onClick={stopGuide} className={`${ROW_BTN} bg-destructive text-destructive-foreground shadow-sm`}>
+                    <X className="h-4 w-4 shrink-0" /> Stop guide <span className="ml-auto text-xs opacity-70">Esc</span>
+                  </button>
+                )}
+              </div>
+            </section>
+
+            {/* 02 / Color */}
+            <section aria-labelledby="colors-heading" className="p-5">
+              <SectionLabel id="colors-heading" n="02" title="Color" Icon={Palette} />
+              <div className="mt-4 grid grid-cols-6 gap-2.5">
+                {COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    onClick={() => pickColor(c)}
+                    aria-label={`Color ${c.name}`}
+                    aria-pressed={color === c.value}
+                    className={`relative aspect-square w-full rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
+                      color === c.value ? "scale-105 ring-foreground" : "ring-border/60"
+                    }`}
+                    style={{ backgroundColor: c.value }}
+                  >
+                    {color === c.value && (
+                      <Check
+                        className="absolute inset-0 m-auto h-4 w-4 drop-shadow"
+                        style={{ color: ["#f5a623", "#e0b04f", "#f9a8a8", "#ffffff"].includes(c.value) ? "#3a1f2b" : "#fff" }}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                {activeColorName} <span className="font-medium normal-case tracking-normal">· Q / E to cycle</span>
+              </p>
+            </section>
+
+            {/* 03 / Brush */}
+            <section aria-labelledby="brush-heading" className="p-5">
+              <SectionLabel id="brush-heading" n="03" title="Brush" Icon={Paintbrush} />
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {TEXTURE_ORDER.map((t) => {
+                  const TextureIcon = TEXTURE_ICONS[t];
+                  const active = texture === t;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => changeTexture(t)}
+                      aria-pressed={active}
+                      className={`flex h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-2 text-sm font-medium transition-colors ${
+                        active ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : "ring-1 ring-border/70 text-foreground hover:bg-primary/10"
+                      }`}
+                    >
+                      <TextureIcon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{TEXTURE_LABELS[t]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">T to cycle textures</p>
+
+              <div className="mt-5 flex items-center justify-between text-sm">
+                <span className="font-medium">Size</span>
+                <span className="text-muted-foreground">{penWidth} px <span className="ml-1 text-xs">[ / ]</span></span>
+              </div>
+              <div className="mt-2 flex items-center gap-2.5">
+                <Button onClick={() => changePenWidth(penWidth - 1)} variant="outline" size="icon" className={STEP_BTN} aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}>
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <input
+                  type="range"
+                  min={MIN_PEN_WIDTH}
+                  max={MAX_PEN_WIDTH}
+                  step={1}
+                  value={penWidth}
+                  onChange={(e) => changePenWidth(Number(e.target.value))}
+                  aria-label={`${TEXTURE_LABELS[texture]} thickness`}
+                  aria-valuemin={MIN_PEN_WIDTH}
+                  aria-valuemax={MAX_PEN_WIDTH}
+                  aria-valuenow={penWidth}
+                  className={SLIDER_CLASS}
+                  style={{
+                    background: `linear-gradient(to right, oklch(0.58 0.15 20) ${((penWidth - MIN_PEN_WIDTH) / (MAX_PEN_WIDTH - MIN_PEN_WIDTH)) * 100}%, oklch(0.58 0.15 20 / 0.18) ${((penWidth - MIN_PEN_WIDTH) / (MAX_PEN_WIDTH - MIN_PEN_WIDTH)) * 100}%)`,
+                  }}
+                />
+                <Button onClick={() => changePenWidth(penWidth + 1)} variant="outline" size="icon" className={STEP_BTN} aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="mt-5 flex items-center justify-between text-sm">
+                <span className="font-medium">Opacity</span>
+                <span className="text-muted-foreground">{Math.round(penOpacity * 100)}% <span className="ml-1 text-xs">, / .</span></span>
+              </div>
+              <div className="mt-2 flex items-center gap-2.5">
+                <Button onClick={() => changePenOpacity(penOpacity - OPACITY_STEP)} variant="outline" size="icon" className={STEP_BTN} aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}>
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <input
+                  type="range"
+                  min={OPACITY_RANGE[texture].min}
+                  max={OPACITY_RANGE[texture].max}
+                  step={OPACITY_STEP}
+                  value={penOpacity}
+                  onChange={(e) => changePenOpacity(Number(e.target.value))}
+                  aria-label={`${TEXTURE_LABELS[texture]} opacity`}
+                  aria-valuemin={OPACITY_RANGE[texture].min}
+                  aria-valuemax={OPACITY_RANGE[texture].max}
+                  aria-valuenow={penOpacity}
+                  className={SLIDER_CLASS}
+                  style={{
+                    background: `linear-gradient(to right, oklch(0.58 0.15 20) ${((penOpacity - OPACITY_RANGE[texture].min) / (OPACITY_RANGE[texture].max - OPACITY_RANGE[texture].min)) * 100}%, oklch(0.58 0.15 20 / 0.18) ${((penOpacity - OPACITY_RANGE[texture].min) / (OPACITY_RANGE[texture].max - OPACITY_RANGE[texture].min)) * 100}%)`,
+                  }}
+                />
+                <Button onClick={() => changePenOpacity(penOpacity + OPACITY_STEP)} variant="outline" size="icon" className={STEP_BTN} aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </section>
+
+          {/* 04 / Shortcuts (left column) */}
+          <section aria-labelledby="kbd-heading" className="p-5">
+            <SectionLabel id="kbd-heading" n="04" title="Shortcuts" Icon={Keyboard} />
+            <h3 className="mt-4 text-xl font-black tracking-tight">
+              Keys for <span className={`${ACCENT} text-[1.15em]`}>speed.</span>
+            </h3>
+            <button
+              type="button"
+              onClick={() => setKeyboardPanelOpen((o) => !o)}
+              aria-expanded={keyboardPanelOpen}
+              aria-controls="kbd-list"
+              className="mt-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-primary"
+            >
+              {keyboardPanelOpen ? "Hide shortcuts" : "Show shortcuts"}
+              <ChevronRight className={`h-4 w-4 transition-transform ${keyboardPanelOpen ? "rotate-90" : ""}`} />
+            </button>
+            {keyboardPanelOpen && (
+              <ul id="kbd-list" className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                <li>Arrows: move brush (Shift = ×3)</li>
+                <li>Space / D: toggle drawing</li>
+                <li>S: toggle sound</li>
+                <li>C: clear canvas</li>
+                <li>Q / E: cycle colour</li>
+                <li>[ / ]: thickness</li>
+                <li>, / .: opacity</li>
+                <li>T: cycle texture</li>
+                <li>V / R / B: draw, eraser, blend</li>
+                <li>G: open / close guides</li>
+                <li>Esc: stop active guide</li>
+                <li>H: explain this page out loud</li>
+                <li>X: toggle visual aids</li>
+              </ul>
+            )}
+          </section>
+          </aside>
+
+          {/* ───────── CENTER: the canvas ───────── */}
+          <section aria-label="Canvas" className="order-1 min-w-0 p-5 pb-3 xl:col-start-2 xl:row-start-1">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3 text-[11px] font-bold uppercase tracking-[0.18em]">
+                <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-[oklch(0.58_0.13_150)]" />
+                <span className="truncate text-foreground">Untitled canvas</span>
+                <span className="hidden font-medium normal-case tracking-normal text-muted-foreground sm:inline">{WIDTH} × {HEIGHT}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={explainStudio}
+                  className="flex h-10 items-center gap-2 rounded-full bg-primary/15 px-3.5 text-sm font-semibold text-foreground ring-1 ring-primary/40 transition-colors hover:bg-primary/25"
+                  aria-label="Explain this page out loud: what every feature is and how to use it"
+                >
+                  <HelpCircle className="h-4 w-4 text-primary" /> Explain this page <span className="text-xs opacity-60">H</span>
+                </button>
+                <button onClick={undo} className="flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium text-foreground ring-1 ring-border/70 transition-colors hover:bg-primary/10">
+                  <Undo2 className="h-4 w-4" /> Undo
+                </button>
+                <button onClick={clearCanvas} className="flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium text-foreground ring-1 ring-border/70 transition-colors hover:bg-primary/10">
+                  <Eraser className="h-4 w-4" /> Clear <span className="text-xs opacity-60">C</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-xl bg-[oklch(0.98_0.02_15)] shadow-inner ring-1 ring-border">
           <svg
             role="img"
             aria-label="Sonic tactile drawing canvas. Use arrow keys to move, space to toggle drawing."
@@ -1425,6 +1827,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 painterly edge instead of a crisp digital line. */}
             <filter id="brushSoften" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="0.6" />
+            </filter>
+            <filter id="blendSoften" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="5" />
             </filter>
           </defs>
 
@@ -1494,6 +1899,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               points={s.points.map((p) => `${p.x},${p.y}`).join(" ")}
               fill="none" stroke={s.color} strokeWidth={s.width} strokeOpacity={s.opacity}
               {...textureVisualProps(s.texture)}
+              filter={s.mode === "blend" ? "url(#blendSoften)" : textureVisualProps(s.texture).filter}
+              style={s.mode === "blend" ? { mixBlendMode: "multiply" } : textureVisualProps(s.texture).style}
             />
           ))}
           {strokes.flatMap((s, i) =>
@@ -1512,6 +1919,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               points={current.points.map((p) => `${p.x},${p.y}`).join(" ")}
               fill="none" stroke={current.color} strokeWidth={current.width} strokeOpacity={current.opacity}
               {...textureVisualProps(current.texture)}
+              filter={current.mode === "blend" ? "url(#blendSoften)" : textureVisualProps(current.texture).filter}
+              style={current.mode === "blend" ? { mixBlendMode: "multiply" } : textureVisualProps(current.texture).style}
             />
           )}
           {current && getBrushDabs(current).map((d, j) => (
@@ -1535,420 +1944,280 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
           ))}
 
           {/* Cursor */}
-          <circle cx={cursor.x} cy={cursor.y} r={12} fill={color} fillOpacity={0.18} stroke={color} strokeWidth={2} />
-          <circle cx={cursor.x} cy={cursor.y} r={Math.max(2, penWidth / 2)} fill={color} fillOpacity={penOpacity} />
+          <circle cx={cursor.x} cy={cursor.y}
+            r={tool === "eraser" ? eraserSize / 2 : tool === "blend" ? blendSize / 2 : 12}
+            fill={tool === "eraser" ? "white" : color}
+            fillOpacity={tool === "eraser" ? 0.5 : 0.18}
+            stroke={tool === "eraser" ? "oklch(0.55 0.08 20)" : color}
+            strokeWidth={2} strokeDasharray={tool === "eraser" ? "5 4" : undefined} />
+          {tool === "draw" && <circle cx={cursor.x} cy={cursor.y} r={Math.max(2, penWidth / 2)} fill={color} fillOpacity={penOpacity} />}
           </svg>
-          </div>
-        </div>
-
-        <p className="mt-3 rounded-xl bg-background/35 px-3 py-2 text-xs text-muted-foreground ring-1 ring-white/40">
-          Left/right pans the sound · Up/down changes pitch · Shift+arrows = bigger steps · Q/E cycle colours · [ ] adjust thickness · , . adjust opacity · T cycles texture
-        </p>
-
-        {/* New feature callout — Public Gallery. Placed right under the
-            canvas so it's clearly visible without digging into the
-            sidebar's Export/Share card. */}
-        <div className="mt-4 flex flex-col items-start gap-3 rounded-2xl bg-gradient-to-br from-accent/25 via-card/80 to-primary/15 p-4 shadow-md ring-1 ring-white/50 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
-              <Globe className="h-4 w-4" />
-            </span>
-            <div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
-                New
-              </span>
-              <p className="mt-1 text-sm font-semibold text-foreground">The Public Gallery is here</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Finish a drawing and send it in for review — approved pieces get featured on the
-                Gallery page for creators everywhere to see.
-              </p>
+              {strokes.length === 0 && !current && (
+                <div aria-hidden className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+                  <Sparkles className="h-6 w-6 text-primary" />
+                  <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.2em] text-foreground">This space is yours</p>
+                  <p className={`${ACCENT} mt-2 text-3xl text-muted-foreground sm:text-4xl`}>Make your first mark anywhere.</p>
+                </div>
+              )}
             </div>
-          </div>
-          <Button asChild variant="outline" size="sm" className="w-full shrink-0 rounded-full bg-card/60 backdrop-blur-sm sm:w-auto">
-            <Link to="/gallery" className="gap-1.5">
-              <Globe className="h-3.5 w-3.5" /> View Gallery
-            </Link>
-          </Button>
-        </div>
 
-        {/* Audio Guides — moved here from the sidebar so this card doesn't sit
-            half-empty next to the taller settings column */}
-        <section aria-labelledby="guides-heading" className="mt-4 border-t border-border pt-4">
-          <button
-            id="guides-heading"
-            onClick={() => setGuidesPanelOpen((o) => !o)}
-            className="mb-1 flex w-full items-center justify-between text-sm font-semibold"
-            aria-expanded={guidesPanelOpen}
-          >
-            <span className="flex items-center gap-2">
-              <Map className="h-4 w-4 text-primary" />
-              Audio guides
-              <kbd className="rounded bg-muted px-1 py-0.5 text-[10px] font-normal text-muted-foreground">G</kbd>
-            </span>
-            <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${guidesPanelOpen ? "rotate-90" : ""}`} />
-          </button>
-
-          {guideKey && (
-            <p className="mb-2 rounded-xl bg-primary/10 px-3 py-2 text-xs text-primary ring-1 ring-primary/20">
-              Active: <strong>{SHAPE_GUIDES[guideKey].name}</strong> — move near the glowing path to hear the guide tone
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+              <span className="flex items-center gap-2.5">
+                <img
+                  src={drawing ? bearDrawing : bearSleeping}
+                  alt=""
+                  aria-hidden="true"
+                  className="h-10 w-10 select-none object-contain drop-shadow-[0_4px_6px_rgba(58,31,43,0.2)]"
+                />
+                <span aria-hidden className="h-2 w-2 rounded-full bg-[oklch(0.58_0.13_150)]" />
+                <span className="text-[oklch(0.42_0.1_150)]">{statusText}</span>
+              </span>
+              <span>Drag to draw <span aria-hidden>·</span> Every line has a sound</span>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {stats.data == null
+                ? "Counting canvas drawings…"
+                : `${stats.data.toLocaleString()} drawings created worldwide`}
             </p>
-          )}
+          </section>
 
-          {guidesPanelOpen && (
-            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              {Object.entries(SHAPE_GUIDES).map(([key, guide]) => {
-                const { Icon, color } = GUIDE_ICONS[key];
-                return (
-                  <button
-                    key={key}
-                    onClick={() => guideKey === key ? stopGuide() : startGuide(key)}
-                    className={`flex items-start gap-3 rounded-2xl p-3 text-left transition ring-1 ${
-                      guideKey === key
-                        ? "bg-primary/15 ring-primary/50 text-primary"
-                        : "bg-background/50 ring-border hover:bg-primary/8 hover:ring-primary/30"
-                    }`}
-                  >
-                    <span
-                      className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
-                      style={{ backgroundColor: `${color}26` }}
-                    >
-                      <Icon className="h-4 w-4" style={{ color }} />
-                    </span>
-                    <div>
-                      <div className="text-sm font-medium leading-tight">
-                        {guide.name}
-                        {guideKey === key && <span className="ml-1.5 text-[10px] font-normal opacity-70">(active — press to stop)</span>}
-                      </div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground leading-snug">{guide.description}</div>
-                    </div>
-                  </button>
-                );
-              })}
+          {/* ───────── CENTER, ROW 2: session, how it sounds, keep your art ───────── */}
+          <div className="order-4 flex min-w-0 flex-col gap-4 p-5 pt-2 xl:col-start-2 xl:row-start-2">
+            {/* Live session strip */}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-secondary/40 px-4 py-3 text-sm ring-1 ring-border/70">
+              <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Session</span>
+              <span className="flex items-center gap-2">
+                <span aria-hidden className="h-4 w-4 rounded-full ring-1 ring-border" style={{ backgroundColor: color }} />
+                {activeColorName}
+              </span>
+              <span>{tool === "draw" ? `${TEXTURE_LABELS[texture]} · ${penWidth}px · ${Math.round(penOpacity * 100)}%` : tool === "eraser" ? `Eraser · ${eraserSize}px` : `Blend · ${blendSize}px`}</span>
+              <span>Sound {soundOn ? "on" : "off"}</span>
+              <span>{voiceOn ? `${VOICE_PERSONA_LABELS[voicePersona]} guiding` : "Narration off"}</span>
+              <span className="ml-auto text-muted-foreground">{statusText}</span>
             </div>
-          )}
-        </section>
-        </div>
-      </div>
 
-      {/* ── Sidebar ── */}
-      <aside className="space-y-4">
-
-        {/* Palette */}
-        <section aria-labelledby="colors-heading" className="rounded-3xl bg-gradient-to-br from-primary/20 via-card/75 to-transparent p-4 shadow-lg shadow-primary/10 ring-1 ring-white/50 backdrop-blur-md">
-          <h2 id="colors-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
-              <Palette className="h-3.5 w-3.5" />
-            </span>
-            Palette
-            <span className="ml-auto rounded-full bg-background/60 px-2 py-0.5 text-[10px] font-normal text-muted-foreground">Q / E to cycle</span>
-          </h2>
-          <div className="flex flex-wrap gap-2.5">
-            {COLORS.map((c) => (
-              <button
-                key={c.value}
-                onClick={() => pickColor(c)}
-                aria-label={`Color ${c.name}`}
-                aria-pressed={color === c.value}
-                className={`relative h-9 w-9 rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
-                  color === c.value ? "scale-110 ring-foreground" : "ring-transparent"
-                }`}
-                style={{ backgroundColor: c.value }}
-              >
-                {color === c.value && (
-                  <Check
-                    className="absolute inset-0 m-auto h-4 w-4 drop-shadow"
-                    style={{ color: ["#f5a623", "#e0b04f", "#f9a8a8"].includes(c.value) ? "#3a1f2b" : "#fff" }}
-                  />
-                )}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Texture */}
-        <section aria-labelledby="texture-heading" className="rounded-3xl bg-gradient-to-br from-accent/30 via-card/75 to-transparent p-4 shadow-lg shadow-accent/10 ring-1 ring-white/50 backdrop-blur-md">
-          <h2 id="texture-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
-              <Pencil className="h-3.5 w-3.5" />
-            </span>
-            Texture
-            <span className="ml-auto rounded-full bg-background/60 px-2 py-0.5 text-[10px] font-normal text-muted-foreground">T to cycle</span>
-          </h2>
-          <div className="grid grid-cols-2 gap-2">
-            {TEXTURE_ORDER.map((t) => {
-              const TextureIcon = TEXTURE_ICONS[t];
-              const active = texture === t;
-              return (
-                <button
-                  key={t}
-                  onClick={() => changeTexture(t)}
-                  aria-pressed={active}
-                  className={`flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-medium shadow-sm transition-all ${
-                    active
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "bg-card/60 text-foreground ring-1 ring-white/50 backdrop-blur-sm hover:bg-primary/10"
-                  }`}
-                >
-                  <TextureIcon className="h-4 w-4" />
-                  {TEXTURE_LABELS[t]}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Thickness + Opacity (per active texture) — merged into one card;
-            two sliders under one header take noticeably less vertical
-            space than two separate cards each with their own header/ring. */}
-        <section aria-labelledby="pen-heading" className="rounded-3xl bg-gradient-to-br from-secondary/40 via-card/75 to-transparent p-4 shadow-lg shadow-secondary/10 ring-1 ring-white/50 backdrop-blur-md">
-          <h2 id="pen-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
-              <Pencil className="h-3.5 w-3.5" />
-            </span>
-            {TEXTURE_LABELS[texture]} settings
-          </h2>
-
-          <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-            <span>Thickness</span>
-            <span className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">{penWidth}px</span>
-              <span className="rounded-full bg-background/60 px-2 py-0.5 text-[10px]">[ / ]</span>
-            </span>
-          </div>
-          <div className="mt-1.5 flex items-center gap-2.5">
-            <Button
-              onClick={() => changePenWidth(penWidth - 1)}
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
-              aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}
-            >
-              <Minus className="h-3.5 w-3.5" />
-            </Button>
-            <input
-              type="range"
-              min={MIN_PEN_WIDTH}
-              max={MAX_PEN_WIDTH}
-              step={1}
-              value={penWidth}
-              onChange={(e) => changePenWidth(Number(e.target.value))}
-              aria-label={`${TEXTURE_LABELS[texture]} thickness`}
-              aria-valuemin={MIN_PEN_WIDTH}
-              aria-valuemax={MAX_PEN_WIDTH}
-              aria-valuenow={penWidth}
-              className="h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"
-              style={{
-                background: `linear-gradient(to right, oklch(0.58 0.15 20) ${((penWidth - MIN_PEN_WIDTH) / (MAX_PEN_WIDTH - MIN_PEN_WIDTH)) * 100}%, oklch(0.58 0.15 20 / 0.18) ${((penWidth - MIN_PEN_WIDTH) / (MAX_PEN_WIDTH - MIN_PEN_WIDTH)) * 100}%)`,
-              }}
-            />
-            <Button
-              onClick={() => changePenWidth(penWidth + 1)}
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
-              aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between text-xs font-medium text-muted-foreground">
-            <span>Opacity</span>
-            <span className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">{Math.round(penOpacity * 100)}%</span>
-              <span className="rounded-full bg-background/60 px-2 py-0.5 text-[10px]">, / .</span>
-            </span>
-          </div>
-          <div className="mt-1.5 flex items-center gap-2.5">
-            <Button
-              onClick={() => changePenOpacity(penOpacity - OPACITY_STEP)}
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
-              aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}
-            >
-              <Minus className="h-3.5 w-3.5" />
-            </Button>
-            <input
-              type="range"
-              min={OPACITY_RANGE[texture].min}
-              max={OPACITY_RANGE[texture].max}
-              step={OPACITY_STEP}
-              value={penOpacity}
-              onChange={(e) => changePenOpacity(Number(e.target.value))}
-              aria-label={`${TEXTURE_LABELS[texture]} opacity`}
-              aria-valuemin={OPACITY_RANGE[texture].min}
-              aria-valuemax={OPACITY_RANGE[texture].max}
-              aria-valuenow={penOpacity}
-              className="h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"
-              style={{
-                background: `linear-gradient(to right, oklch(0.58 0.15 20) ${((penOpacity - OPACITY_RANGE[texture].min) / (OPACITY_RANGE[texture].max - OPACITY_RANGE[texture].min)) * 100}%, oklch(0.58 0.15 20 / 0.18) ${((penOpacity - OPACITY_RANGE[texture].min) / (OPACITY_RANGE[texture].max - OPACITY_RANGE[texture].min)) * 100}%)`,
-              }}
-            />
-            <Button
-              onClick={() => changePenOpacity(penOpacity + OPACITY_STEP)}
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
-              aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </section>
-
-        {/* Canvas Sound */}
-        <section aria-labelledby="canvas-sound-heading" className="rounded-3xl bg-gradient-to-br from-primary/20 via-card/75 to-transparent p-4 shadow-lg shadow-primary/10 ring-1 ring-white/50 backdrop-blur-md">
-          <h2 id="canvas-sound-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
-              <Volume2 className="h-3.5 w-3.5" />
-            </span>
-            Canvas sound
-          </h2>
-          <div className="grid grid-cols-2 gap-2">
-            {SOUND_STYLE_ORDER.map((s) => {
-              const StyleIcon = SOUND_STYLE_ICONS[s];
-              const active = soundStyle === s;
-              return (
-                <button
-                  key={s}
-                  onClick={() => { setSoundStyle(s); say(`${SOUND_STYLE_LABELS[s]} sound.`); trackClick(); }}
-                  aria-pressed={active}
-                  className={`flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-medium shadow-sm transition-all ${
-                    active
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "bg-card/60 text-foreground ring-1 ring-white/50 backdrop-blur-sm hover:bg-primary/10"
-                  }`}
-                >
-                  <StyleIcon className="h-4 w-4" />
-                  {SOUND_STYLE_LABELS[s]}
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-3 flex items-center gap-3">
-            <Button
-              onClick={() => setSoundVolume((v) => Math.max(0, +(v - 0.1).toFixed(2)))}
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
-              aria-label="Decrease canvas sound volume"
-            >
-              <Minus className="h-3.5 w-3.5" />
-            </Button>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={soundVolume}
-              onChange={(e) => setSoundVolume(Number(e.target.value))}
-              aria-label="Canvas sound volume"
-              className="h-2 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"
-              style={{ background: `linear-gradient(to right, oklch(0.58 0.15 20) ${soundVolume * 100}%, oklch(0.58 0.15 20 / 0.18) ${soundVolume * 100}%)` }}
-            />
-            <Button
-              onClick={() => setSoundVolume((v) => Math.min(1, +(v + 0.1).toFixed(2)))}
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm"
-              aria-label="Increase canvas sound volume"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          <div className="mt-2.5 rounded-full bg-background/50 py-1.5 text-center text-xs font-medium text-muted-foreground">
-            {Math.round(soundVolume * 100)}% volume
-          </div>
-        </section>
-
-        {/* Export & Share — merged into one card */}
-        <section aria-labelledby="export-heading" className="rounded-3xl bg-gradient-to-br from-accent/25 via-card/75 to-transparent p-4 shadow-lg shadow-accent/10 ring-1 ring-white/50 backdrop-blur-md">
-          <h2 id="export-heading" className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
-              <Sparkles className="h-3.5 w-3.5" />
-            </span>
-            Export
-          </h2>
-          <div className="grid gap-2">
-            <Button onClick={exportSwell} className="justify-start gap-3 rounded-2xl py-4 shadow-md">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-foreground/20">
-                <Waves className="h-4 w-4" />
-              </span>
-              Swell Paper SVG
-            </Button>
-            <Button onClick={exportColor} variant="secondary" className="justify-start gap-3 rounded-2xl py-4 shadow-sm">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground/10">
-                <Palette className="h-4 w-4" />
-              </span>
-              Colour SVG
-            </Button>
-            <Button onClick={exportStl} variant="outline" className="justify-start gap-3 rounded-2xl bg-background/60 py-4 shadow-sm ring-1 ring-primary/15">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
-                <Box className="h-4 w-4" />
-              </span>
-              3D Print (STL)
-            </Button>
-          </div>
-
-          {onPost && (
-            <>
-              <div className="my-4 border-t border-primary/10" />
-              <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card/60 text-primary ring-1 ring-white/50 backdrop-blur-sm">
-                  <Globe className="h-3.5 w-3.5" />
-                </span>
-                Share
-              </h2>
-              <p className="mb-3 text-xs text-muted-foreground">
-                Send your artwork in for a quick review — approved pieces appear on the public
-                Gallery page for creators everywhere to see.
+            {/* How it sounds */}
+            <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-2 px-1">
+              <p className="text-2xl font-black leading-tight tracking-tight sm:text-3xl">
+                Left and right <span className={`${ACCENT} text-[1.15em]`}>pans.</span>{" "}
+                Up and down <span className={`${ACCENT} text-[1.15em]`}>sings.</span>
               </p>
-              <Button
-                onClick={requestPost}
-                disabled={!hasArtwork}
-                variant={justPosted ? "secondary" : "default"}
-                className="w-full justify-center gap-2 rounded-full"
-              >
-                {justPosted ? <Check className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-                {justPosted ? "Sent for review!" : "Send to Gallery"}
-              </Button>
-            </>
-          )}
-        </section>
+              <p className="max-w-xs text-sm text-muted-foreground">
+                Move across the canvas to sweep the sound between your ears. Move higher for a higher note.
+              </p>
+            </div>
 
-        {/* Keyboard reference — collapsed by default; it's the single
-            tallest block in this sidebar and most people don't need it
-            open all the time, so tucking it away keeps the whole sidebar
-            closer in height to the canvas next to it. */}
-        <section aria-labelledby="kbd-heading" className="rounded-3xl bg-gradient-to-br from-secondary/30 via-card/75 to-transparent p-4 shadow-lg shadow-secondary/10 ring-1 ring-white/50 backdrop-blur-md text-xs text-muted-foreground">
-          <button
-            type="button"
-            onClick={() => setKeyboardPanelOpen((o) => !o)}
-            aria-expanded={keyboardPanelOpen}
-            aria-controls="kbd-list"
-            className="flex w-full items-center gap-2 text-sm font-semibold text-foreground"
+            {/* 07 Export + 08 Share */}
+            <div className="grid flex-1 items-stretch gap-4 md:grid-cols-2">
+              <section aria-labelledby="export-heading" className="flex flex-col rounded-2xl p-5 ring-1 ring-border/70">
+                <SectionLabel id="export-heading" n="08" title="Export" Icon={Box} />
+                <h3 className="mt-4 text-xl font-black tracking-tight">
+                  Hold it in your <span className={`${ACCENT} text-[1.15em]`}>hands.</span>
+                </h3>
+                <div className="mt-4 grid gap-2">
+                  <Button onClick={exportSwell} className={`${ACTION_BTN} shadow-md`}>
+                    <Waves className="h-4 w-4 shrink-0" /> Swell Paper SVG
+                  </Button>
+                  <Button onClick={exportColor} variant="secondary" className={`${ACTION_BTN} shadow-sm`}>
+                    <Palette className="h-4 w-4 shrink-0" /> Colour SVG
+                  </Button>
+                  <Button onClick={exportStl} variant="outline" className={`${ACTION_BTN} bg-background/60 ring-1 ring-primary/15`}>
+                    <Box className="h-4 w-4 shrink-0" /> 3D Print (STL)
+                  </Button>
+                </div>
+              </section>
+
+              <section aria-labelledby="share-heading" className="flex flex-col rounded-2xl p-5 ring-1 ring-border/70">
+                <SectionLabel id="share-heading" n="09" title="Share" Icon={Globe} />
+                <h3 className="mt-4 flex flex-wrap items-center gap-2 text-xl font-black tracking-tight">
+                  Let the world <span className={`${ACCENT} text-[1.15em]`}>see it.</span>
+                  <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">New</span>
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  The Public Gallery is here. Send your artwork in for a quick review and approved pieces are featured for creators everywhere to see.
+                </p>
+                <div className="mt-auto grid gap-2 pt-4">
+                  {onPost && (
+                    <Button
+                      onClick={requestPost}
+                      disabled={!hasArtwork}
+                      variant={justPosted ? "secondary" : "default"}
+                      className="h-12 w-full justify-center gap-2 rounded-2xl text-sm font-medium"
+                    >
+                      {justPosted ? <Check className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+                      {justPosted ? "Sent for review!" : "Send to Gallery"}
+                    </Button>
+                  )}
+                  <Button asChild variant="outline" className="h-12 w-full rounded-2xl bg-card/60 text-sm font-medium">
+                    <Link to="/gallery" className="gap-2"><Globe className="h-4 w-4" /> View Gallery</Link>
+                  </Button>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          {/* ───────── RIGHT: sound, guide voice, inspiration ───────── */}
+          <aside
+            aria-label="Sound and inspiration"
+            className="order-3 divide-y divide-border/70 border-t border-border/70 xl:col-start-3 xl:row-span-2 xl:row-start-1 xl:border-l xl:border-t-0"
           >
-            <Keyboard className="h-4 w-4 text-primary" /> Keyboard shortcuts
-            <ChevronRight className={`ml-auto h-4 w-4 text-primary transition-transform ${keyboardPanelOpen ? "rotate-90" : ""}`} />
-          </button>
-          {keyboardPanelOpen && (
-            <ul id="kbd-list" className="mt-3 space-y-1">
-              <li>Arrows — move brush (Shift = ×3)</li>
-              <li>Space / D — toggle drawing</li>
-              <li>S — toggle sound</li>
-              <li>C — clear canvas</li>
-              <li>Q / E — cycle colour</li>
-              <li>[ / ] — thickness</li>
-              <li>, / . — opacity</li>
-              <li>T — cycle texture</li>
-              <li>G — open / close guides</li>
-              <li>Esc — stop active guide</li>
-              <li>X — toggle visual aids</li>
-            </ul>
-          )}
-        </section>
-      </aside>
+            {/* 04 / Sound */}
+            <section aria-labelledby="sound-heading" className="p-5">
+              <SectionLabel id="sound-heading" n="05" title="Sound" Icon={Volume2} />
+              <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight">
+                Give it a <span className={`${ACCENT} text-[1.15em]`}>voice.</span>
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">Every movement can make music.</p>
+
+              <button
+                onClick={toggleSound}
+                aria-pressed={soundOn}
+                className={`mt-4 flex h-12 w-full items-center gap-3 rounded-xl px-3.5 text-sm font-semibold transition-colors ${
+                  soundOn ? "bg-primary text-primary-foreground shadow-md" : "bg-card text-foreground ring-1 ring-border hover:bg-primary/10"
+                }`}
+              >
+                {soundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+                {soundOn ? "Sound on" : "Sound off"}
+                <span className="ml-auto text-xs opacity-70">S</span>
+              </button>
+
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {SOUND_STYLE_ORDER.map((st) => {
+                  const StyleIcon = SOUND_STYLE_ICONS[st];
+                  const active = soundStyle === st;
+                  return (
+                    <button
+                      key={st}
+                      onClick={() => { setSoundStyle(st); say(`${SOUND_STYLE_LABELS[st]} sound.`); }}
+                      aria-pressed={active}
+                      className={`flex h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-2 text-sm font-medium transition-colors ${
+                        active ? "bg-primary/15 ring-1 ring-primary/40" : "ring-1 ring-border/70 hover:bg-primary/10"
+                      }`}
+                    >
+                      <StyleIcon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{SOUND_STYLE_LABELS[st]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 flex items-center gap-2.5">
+                <Button onClick={() => setSoundVolume((v) => Math.max(0, +(v - 0.1).toFixed(2)))} variant="outline" size="icon" className={STEP_BTN} aria-label="Decrease canvas sound volume">
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={soundVolume}
+                  onChange={(e) => setSoundVolume(Number(e.target.value))}
+                  aria-label="Canvas sound volume"
+                  className={SLIDER_CLASS}
+                  style={{ background: `linear-gradient(to right, oklch(0.58 0.15 20) ${soundVolume * 100}%, oklch(0.58 0.15 20 / 0.18) ${soundVolume * 100}%)` }}
+                />
+                <Button onClick={() => setSoundVolume((v) => Math.min(1, +(v + 0.1).toFixed(2)))} variant="outline" size="icon" className={STEP_BTN} aria-label="Increase canvas sound volume">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="mt-2 text-right text-sm text-muted-foreground">{Math.round(soundVolume * 100)}%</p>
+            </section>
+
+            {/* 05 / Guide voice */}
+            <section aria-labelledby="voice-heading" className="p-5">
+              <SectionLabel id="voice-heading" n="06" title="Guide voice" Icon={Mic} />
+              <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight">
+                Pick your <span className={`${ACCENT} text-[1.15em]`}>guide.</span>
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">Who talks you through the canvas.</p>
+              <div role="group" aria-label="Guide voice" className="mt-4 grid grid-cols-2 gap-2">
+                {VOICE_PERSONA_ORDER.map((v) => {
+                  const active = voicePersona === v;
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => chooseVoicePersona(v)}
+                      aria-pressed={active}
+                      className={`flex h-11 items-center justify-center rounded-xl px-3 text-sm font-medium transition-colors ${
+                        active ? ROW_ON : "ring-1 ring-border/70 text-foreground hover:bg-primary/10"
+                      }`}
+                    >
+                      {VOICE_PERSONA_LABELS[v]}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={toggleVoiceOn}
+                aria-pressed={voiceOn}
+                aria-label={voiceOn ? "Turn narration voice off" : "Turn narration voice on"}
+                className={`mt-2 flex h-11 w-full items-center gap-3 rounded-xl px-3.5 text-sm font-medium transition-colors ${
+                  voiceOn ? "bg-primary/15 ring-1 ring-primary/40" : "bg-muted text-muted-foreground ring-1 ring-border"
+                }`}
+              >
+                {voiceOn ? <Mic className="h-4 w-4 text-primary" /> : <MicOff className="h-4 w-4" />}
+                {voiceOn ? "Narration on" : "Narration off"}
+              </button>
+            </section>
+
+            {/* 06 / Inspiration */}
+            <section aria-labelledby="guides-heading" className="p-5">
+              <SectionLabel id="guides-heading" n="07" title="Inspiration" Icon={Map} />
+              <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight">
+                Need a place <span className={`${ACCENT} text-[1.15em]`}>to start?</span>
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Try following a shape, or just let your hand wander.
+              </p>
+              <button
+                type="button"
+                onClick={() => setGuidesPanelOpen((o) => !o)}
+                aria-expanded={guidesPanelOpen}
+                aria-controls="guide-list"
+                className="mt-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-primary"
+              >
+                {guidesPanelOpen ? "Hide shapes" : "Show shapes"} <span className="font-medium normal-case tracking-normal text-muted-foreground">· G</span>
+                <ChevronRight className={`h-4 w-4 transition-transform ${guidesPanelOpen ? "rotate-90" : ""}`} />
+              </button>
+
+              {guideKey && (
+                <p className="mt-3 rounded-xl bg-primary/10 px-3 py-2 text-xs text-primary ring-1 ring-primary/20">
+                  Active: <strong>{SHAPE_GUIDES[guideKey].name}</strong>. Move near the glowing path to hear the guide tone.
+                </p>
+              )}
+
+              {guidesPanelOpen && (
+                <div id="guide-list" className="mt-3 grid grid-cols-2 gap-2">
+                  {Object.entries(SHAPE_GUIDES).map(([key, guide]) => {
+                    const { Icon, color: gColor } = GUIDE_ICONS[key];
+                    const active = guideKey === key;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => (active ? stopGuide() : startGuide(key))}
+                        aria-pressed={active}
+                        title={guide.description}
+                        className={`flex min-h-12 min-w-0 items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors ${
+                          active ? "bg-primary/15 text-foreground ring-1 ring-primary/50" : "ring-1 ring-border/70 hover:bg-primary/10"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" style={{ color: gColor }} />
+                        <span className="min-w-0 leading-tight">
+                          {guide.name}
+                          {active && <span className="block text-[10px] font-normal text-muted-foreground">Active. Press to stop</span>}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </aside>
+        </div>
+
+      </div>
 
       <div aria-live="assertive" role="status" className="sr-only">{announce}</div>
 
