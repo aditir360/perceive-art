@@ -44,6 +44,14 @@ export function SiteHeader() {
               Studio
             </Link>
             <Link
+              to="/blind"
+              className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+              activeProps={{ className: "!bg-primary/12 font-semibold !text-foreground" }}
+              activeOptions={{ exact: true }}
+            >
+              Voice Studio
+            </Link>
+            <Link
               to="/gallery"
               className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
               activeProps={{ className: "!bg-primary/12 font-semibold !text-foreground" }}
@@ -99,6 +107,14 @@ export function SiteHeader() {
             activeOptions={{ exact: true }}
           >
             Studio
+          </Link>
+          <Link
+            to="/blind"
+            className="shrink-0 rounded-full bg-background/60 px-3.5 py-1.5 text-sm font-medium text-muted-foreground ring-1 ring-primary/10 transition-colors hover:bg-primary/10 hover:text-foreground"
+            activeProps={{ className: "!bg-primary/12 font-semibold !text-foreground" }}
+            activeOptions={{ exact: true }}
+          >
+            Voice Studio
           </Link>
           <Link
             to="/gallery"
