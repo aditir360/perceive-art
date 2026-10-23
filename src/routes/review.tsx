@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Check, Lock, RefreshCw, X } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/review")({
   component: ReviewPage,
@@ -127,6 +128,7 @@ function ReviewPage() {
   if (!loggedIn) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background px-6">
+        <ThemeToggle className="absolute right-4 top-4" />
         <div className="w-full max-w-sm rounded-3xl bg-card p-8 shadow-lg ring-1 ring-primary/15">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Lock className="h-6 w-6" />
@@ -185,16 +187,19 @@ function ReviewPage() {
             </p>
           </div>
 
-          <Button
-            onClick={() => void loadPending()}
-            variant="outline"
-            size="sm"
-            disabled={loading}
-            className="gap-2 rounded-full"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Button
+              onClick={() => void loadPending()}
+              variant="outline"
+              size="sm"
+              disabled={loading}
+              className="gap-2 rounded-full"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -225,7 +230,7 @@ function ReviewPage() {
                 className="overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-primary/15"
               >
                 <div
-                  className="aspect-[900/560] w-full bg-white [&_svg]:h-full [&_svg]:w-full"
+                  className="aspect-[900/560] w-full bg-white [&_svg]:h-full [&_svg]:w-full dark:brightness-[0.86]"
                   dangerouslySetInnerHTML={{
                     __html: art.svg,
                   }}
@@ -272,4 +277,3 @@ function ReviewPage() {
     </main>
   );
 }
- 
