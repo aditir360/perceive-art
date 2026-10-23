@@ -603,7 +603,7 @@ function Index() {
 
                           {/* Type badge */}
                           <div className="absolute left-4 top-4">
-                            <span className="inline-flex items-center rounded-full border border-white/60 bg-white/75 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-foreground shadow-sm backdrop-blur-md">
+                            <span className="inline-flex items-center rounded-full border border-white/60 bg-white/75 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-foreground shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-black/60">
                               {type}
                             </span>
                           </div>
@@ -611,7 +611,7 @@ function Index() {
                           {/* Video play button */}
                           {type === "Video" && (
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="grid h-14 w-14 place-items-center rounded-full border border-white/70 bg-white/80 text-foreground shadow-xl backdrop-blur-md transition-all duration-300 group-hover/card:scale-110 group-hover/card:bg-white">
+                              <div className="grid h-14 w-14 place-items-center rounded-full border border-white/70 bg-white/80 text-foreground shadow-xl backdrop-blur-md transition-all duration-300 group-hover/card:scale-110 group-hover/card:bg-white dark:border-white/20 dark:bg-black/60 dark:group-hover/card:bg-black/80">
                                 <Play className="ml-0.5 h-5 w-5 fill-current" />
                               </div>
                             </div>
@@ -619,7 +619,7 @@ function Index() {
 
                           {/* Publication arrow */}
                           {type === "Publication" && (
-                            <div className="absolute bottom-4 right-4 grid h-10 w-10 place-items-center rounded-full border border-white/60 bg-white/75 text-foreground shadow-lg backdrop-blur-md transition-transform duration-300 group-hover/card:scale-110">
+                            <div className="absolute bottom-4 right-4 grid h-10 w-10 place-items-center rounded-full border border-white/60 bg-white/75 text-foreground shadow-lg backdrop-blur-md transition-transform duration-300 group-hover/card:scale-110 dark:border-white/15 dark:bg-black/60">
                               <ArrowUpRight className="h-4 w-4" />
                             </div>
                           )}
@@ -679,7 +679,7 @@ function Index() {
               <Rocket className="h-3.5 w-3.5" /> Coming soon
             </span>
 
-            <h2 className="mx-auto mt-5 max-w-xl bg-gradient-to-br from-[oklch(0.42_0.19_10)] to-[oklch(0.32_0.13_340)] bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-4xl">
+            <h2 className="mx-auto mt-5 max-w-xl bg-gradient-to-br from-[oklch(0.42_0.19_10)] to-[oklch(0.32_0.13_340)] bg-clip-text dark:from-[oklch(0.82_0.11_15)] dark:to-[oklch(0.78_0.1_335)] text-3xl font-bold tracking-tight text-transparent sm:text-4xl">
               More features coming soon
             </h2>
 
