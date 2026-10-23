@@ -72,6 +72,7 @@
 }
 
 :root {
+  color-scheme: light;
   --radius: 0.75rem;
   --background: oklch(0.94 0.045 50);
   --foreground: oklch(0.32 0.06 30);
@@ -116,46 +117,84 @@
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --success: oklch(0.48 0.18 140);
-  --success-foreground: oklch(0.984 0.003 247.858);
-  --info: oklch(0.6 0.14 220);
-  --info-foreground: oklch(0.984 0.003 247.858);
-  --warning: oklch(0.7 0.16 95);
-  --warning-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --chart-6: oklch(0.6 0.18 20);
-  --chart-7: oklch(0.55 0.18 300);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  color-scheme: dark;
+
+  /* Warm, low-glare night palette: deep plum-brown surfaces and soft cream
+     text (never pure black or pure white), with the brand rose toned down
+     so it glows gently instead of burning in a dark room. */
+  --background: oklch(0.165 0.02 335);
+  --foreground: oklch(0.9 0.02 55);
+  --card: oklch(0.205 0.025 335);
+  --card-foreground: oklch(0.9 0.02 55);
+  --popover: oklch(0.225 0.028 335);
+  --popover-foreground: oklch(0.9 0.02 55);
+  --primary: oklch(0.74 0.115 15);
+  --primary-foreground: oklch(0.17 0.03 20);
+  --secondary: oklch(0.3 0.04 340);
+  --secondary-foreground: oklch(0.9 0.02 55);
+  --muted: oklch(0.25 0.025 335);
+  --muted-foreground: oklch(0.7 0.03 45);
+  --accent: oklch(0.33 0.05 325);
+  --accent-foreground: oklch(0.86 0.06 335);
+  --success: oklch(0.62 0.15 140);
+  --success-foreground: oklch(0.15 0.03 140);
+  --info: oklch(0.7 0.12 225);
+  --info-foreground: oklch(0.15 0.03 225);
+  --warning: oklch(0.78 0.13 90);
+  --warning-foreground: oklch(0.15 0.03 90);
+  --destructive: oklch(0.7 0.16 25);
+  --destructive-foreground: oklch(0.16 0.03 25);
+  --border: oklch(0.34 0.03 335);
+  --input: oklch(0.34 0.03 335);
+  --ring: oklch(0.74 0.115 15);
+  --chart-1: oklch(0.72 0.14 40);
+  --chart-2: oklch(0.7 0.11 185);
+  --chart-3: oklch(0.7 0.08 227);
+  --chart-4: oklch(0.8 0.14 85);
+  --chart-5: oklch(0.75 0.14 70);
+  --chart-6: oklch(0.72 0.14 15);
+  --chart-7: oklch(0.68 0.14 300);
+  --sidebar: oklch(0.205 0.025 335);
+  --sidebar-foreground: oklch(0.9 0.02 55);
+  --sidebar-primary: oklch(0.74 0.115 15);
+  --sidebar-primary-foreground: oklch(0.17 0.03 20);
+  --sidebar-accent: oklch(0.3 0.04 340);
+  --sidebar-accent-foreground: oklch(0.9 0.02 55);
+  --sidebar-border: oklch(0.34 0.03 335);
+  --sidebar-ring: oklch(0.74 0.115 15);
+}
+
+/* ── Dark-mode softening for light-only decoration ───────────────────────
+   Many components use translucent white hairlines (ring-white/50 etc.) and
+   big blurred colour glows that look right on peach but glare on a dark
+   page. Overriding them here keeps light mode byte-for-byte unchanged and
+   fixes every page at once. */
+.dark .ring-white\/40,
+.dark .ring-white\/50,
+.dark .ring-white\/60 {
+  --tw-ring-color: oklch(1 0 0 / 0.08);
+}
+.dark .border-white\/10,
+.dark .border-white\/40,
+.dark .border-white\/60 {
+  border-color: oklch(1 0 0 / 0.1);
+}
+.dark .divide-white\/40 > :not(:last-child) {
+  border-color: oklch(1 0 0 / 0.08);
+}
+.dark .blur-3xl {
+  opacity: 0.45;
+}
+.dark img:not([data-keep-bright]) {
+  filter: brightness(0.92);
+}
+
+/* Smooth, but not on first paint and not for reduced-motion users. */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-ready,
+  html.theme-ready body {
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
 }
 
 @layer base {
