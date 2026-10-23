@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const scrollLinks = [
   { label: "Mission", hash: "mission" },
@@ -69,20 +70,24 @@ export function SiteHeader() {
             </Link>
           </nav>
 
-          {/* Desktop CTA */}
-          <Button asChild className="hidden rounded-full shadow-md sm:inline-flex">
-            <Link to="/studio" className="group gap-2">
-              Open studio
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle />
 
-          {/* Mobile CTA (visible next to logo, since mobile nav row is a separate scroller below) */}
-          <Button asChild size="sm" className="rounded-full shadow-sm sm:hidden">
-            <Link to="/studio" className="gap-1.5">
-              Studio <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </Button>
+            {/* Desktop CTA */}
+            <Button asChild className="hidden rounded-full shadow-md sm:inline-flex">
+              <Link to="/studio" className="group gap-2">
+                Open studio
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </Button>
+
+            {/* Mobile CTA (visible next to logo, since mobile nav row is a separate scroller below) */}
+            <Button asChild size="sm" className="rounded-full shadow-sm sm:hidden">
+              <Link to="/studio" className="gap-1.5">
+                Studio <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Mobile navigation — always visible, horizontally scrollable */}
