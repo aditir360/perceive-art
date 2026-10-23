@@ -90,7 +90,7 @@ export function SiteHeader() {
           </div>
         </div>
 
-        {/* Mobile navigation — always visible, horizontally scrollable */}
+        {/* Mobile navigation — always visible, horizontally scrollable :D */}
         <nav
           aria-label="Primary mobile"
           className="mt-3 flex gap-2 overflow-x-auto pb-0.5 sm:hidden"
