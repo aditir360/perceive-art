@@ -127,9 +127,12 @@ function ReviewPage() {
 
   if (!loggedIn) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-6">
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-6">
+        <div aria-hidden className="pointer-events-none absolute -left-32 -top-32 h-80 w-80 rounded-full bg-primary/20 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-32 -right-32 h-80 w-80 rounded-full bg-accent/25 blur-3xl" />
         <ThemeToggle className="absolute right-4 top-4" />
-        <div className="w-full max-w-sm rounded-3xl bg-card p-8 shadow-lg ring-1 ring-primary/15">
+        <div className="relative w-full max-w-sm rounded-[2rem] bg-gradient-to-br from-primary/25 via-card/70 to-accent/20 p-1.5 shadow-2xl shadow-primary/20 ring-1 ring-white/40 backdrop-blur-xl">
+          <div className="rounded-[1.6rem] bg-card/60 p-8 backdrop-blur-md">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Lock className="h-6 w-6" />
           </div>
@@ -167,6 +170,7 @@ function ReviewPage() {
               {message}
             </p>
           )}
+          </div>
         </div>
       </main>
     );
@@ -174,7 +178,7 @@ function ReviewPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <header className="border-b border-primary/10 bg-card/60">
+      <header className="border-b border-white/20 bg-gradient-to-r from-primary/15 via-card/70 to-accent/15 shadow-lg shadow-primary/5 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-5">
           <div>
             <h1 className="text-2xl font-bold">
@@ -211,7 +215,8 @@ function ReviewPage() {
         )}
 
         {artworks.length === 0 ? (
-          <div className="rounded-3xl bg-card p-12 text-center shadow-sm ring-1 ring-primary/10">
+          <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary/25 via-card/70 to-accent/20 p-1.5 shadow-2xl shadow-primary/15 ring-1 ring-white/40 backdrop-blur-xl">
+            <div className="rounded-[1.6rem] bg-card/50 p-12 text-center backdrop-blur-md">
             <Check className="mx-auto h-10 w-10 text-primary" />
 
             <h2 className="mt-4 text-xl font-semibold">
@@ -221,13 +226,14 @@ function ReviewPage() {
             <p className="mt-2 text-sm text-muted-foreground">
               New Studio submissions will appear here.
             </p>
+            </div>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {artworks.map((art) => (
               <article
                 key={art.id}
-                className="overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-primary/15"
+                className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-card/75 to-accent/15 p-1 shadow-xl shadow-primary/10 ring-1 ring-white/40 backdrop-blur-xl transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20"
               >
                 <div
                   className="aspect-[900/560] w-full bg-white [&_svg]:h-full [&_svg]:w-full dark:brightness-[0.86]"
@@ -236,7 +242,7 @@ function ReviewPage() {
                   }}
                 />
 
-                <div className="p-4">
+                <div className="rounded-[1.25rem] bg-card/50 p-4 backdrop-blur-md">
                   <p className="mb-4 text-xs text-muted-foreground">
                     Submitted{" "}
                     {new Date(
