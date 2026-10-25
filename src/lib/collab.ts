@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
    No database tables are needed: a "room" is just a named channel.
 
    • Private rooms: a 6-character code names the channel. Anyone who has the
-     code can join, up to PRIVATE_CAP people.
+     code can join, up to PRIVATE_CAP people. :D
    • Public rooms: public-1, public-2, … The first room with space is joined,
      so strangers are grouped automatically, up to PUBLIC_CAP people each.
 
