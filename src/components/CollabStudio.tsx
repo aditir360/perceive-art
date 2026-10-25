@@ -637,15 +637,21 @@ function Room({
   const peerByKey = new Map(peers.map((p) => [p.key, p]));
 
   return (
-    <section aria-label="Collaborative canvas">
+    <section aria-label="Collaborative canvas" className="relative isolate">
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-primary/15 blur-3xl" />
+        <div className="absolute -right-40 top-1/3 h-96 w-96 rounded-full bg-accent/20 blur-3xl" />
+        <div className="absolute bottom-0 left-1/2 h-80 w-[42rem] -translate-x-1/2 rounded-full bg-secondary/20 blur-3xl" />
+      </div>
       {/* Room header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+            <span aria-hidden className="h-px w-8 bg-primary/60" />
             {isPrivate ? <Lock className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
             {isPrivate ? "Private room" : "Public room"}
           </div>
-          <h1 className="mt-2 text-3xl font-black tracking-[-0.03em] text-foreground sm:text-4xl">
+          <h1 className="mt-4 text-5xl font-black tracking-[-0.04em] text-foreground sm:text-7xl">
             {isPrivate ? (
               <>
                 Room <span className="font-mono tracking-[0.18em]">{code}</span>
@@ -658,13 +664,13 @@ function Room({
             )}
           </h1>
         </div>
-        <Button onClick={onLeave} variant="outline" className="gap-2 rounded-full">
+        <Button onClick={onLeave} variant="outline" className="gap-2 rounded-full shadow-sm backdrop-blur-md">
           <LogOut className="h-4 w-4" /> Leave room
         </Button>
       </div>
 
       {isPrivate && (
-        <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl bg-secondary/40 px-4 py-3 ring-1 ring-border/70">
+        <div className="relative mb-6 flex flex-wrap items-center gap-3 overflow-hidden rounded-2xl border border-white/30 bg-gradient-to-br from-primary/15 via-card/70 to-accent/15 px-5 py-4 shadow-xl shadow-primary/10 ring-1 ring-white/40 backdrop-blur-xl">
           <p className="min-w-[14rem] flex-1 text-sm text-foreground">
             Share this code with up to {PRIVATE_CAP - 1} friends. Anyone who has it can join.
           </p>
@@ -677,7 +683,7 @@ function Room({
         </div>
       )}
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* Canvas */}
         <div className="min-w-0">
           <div
@@ -686,12 +692,12 @@ function Room({
             aria-label="Shared canvas. Use the arrow keys to move, Space to put the pen down or lift it, Shift for bigger steps, Control Z to undo, M to toggle sound."
             onKeyDown={onKeyDown}
             onBlur={onBlur}
-            className="rounded-3xl bg-card p-3 shadow-lg ring-1 ring-primary/15 outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
+            className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-br from-primary/20 via-card/75 to-accent/20 p-1.5 shadow-2xl shadow-primary/20 ring-1 ring-white/40 backdrop-blur-xl outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-2"
           >
             <svg
               ref={svgRef}
               viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
-              className="w-full touch-none select-none rounded-2xl bg-white shadow-inner dark:brightness-[0.92]"
+              className="w-full touch-none select-none rounded-[1.85rem] border border-white/60 bg-white shadow-inner dark:brightness-[0.92]"
               style={{ cursor: "crosshair" }}
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
@@ -745,7 +751,7 @@ function Room({
             </svg>
           </div>
 
-          <p className="mt-3 text-xs text-muted-foreground">
+          <p className="mt-4 px-2 text-sm leading-relaxed text-muted-foreground">
             Draw with a mouse, finger, or pen. Or focus the canvas and use the arrow keys with Space to draw by keyboard —
             moving left and right pans the tone, and up and down changes its pitch.
           </p>
@@ -754,7 +760,7 @@ function Room({
         {/* Side panel */}
         <div className="space-y-4">
           {/* People */}
-          <div className="rounded-3xl bg-card p-5 shadow-sm ring-1 ring-primary/15">
+          <div className="rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-card/90 via-card/75 to-primary/10 p-5 shadow-xl shadow-primary/10 ring-1 ring-primary/15 backdrop-blur-xl">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <Users className="h-4 w-4 text-primary" /> In this room
               <span className="ml-auto rounded-full bg-background/60 px-2.5 py-0.5 text-xs font-normal text-muted-foreground">
@@ -773,7 +779,7 @@ function Room({
           </div>
 
           {/* Tools */}
-          <div className="rounded-3xl bg-card p-5 shadow-sm ring-1 ring-primary/15">
+          <div className="rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-card/90 via-card/75 to-primary/10 p-5 shadow-xl shadow-primary/10 ring-1 ring-primary/15 backdrop-blur-xl">
             <h2 className="text-sm font-semibold text-foreground">Tools</h2>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <Button onClick={() => setTool("draw")} variant={tool === "draw" ? "default" : "outline"} size="sm" className="gap-2 rounded-full"><Pencil className="h-4 w-4" /> Draw</Button>
@@ -843,7 +849,7 @@ function Room({
           </div>
 
           {/* Keep */}
-          <div className="rounded-3xl bg-card p-5 shadow-sm ring-1 ring-primary/15">
+          <div className="rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-card/90 via-card/75 to-primary/10 p-5 shadow-xl shadow-primary/10 ring-1 ring-primary/15 backdrop-blur-xl">
             <h2 className="text-sm font-semibold text-foreground">Keep your art</h2>
             <div className="mt-3 grid gap-2">
               <Button onClick={download} variant="outline" size="sm" className="gap-2 rounded-full">
