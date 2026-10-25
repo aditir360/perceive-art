@@ -31,7 +31,7 @@ const cards = [
   {
     label: "Draw with intention",
     icon: Hand,
-    header: "from-accent to-accent/80",
+    header: "from-accent to-accent/80 dark:from-[oklch(0.8_0.08_335)] dark:to-[oklch(0.74_0.08_335)]",
     rotate: "rotate-2",
     translate: "sm:-translate-y-2",
     content: (
@@ -56,7 +56,7 @@ const cards = [
   {
     label: "Hold your art",
     icon: Printer,
-    header: "from-secondary to-secondary/80",
+    header: "from-secondary to-secondary/80 dark:from-[oklch(0.82_0.06_60)] dark:to-[oklch(0.76_0.07_55)]",
     rotate: "-rotate-2",
     translate: "sm:translate-y-6",
     content: (
@@ -75,7 +75,7 @@ const cards = [
   {
     label: "Made together",
     icon: Waves,
-    header: "from-primary/90 to-accent/90",
+    header: "from-primary/90 to-accent/90 dark:to-[oklch(0.78_0.08_335)]",
     rotate: "rotate-1",
     translate: "sm:-translate-y-4",
     content: (
