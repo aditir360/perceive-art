@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { CollabStudio } from "@/components/CollabStudio";
 
 export const Route = createFileRoute("/collab")({
-  // /collab?code=ABC123 opens straight into that private room (invite links).
+  // /collab?code=ABC123 opens straight into that private room (invite links) :D.
   validateSearch: (search: Record<string, unknown>): { code?: string } => ({
     code: typeof search.code === "string" ? search.code : undefined,
   }),
