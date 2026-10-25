@@ -31,6 +31,7 @@ export type CStroke = {
   color: string;
   width: number;
   points: Pt[];
+  fillPath?: string;
 };
 export type Peer = {
   key: string;
@@ -245,8 +246,13 @@ export function useCollabRoom(req: RoomRequest | null) {
       ch.on("presence", { event: "sync" }, handleSync)
         .on("broadcast", { event: "stroke" }, ({ payload }) => {
           if (!isCurrent() || !admittedRef.current) return;
-          const p = payload as { id: string; owner: string; color: string; width: number; pts: Pt[] };
-          if (!p?.id || !Array.isArray(p.pts)) return;
+          const p = payload as { id: string; owner: string; color: string; width: number; pts?: Pt[]; fillPath?: string };
+          if (!p?.id || (!Array.isArray(p.pts) && !p.fillPath)) return;
+          if (p.fillPath) {
+            strokesRef.current.set(p.id, { id: p.id, owner: p.owner, color: p.color, width: 0, points: [], fillPath: p.fillPath });
+            schedule();
+            return;
+          }
           let s = strokesRef.current.get(p.id);
           if (!s) {
             s = { id: p.id, owner: p.owner, color: p.color, width: p.width, points: [] };
@@ -402,6 +408,18 @@ export function useCollabRoom(req: RoomRequest | null) {
     localRef.current = null;
   }, [flushLocal]);
 
+  const addFill = useCallback((color: string, fillPath: string) => {
+    if (!admittedRef.current || !fillPath) return;
+    if (localRef.current?.timer) clearInterval(localRef.current.timer);
+    localRef.current = null;
+    counterRef.current += 1;
+    const id = `${me.key.slice(0, 8)}-${counterRef.current}`;
+    const fill = { id, owner: me.key, color, width: 0, points: [] as Pt[], fillPath };
+    strokesRef.current.set(id, fill);
+    send("stroke", { id, owner: me.key, color, width: 0, pts: [], fillPath });
+    schedule();
+  }, [me.key, schedule, send]);
+
   const moveCursor = useCallback(
     (pt: Pt) => {
       if (localRef.current) return; // while drawing, stroke messages carry the cursor
@@ -450,6 +468,7 @@ export function useCollabRoom(req: RoomRequest | null) {
     notice,
     begin,
     extend,
+    addFill,
     end,
     moveCursor,
     undoMine,
