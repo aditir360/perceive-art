@@ -1850,13 +1850,13 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-xl bg-[oklch(0.98_0.02_15)] shadow-inner ring-1 ring-border">
+            <div className="relative overflow-hidden rounded-xl bg-[var(--canvas-paper)] [--canvas-paper:oklch(0.975_0.025_15)] [--canvas-grid:oklch(0.88_0.05_20)] dark:[--canvas-paper:oklch(0.25_0.025_15)] dark:[--canvas-grid:oklch(0.38_0.035_20)] shadow-inner ring-1 ring-border">
           <svg
             role="img"
             aria-label="Sonic tactile drawing canvas. Use arrow keys to move, space to toggle drawing."
             tabIndex={0}
             viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-            className={`w-full touch-none rounded-2xl bg-[oklch(0.98_0.02_15)] ${
+            className={`w-full touch-none rounded-2xl bg-[var(--canvas-paper)] ${
               visualAids
                 ? "ring-4 ring-primary/60 focus-visible:ring-4 focus-visible:ring-primary"
                 : "ring-2 ring-primary/40"
@@ -1873,7 +1873,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 for tracing/drawing. A warm rose tint on the lines instead of
                 cool grey is the one small upgrade here. */}
             <pattern id="grid" width={GRID} height={GRID} patternUnits="userSpaceOnUse">
-              <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="oklch(0.88 0.05 20)" strokeWidth="1" />
+              <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="var(--canvas-grid)" strokeWidth="1" />
             </pattern>
             {/* Glow filter for guide path */}
             <filter id="glow">
@@ -1906,7 +1906,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             </filter>
           </defs>
 
-          <rect width="100%" height="100%" fill="oklch(0.975 0.025 15)" />
+          <rect width="100%" height="100%" fill="var(--canvas-paper)" />
           <rect width="100%" height="100%" fill="url(#grid)" />
           {fills.map((f, i) => <path key={`fill-${i}`} d={f.path} fill={f.color} />)}
 
