@@ -664,207 +664,165 @@ function Room({
             )}
           </h1>
         </div>
-        <Button onClick={onLeave} variant="outline" className="gap-2 rounded-full shadow-sm backdrop-blur-md">
-          <LogOut className="h-4 w-4" /> Leave room
-        </Button>
       </div>
 
-      {isPrivate && (
-        <div className="relative mb-6 flex flex-wrap items-center gap-3 overflow-hidden rounded-2xl border border-white/30 bg-gradient-to-br from-primary/15 via-card/70 to-accent/15 px-5 py-4 shadow-xl shadow-primary/10 ring-1 ring-white/40 backdrop-blur-xl">
-          <p className="min-w-[14rem] flex-1 text-sm text-foreground">
-            Share this code with up to {PRIVATE_CAP - 1} friends. Anyone who has it can join.
-          </p>
-          <Button onClick={() => void copy("code")} variant="outline" size="sm" className="gap-2 rounded-full">
-            {copied === "code" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} Copy code
-          </Button>
-          <Button onClick={() => void copy("link")} variant="outline" size="sm" className="gap-2 rounded-full">
-            {copied === "link" ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />} Copy invite link
-          </Button>
-        </div>
-      )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-        {/* Canvas */}
-        <div className="min-w-0">
-          <div
-            tabIndex={0}
-            role="group"
-            aria-label="Shared canvas. Use the arrow keys to move, Space to put the pen down or lift it, Shift for bigger steps, Control Z to undo, M to toggle sound."
-            onKeyDown={onKeyDown}
-            onBlur={onBlur}
-            className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-br from-primary/20 via-card/75 to-accent/20 p-1.5 shadow-2xl shadow-primary/20 ring-1 ring-white/40 backdrop-blur-xl outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-2"
+
+      <div className="overflow-hidden rounded-[2rem] bg-card/70 shadow-2xl shadow-primary/15 ring-1 ring-white/60 backdrop-blur-xl">
+        <div className="grid xl:grid-cols-[264px_minmax(0,1fr)_316px] xl:grid-rows-[auto_1fr]">
+          {/* LEFT: participants, tools, and color — mirrors the regular Studio's left rail */}
+          <aside
+            aria-label="Room members and drawing tools"
+            className="order-2 divide-y divide-border/70 border-t border-border/70 xl:col-start-1 xl:row-span-2 xl:row-start-1 xl:border-r xl:border-t-0"
           >
-            <svg
-              ref={svgRef}
-              viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
-              className="w-full touch-none select-none rounded-[1.85rem] border border-white/60 bg-white shadow-inner dark:brightness-[0.92]"
-              style={{ cursor: "crosshair" }}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={endPointer}
-              onPointerCancel={endPointer}
-              role="img"
-              aria-label={`Canvas with ${strokes.length} ${strokes.length === 1 ? "line" : "lines"} from ${peers.length} ${peers.length === 1 ? "person" : "people"}.`}
-            >
-              <rect width={CANVAS_W} height={CANVAS_H} fill="#ffffff" />
-              {strokes.map((s) => s.fillPath ? (
-                <path key={s.id} d={s.fillPath} fill={s.color} />
-              ) : (
-                <polyline key={s.id} points={s.points.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke={s.color} strokeWidth={s.width} strokeLinecap="round" strokeLinejoin="round" />
-              ))}
+            <section aria-labelledby="people-heading" className="p-5">
+              <h2 id="people-heading" className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-primary">
+                <Users className="h-4 w-4" /> In this room
+                <span className="ml-auto rounded-full bg-background/60 px-2.5 py-0.5 text-xs font-normal tracking-normal text-muted-foreground">{peers.length}/{cap}</span>
+              </h2>
+              <ul className="mt-4 space-y-2.5">
+                {peers.map((p) => (
+                  <li key={p.key} className="flex items-center gap-2.5 text-sm text-foreground">
+                    <span aria-hidden className="h-3 w-3 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: p.color }} />
+                    <span className="truncate">{p.name}</span>
+                    {p.key === me.key && <span className="text-xs text-muted-foreground">(you)</span>}
+                  </li>
+                ))}
+              </ul>
+            </section>
 
-              {/* Other people's cursors */}
-              {Object.entries(cursors).map(([key, c]) => {
-                const peer = peerByKey.get(key);
-                if (!peer || key === me.key) return null;
-                const flip = c.x > CANVAS_W - 130;
-                return (
-                  <g key={key} transform={`translate(${c.x} ${c.y})`} pointerEvents="none">
-                    <circle r={7} fill={peer.color} stroke="#ffffff" strokeWidth={2} />
-                    <text
-                      x={flip ? -12 : 12}
-                      y={-10}
-                      textAnchor={flip ? "end" : "start"}
-                      fontSize={15}
-                      fontWeight={700}
-                      fill={peer.color}
-                      stroke="#ffffff"
-                      strokeWidth={4}
-                      paintOrder="stroke"
-                    >
-                      {peer.name}
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* Your pen */}
-              <circle
-                cx={pos.x}
-                cy={pos.y}
-                r={penDown ? 10 : 8}
-                fill={color}
-                stroke="#111111"
-                strokeWidth={2}
-                pointerEvents="none"
-              />
-            </svg>
-          </div>
-
-          <p className="mt-4 px-2 text-sm leading-relaxed text-muted-foreground">
-            Draw with a mouse, finger, or pen. Or focus the canvas and use the arrow keys with Space to draw by keyboard —
-            moving left and right pans the tone, and up and down changes its pitch.
-          </p>
-        </div>
-
-        {/* Side panel */}
-        <div className="space-y-4">
-          {/* People */}
-          <div className="rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-card/90 via-card/75 to-primary/10 p-5 shadow-xl shadow-primary/10 ring-1 ring-primary/15 backdrop-blur-xl">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Users className="h-4 w-4 text-primary" /> In this room
-              <span className="ml-auto rounded-full bg-background/60 px-2.5 py-0.5 text-xs font-normal text-muted-foreground">
-                {peers.length} of {cap}
-              </span>
-            </h2>
-            <ul className="mt-3 space-y-2">
-              {peers.map((p) => (
-                <li key={p.key} className="flex items-center gap-2.5 text-sm text-foreground">
-                  <span aria-hidden className="h-3 w-3 shrink-0 rounded-full" style={{ background: p.color }} />
-                  <span className="truncate">{p.name}</span>
-                  {p.key === me.key && <span className="text-xs text-muted-foreground">(you)</span>}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Tools */}
-          <div className="rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-card/90 via-card/75 to-primary/10 p-5 shadow-xl shadow-primary/10 ring-1 ring-primary/15 backdrop-blur-xl">
-            <h2 className="text-sm font-semibold text-foreground">Tools</h2>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <Button onClick={() => setTool("draw")} variant={tool === "draw" ? "default" : "outline"} size="sm" className="gap-2 rounded-full"><Pencil className="h-4 w-4" /> Draw</Button>
-              <Button onClick={() => setTool("fill")} variant={tool === "fill" ? "default" : "outline"} size="sm" className="gap-2 rounded-full"><PaintBucket className="h-4 w-4" /> Fill</Button>
-            </div>
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Color</h2>
-            <div className="mt-3 grid grid-cols-6 gap-2" role="group" aria-label="Brush color">
-              {SWATCHES.map((s) => (
-                <button
-                  key={s.value}
-                  type="button"
-                  onClick={() => setColor(s.value)}
-                  aria-label={s.name}
-                  aria-pressed={color === s.value}
-                  className={`h-8 w-8 rounded-full ring-1 ring-border transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                    color === s.value ? "scale-110 ring-2 ring-primary ring-offset-2 ring-offset-card" : ""
-                  }`}
-                  style={{ background: s.value }}
-                />
-              ))}
-            </div>
-
-            <label htmlFor="collab-width" className="mt-5 flex items-center justify-between text-sm font-semibold text-foreground">
-              Brush size <span className="text-xs font-normal text-muted-foreground">{width}px</span>
-            </label>
-            <input
-              id="collab-width"
-              type="range"
-              min={2}
-              max={28}
-              value={width}
-              onChange={(e) => setWidth(Number(e.target.value))}
-              className="mt-2 w-full accent-[var(--primary)]"
-            />
-
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              <Button onClick={doUndo} variant="outline" size="sm" className="gap-1.5 rounded-full">
-                <Undo2 className="h-3.5 w-3.5" /> Undo
-              </Button>
-              <Button
-                onClick={() => {
-                  room.clearMine();
-                  say("Cleared your lines.");
-                }}
-                variant="outline"
-                size="sm"
-                className="gap-1.5 rounded-full"
-              >
-                <Eraser className="h-3.5 w-3.5" /> Clear mine
-              </Button>
-              {isPrivate && (
-                <Button onClick={clearAll} variant="outline" size="sm" className="col-span-2 gap-1.5 rounded-full">
-                  <Trash2 className="h-3.5 w-3.5" /> Clear everyone's
+            <section aria-labelledby="tools-heading" className="p-5">
+              <h2 id="tools-heading" className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">01 / Tools</h2>
+              <div className="mt-4 space-y-2">
+                <Button onClick={() => setTool("draw")} aria-pressed={tool === "draw"} variant={tool === "draw" ? "default" : "outline"} className="h-11 w-full justify-start gap-2 rounded-xl">
+                  <Pencil className="h-4 w-4" /> Draw
                 </Button>
-              )}
-              <Button
-                onClick={() => setSoundOn((v) => !v)}
-                variant="outline"
-                size="sm"
-                aria-pressed={soundOn}
-                className="col-span-2 gap-1.5 rounded-full"
-              >
-                {soundOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-                {soundOn ? "My brush sound: on" : "My brush sound: off"}
-              </Button>
-            </div>
-          </div>
+                <Button onClick={() => setTool("fill")} aria-pressed={tool === "fill"} variant={tool === "fill" ? "default" : "outline"} className="h-11 w-full justify-start gap-2 rounded-xl">
+                  <PaintBucket className="h-4 w-4" /> Fill
+                </Button>
+                <Button onClick={doUndo} variant="outline" className="h-11 w-full justify-start gap-2 rounded-xl">
+                  <Undo2 className="h-4 w-4" /> Undo last line
+                </Button>
+                <Button onClick={() => { room.clearMine(); say("Cleared your lines."); }} variant="outline" className="h-11 w-full justify-start gap-2 rounded-xl">
+                  <Eraser className="h-4 w-4" /> Clear my lines
+                </Button>
+                {isPrivate && (
+                  <Button onClick={clearAll} variant="outline" className="h-11 w-full justify-start gap-2 rounded-xl">
+                    <Trash2 className="h-4 w-4" /> Clear everyone's
+                  </Button>
+                )}
+              </div>
+              <label htmlFor="collab-width" className="mt-5 flex items-center justify-between gap-2 text-sm font-medium text-muted-foreground">
+                Brush size <span className="text-foreground">{width}px</span>
+              </label>
+              <input id="collab-width" type="range" min={2} max={28} value={width} onChange={(e) => setWidth(Number(e.target.value))} className="mt-3 w-full accent-[var(--primary)]" />
+            </section>
 
-          {/* Keep */}
-          <div className="rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-card/90 via-card/75 to-primary/10 p-5 shadow-xl shadow-primary/10 ring-1 ring-primary/15 backdrop-blur-xl">
-            <h2 className="text-sm font-semibold text-foreground">Keep your art</h2>
-            <div className="mt-3 grid gap-2">
-              <Button onClick={download} variant="outline" size="sm" className="gap-2 rounded-full">
-                <Download className="h-4 w-4" /> Save as SVG
-              </Button>
-              <Button onClick={() => void share()} disabled={sharing} size="sm" className="gap-2 rounded-full">
-                <Share2 className="h-4 w-4" /> {sharing ? "Sending…" : "Send to gallery"}
+            <section aria-labelledby="colors-heading" className="p-5">
+              <h2 id="colors-heading" className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">02 / Color</h2>
+              <div className="mt-4 grid grid-cols-6 gap-2.5" role="group" aria-label="Brush color">
+                {SWATCHES.map((s) => (
+                  <button key={s.value} type="button" onClick={() => setColor(s.value)} aria-label={s.name} aria-pressed={color === s.value}
+                    className={`aspect-square w-full rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all hover:scale-110 ${color === s.value ? "scale-105 ring-foreground" : "ring-border/60"}`}
+                    style={{ background: s.value }} />
+                ))}
+              </div>
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{SWATCHES.find((s) => s.value === color)?.name ?? "Selected color"}</p>
+            </section>
+          </aside>
+
+          {/* CENTER: canvas first, with save/share grouped directly below like regular Studio */}
+          <section aria-label="Canvas" className="order-1 min-w-0 p-5 pb-3 xl:col-start-2 xl:row-start-1">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3 text-[11px] font-bold uppercase tracking-[0.18em]">
+                <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-[oklch(0.58_0.13_150)]" />
+                <span className="truncate text-foreground">Shared canvas</span>
+                <span className="hidden font-medium normal-case tracking-normal text-muted-foreground sm:inline">{CANVAS_W} × {CANVAS_H}</span>
+              </div>
+              <Button onClick={() => void copy("link")} variant="outline" size="sm" className="gap-2 rounded-full">
+                {copied === "link" ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />} Invite
               </Button>
             </div>
-            <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-              The gallery gets the whole shared canvas, so check with the room first.{" "}
-              <Link to="/gallery" className="font-medium text-primary underline-offset-2 hover:underline">
-                See the gallery
-              </Link>
+
+            <div tabIndex={0} role="group"
+              aria-label="Shared canvas. Use the arrow keys to move, Space to put the pen down or lift it, Shift for bigger steps, Control Z to undo, M to toggle sound."
+              onKeyDown={onKeyDown} onBlur={onBlur}
+              className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary/20 via-card/75 to-accent/20 p-1.5 shadow-2xl shadow-primary/20 ring-1 ring-white/50 backdrop-blur-xl outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-2">
+              <svg ref={svgRef} viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`} className="w-full touch-none select-none rounded-[1.65rem] border border-white/60 bg-white shadow-inner dark:brightness-[0.92]" style={{ cursor: "crosshair" }}
+                onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endPointer} onPointerCancel={endPointer}
+                role="img" aria-label={`Canvas with ${strokes.length} ${strokes.length === 1 ? "line" : "lines"} from ${peers.length} ${peers.length === 1 ? "person" : "people"}.`}>
+                <rect width={CANVAS_W} height={CANVAS_H} fill="#ffffff" />
+                {strokes.map((s) => s.fillPath ? (
+                  <path key={s.id} d={s.fillPath} fill={s.color} />
+                ) : (
+                  <polyline key={s.id} points={s.points.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke={s.color} strokeWidth={s.width} strokeLinecap="round" strokeLinejoin="round" />
+                ))}
+                {Object.entries(cursors).map(([key, c]) => {
+                  const peer = peerByKey.get(key);
+                  if (!peer || key === me.key) return null;
+                  const flip = c.x > CANVAS_W - 130;
+                  return <g key={key} transform={`translate(${c.x} ${c.y})`} pointerEvents="none">
+                    <circle r={7} fill={peer.color} stroke="#ffffff" strokeWidth={2} />
+                    <text x={flip ? -12 : 12} y={-10} textAnchor={flip ? "end" : "start"} fontSize={15} fontWeight={700} fill={peer.color} stroke="#ffffff" strokeWidth={4} paintOrder="stroke">{peer.name}</text>
+                  </g>;
+                })}
+                <circle cx={pos.x} cy={pos.y} r={penDown ? 10 : 8} fill={color} stroke="#111111" strokeWidth={2} pointerEvents="none" />
+              </svg>
+            </div>
+            <p className="mt-4 px-1 text-sm leading-relaxed text-muted-foreground">
+              Draw with a mouse, finger, or pen. Focus the canvas and use the arrow keys with Space to draw by keyboard. Left and right pans the tone; up and down changes its pitch.
             </p>
+          </section>
+
+          {/* RIGHT: sound settings, matching the regular Studio's right rail */}
+          <aside aria-label="Sound and room options" className="order-3 divide-y divide-border/70 border-t border-border/70 xl:col-start-3 xl:row-span-2 xl:row-start-1 xl:border-l xl:border-t-0">
+            <section aria-labelledby="sound-heading" className="p-5">
+              <h2 id="sound-heading" className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">03 / Sound</h2>
+              <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight">Give it a <span className={`${ACCENT} text-[1.15em]`}>voice.</span></h3>
+              <p className="mt-1 text-sm text-muted-foreground">Your brush can make music as you move.</p>
+              <Button onClick={() => setSoundOn((v) => !v)} aria-pressed={soundOn} variant={soundOn ? "default" : "outline"} className="mt-4 h-12 w-full justify-start gap-3 rounded-xl">
+                {soundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+                {soundOn ? "Sound on" : "Sound off"}
+                <span className="ml-auto text-xs opacity-70">M</span>
+              </Button>
+            </section>
+            <section aria-labelledby="room-heading" className="p-5">
+              <h2 id="room-heading" className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">04 / Room</h2>
+              <h3 className="mt-4 text-xl font-black tracking-tight">Make it <span className={`${ACCENT} text-[1.15em]`}>together.</span></h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Everyone in the room can draw on the same canvas in real time.</p>
+              {isPrivate && <div className="mt-4 grid gap-2">
+                <Button onClick={() => void copy("code")} variant="outline" className="w-full justify-start gap-2 rounded-xl">
+                  {copied === "code" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} Copy room code
+                </Button>
+                <Button onClick={() => void copy("link")} variant="outline" className="w-full justify-start gap-2 rounded-xl">
+                  {copied === "link" ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />} Copy invite link
+                </Button>
+              </div>}
+              <Button onClick={onLeave} variant="outline" className="mt-4 w-full justify-start gap-2 rounded-xl">
+                <LogOut className="h-4 w-4" /> Leave room
+              </Button>
+            </section>
+          </aside>
+
+          {/* BOTTOM: export/share actions stay together beneath the canvas, as in Studio */}
+          <div className="order-4 grid gap-4 border-t border-border/70 p-5 md:grid-cols-2 xl:col-start-2 xl:row-start-2 xl:border-t-0 xl:pt-2">
+            <section aria-labelledby="export-heading" className="flex flex-col rounded-2xl p-5 ring-1 ring-border/70">
+              <h2 id="export-heading" className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">05 / Export</h2>
+              <h3 className="mt-4 text-xl font-black tracking-tight">Keep your <span className={`${ACCENT} text-[1.15em]`}>art.</span></h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Save a copy of the shared canvas to your device.</p>
+              <div className="mt-auto grid gap-2 pt-4">
+                <Button onClick={download} variant="outline" className="h-11 w-full justify-center gap-2 rounded-xl"><Download className="h-4 w-4" /> Save as SVG</Button>
+              </div>
+            </section>
+            <section aria-labelledby="share-heading" className="flex flex-col rounded-2xl p-5 ring-1 ring-border/70">
+              <h2 id="share-heading" className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">06 / Share</h2>
+              <h3 className="mt-4 text-xl font-black tracking-tight">Let the world <span className={`${ACCENT} text-[1.15em]`}>see it.</span></h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Send the shared artwork to the gallery for review. Check with the room first.</p>
+              <div className="mt-auto grid gap-2 pt-4">
+                <Button onClick={() => void share()} disabled={sharing} className="h-11 w-full justify-center gap-2 rounded-xl"><Share2 className="h-4 w-4" /> {sharing ? "Sending…" : "Send to gallery"}</Button>
+                <Button asChild variant="outline" className="h-11 w-full rounded-xl"><Link to="/gallery" className="gap-2"><Globe className="h-4 w-4" /> View Gallery</Link></Button>
+              </div>
+            </section>
           </div>
         </div>
       </div>
