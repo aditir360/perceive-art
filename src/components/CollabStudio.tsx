@@ -21,6 +21,8 @@ import {
   Copy,
   Download,
   Eraser,
+  PaintBucket,
+  Pencil,
   Globe,
   KeyRound,
   Link2,
@@ -57,10 +59,65 @@ const KEY_STEP_BIG = 56;
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
+// Rasterize the current line work at half resolution, flood-fill the connected
+// paper region, and encode the result as compact SVG rectangle subpaths.
+function makeBucketFillPath(
+  strokes: { points: { x: number; y: number }[]; color: string; width: number; opacity?: number; fillPath?: string }[],
+  width: number, height: number, point: { x: number; y: number },
+): string | null {
+  const scale = 2;
+  const w = Math.ceil(width / scale), h = Math.ceil(height / scale);
+  const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true }); if (!ctx) return null;
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  for (const s of strokes) {
+    if (s.fillPath) {
+      ctx.save(); ctx.scale(1 / scale, 1 / scale); ctx.fillStyle = s.color; ctx.fill(new Path2D(s.fillPath)); ctx.restore();
+      continue;
+    }
+    if (s.points.length < 1) continue;
+    ctx.beginPath(); ctx.moveTo(s.points[0].x / scale, s.points[0].y / scale);
+    for (const p of s.points.slice(1)) ctx.lineTo(p.x / scale, p.y / scale);
+    ctx.strokeStyle = s.color; ctx.globalAlpha = s.opacity ?? 1; ctx.lineWidth = Math.max(1, s.width / scale); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  const image = ctx.getImageData(0, 0, w, h), data = image.data;
+  const sx = Math.max(0, Math.min(w - 1, Math.floor(point.x / scale)));
+  const sy = Math.max(0, Math.min(h - 1, Math.floor(point.y / scale)));
+  const start = (sy * w + sx) * 4;
+  const eligible = (i: number) => data[i + 3] > 0 && data[i] > 238 && data[i + 1] > 238 && data[i + 2] > 238;
+  if (!eligible(start)) return null;
+  const seen = new Uint8Array(w * h), filled = new Uint8Array(w * h), stack = [sy * w + sx];
+  seen[sy * w + sx] = 1;
+  while (stack.length) {
+    const idx = stack.pop()!;
+    if (!eligible(idx * 4)) continue;
+    filled[idx] = 1;
+    const x = idx % w, y = Math.floor(idx / w);
+    const neighbors = [x > 0 ? idx - 1 : -1, x + 1 < w ? idx + 1 : -1, y > 0 ? idx - w : -1, y + 1 < h ? idx + w : -1];
+    for (const next of neighbors) if (next >= 0 && !seen[next]) { seen[next] = 1; stack.push(next); }
+  }
+  const runs: string[] = [];
+  for (let y = 0; y < h; y++) {
+    let x = 0;
+    while (x < w) {
+      while (x < w && !filled[y * w + x]) x++;
+      if (x >= w) break;
+      const left = x;
+      while (x < w && filled[y * w + x]) x++;
+      const runWidth = x - left;
+      runs.push(`M${left * scale},${y * scale}h${runWidth * scale}v${scale}h-${runWidth * scale}z`);
+    }
+  }
+  return runs.length ? runs.join("") : null;
+}
+
 function buildSvg(strokes: CStroke[]): string {
   const lines = strokes
-    .filter((s) => s.points.length > 0)
+    .filter((s) => s.points.length > 0 || !!s.fillPath)
     .map((s) => {
+      if (s.fillPath) return `<path d="${s.fillPath}" fill="${s.color}" />`;
       const pts = s.points.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
       return `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="${s.width}" stroke-linecap="round" stroke-linejoin="round" />`;
     })
@@ -399,6 +456,7 @@ function Room({
 
   const [color, setColor] = useState(SWATCHES[1].value);
   const [width, setWidth] = useState(6);
+  const [tool, setTool] = useState<"draw" | "fill">("draw");
   const [soundOn, setSoundOn] = useState(true);
   const [pos, setPos] = useState<Pt>({ x: CANVAS_W / 2, y: CANVAS_H / 2 });
   const [penDown, setPenDown] = useState(false);
@@ -433,9 +491,14 @@ function Room({
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (e.button !== 0 && e.pointerType === "mouse") return;
     e.currentTarget.setPointerCapture(e.pointerId);
-    pointerDrawingRef.current = true;
     const p = toPt(e);
     setPosition(p);
+    if (tool === "fill") {
+      const path = makeBucketFillPath(room.strokes, CANVAS_W, CANVAS_H, p);
+      if (path) room.addFill(colorRef.current, path);
+      return;
+    }
+    pointerDrawingRef.current = true;
     room.begin(colorRef.current, widthRef.current, p);
     tone.play(p, true);
   };
@@ -638,16 +701,10 @@ function Room({
               aria-label={`Canvas with ${strokes.length} ${strokes.length === 1 ? "line" : "lines"} from ${peers.length} ${peers.length === 1 ? "person" : "people"}.`}
             >
               <rect width={CANVAS_W} height={CANVAS_H} fill="#ffffff" />
-              {strokes.map((s) => (
-                <polyline
-                  key={s.id}
-                  points={s.points.map((p) => `${p.x},${p.y}`).join(" ")}
-                  fill="none"
-                  stroke={s.color}
-                  strokeWidth={s.width}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+              {strokes.map((s) => s.fillPath ? (
+                <path key={s.id} d={s.fillPath} fill={s.color} />
+              ) : (
+                <polyline key={s.id} points={s.points.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke={s.color} strokeWidth={s.width} strokeLinecap="round" strokeLinejoin="round" />
               ))}
 
               {/* Other people's cursors */}
@@ -717,7 +774,12 @@ function Room({
 
           {/* Tools */}
           <div className="rounded-3xl bg-card p-5 shadow-sm ring-1 ring-primary/15">
-            <h2 className="text-sm font-semibold text-foreground">Color</h2>
+            <h2 className="text-sm font-semibold text-foreground">Tools</h2>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button onClick={() => setTool("draw")} variant={tool === "draw" ? "default" : "outline"} size="sm" className="gap-2 rounded-full"><Pencil className="h-4 w-4" /> Draw</Button>
+              <Button onClick={() => setTool("fill")} variant={tool === "fill" ? "default" : "outline"} size="sm" className="gap-2 rounded-full"><PaintBucket className="h-4 w-4" /> Fill</Button>
+            </div>
+            <h2 className="mt-5 text-sm font-semibold text-foreground">Color</h2>
             <div className="mt-3 grid grid-cols-6 gap-2" role="group" aria-label="Brush color">
               {SWATCHES.map((s) => (
                 <button
