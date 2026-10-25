@@ -45,6 +45,14 @@ export function SiteHeader() {
               Studio
             </Link>
             <Link
+              to="/collab"
+              className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+              activeProps={{ className: "!bg-primary/12 font-semibold !text-foreground" }}
+              activeOptions={{ exact: true }}
+            >
+              Collab
+            </Link>
+            <Link
               to="/blind"
               className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
               activeProps={{ className: "!bg-primary/12 font-semibold !text-foreground" }}
@@ -90,7 +98,7 @@ export function SiteHeader() {
           </div>
         </div>
 
-        {/* Mobile navigation — always visible, horizontally scrollable :D */}
+        {/* Mobile navigation — always visible, horizontally scrollable */}
         <nav
           aria-label="Primary mobile"
           className="mt-3 flex gap-2 overflow-x-auto pb-0.5 sm:hidden"
@@ -112,6 +120,14 @@ export function SiteHeader() {
             activeOptions={{ exact: true }}
           >
             Studio
+          </Link>
+          <Link
+            to="/collab"
+            className="shrink-0 rounded-full bg-background/60 px-3.5 py-1.5 text-sm font-medium text-muted-foreground ring-1 ring-primary/10 transition-colors hover:bg-primary/10 hover:text-foreground"
+            activeProps={{ className: "!bg-primary/12 font-semibold !text-foreground" }}
+            activeOptions={{ exact: true }}
+          >
+            Collab
           </Link>
           <Link
             to="/blind"
