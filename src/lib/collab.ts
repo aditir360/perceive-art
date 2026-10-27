@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { getDeviceId } from "@/lib/gallery-storage";
 
 /* ──────────────────────────────────────────────────────────────────────────
    Realtime collaboration, built on Supabase Realtime (Broadcast + Presence).
@@ -18,7 +19,7 @@ import { supabase } from "@/lib/supabase";
    ────────────────────────────────────────────────────────────────────────── */
 
 export const PRIVATE_CAP = 5;
-export const PUBLIC_CAP = 8;
+export const PUBLIC_CAP = 5;
 const MAX_PUBLIC_ROOMS = 30;
 
 export const CANVAS_W = 900;
@@ -31,8 +32,14 @@ export type CStroke = {
   color: string;
   width: number;
   points: Pt[];
+  /** Bucket fill: SVG path data of the filled region (points is empty). */
   fillPath?: string;
 };
+
+const MAX_FILL_CHARS = 120_000;
+const FILL_PATH_RE = /^[MhvzZ0-9.,\-\s]+$/;
+const validFill = (d: unknown): d is string =>
+  typeof d === "string" && d.length > 0 && d.length <= MAX_FILL_CHARS && FILL_PATH_RE.test(d);
 export type Peer = {
   key: string;
   name: string;
@@ -43,6 +50,21 @@ export type Peer = {
 export type RoomRequest = { kind: "public" } | { kind: "private"; code: string };
 export type RoomStatus = "idle" | "connecting" | "ready" | "full" | "error";
 export type Cursor = { x: number; y: number; t: number };
+export type ChatMsg = {
+  id: string;
+  key: string;
+  name: string;
+  color: string;
+  text: string;
+  t: number;
+};
+
+export const CHAT_MAX_CHARS = 200;
+const CHAT_HISTORY = 100;
+const CHAT_MIN_GAP_MS = 800;
+// Public rooms block links so strangers can't drop spam or phishing URLs.
+const LINK_RE = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|co|gg|ly|me|xyz|ru|info|app|dev|link|site|online)\b)/i;
+export type ChatResult = "ok" | "empty" | "slow" | "links";
 
 // No 0/O/1/I so codes are easy to read out loud or type from a screenshot.
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -93,6 +115,7 @@ export function useCollabRoom(req: RoomRequest | null) {
   const [cursors, setCursors] = useState<Record<string, Cursor>>({});
   const [notice, setNotice] = useState("");
   const [rev, setRev] = useState(0);
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [attempt, setAttempt] = useState(0);
 
   // Stable identity for this tab.
@@ -116,6 +139,7 @@ export function useCollabRoom(req: RoomRequest | null) {
   const localRef = useRef<{ id: string; queue: Pt[]; timer: ReturnType<typeof setInterval> | null } | null>(null);
   const counterRef = useRef(0);
   const lastCursorSentRef = useRef(0);
+  const lastChatRef = useRef(0);
 
   const schedule = useCallback(() => {
     if (rafRef.current) return;
@@ -151,6 +175,7 @@ export function useCollabRoom(req: RoomRequest | null) {
     setPeers([]);
     setCursors({});
     setNotice("");
+    setMessages([]);
     setStatus("connecting");
 
     const closeChannel = (ch: RealtimeChannel | null) => {
@@ -247,12 +272,14 @@ export function useCollabRoom(req: RoomRequest | null) {
         .on("broadcast", { event: "stroke" }, ({ payload }) => {
           if (!isCurrent() || !admittedRef.current) return;
           const p = payload as { id: string; owner: string; color: string; width: number; pts?: Pt[]; fillPath?: string };
-          if (!p?.id || (!Array.isArray(p.pts) && !p.fillPath)) return;
-          if (p.fillPath) {
+          if (!p?.id) return;
+          if (p.fillPath !== undefined) {
+            if (!validFill(p.fillPath) || typeof p.color !== "string") return;
             strokesRef.current.set(p.id, { id: p.id, owner: p.owner, color: p.color, width: 0, points: [], fillPath: p.fillPath });
             schedule();
             return;
           }
+          if (!Array.isArray(p.pts)) return;
           let s = strokesRef.current.get(p.id);
           if (!s) {
             s = { id: p.id, owner: p.owner, color: p.color, width: p.width, points: [] };
@@ -268,6 +295,19 @@ export function useCollabRoom(req: RoomRequest | null) {
           if (!isCurrent() || !p?.key) return;
           cursorsRef.current[p.key] = { x: p.x, y: p.y, t: Date.now() };
           schedule();
+        })
+        .on("broadcast", { event: "chat" }, ({ payload }) => {
+          if (!isCurrent() || !admittedRef.current) return;
+          const p = payload as { id: string; key: string; text: string };
+          if (typeof p?.text !== "string" || typeof p?.key !== "string") return;
+          // Name and color come from Presence, never from the message, so
+          // nobody can post while pretending to be someone else.
+          const peer = peersRef.current.find((x) => x.key === p.key);
+          if (!peer || p.key === me.key) return;
+          const text = p.text.replace(/\s+/g, " ").trim().slice(0, CHAT_MAX_CHARS);
+          if (!text) return;
+          const msg: ChatMsg = { id: String(p.id ?? newId()), key: peer.key, name: peer.name, color: peer.color, text, t: Date.now() };
+          setMessages((prev) => [...prev.slice(-(CHAT_HISTORY - 1)), msg]);
         })
         .on("broadcast", { event: "undo" }, ({ payload }) => {
           const p = payload as { id: string };
@@ -294,7 +334,7 @@ export function useCollabRoom(req: RoomRequest | null) {
             size = 0;
           };
           for (const s of strokesRef.current.values()) {
-            const len = s.points.length * 14 + 80;
+            const len = s.points.length * 14 + (s.fillPath?.length ?? 0) + 80;
             if (size + len > SYNC_CHUNK_CHARS) flushChunk();
             chunk.push(s);
             size += len;
@@ -306,6 +346,7 @@ export function useCollabRoom(req: RoomRequest | null) {
           if (!isCurrent() || p?.to !== me.key) return;
           gotState = true;
           for (const s of p.strokes ?? []) {
+            if (s.fillPath !== undefined && !validFill(s.fillPath)) continue;
             const have = strokesRef.current.get(s.id);
             if (!have || have.points.length < s.points.length) strokesRef.current.set(s.id, s);
           }
@@ -408,17 +449,18 @@ export function useCollabRoom(req: RoomRequest | null) {
     localRef.current = null;
   }, [flushLocal]);
 
-  const addFill = useCallback((color: string, fillPath: string) => {
-    if (!admittedRef.current || !fillPath) return;
-    if (localRef.current?.timer) clearInterval(localRef.current.timer);
-    localRef.current = null;
-    counterRef.current += 1;
-    const id = `${me.key.slice(0, 8)}-${counterRef.current}`;
-    const fill = { id, owner: me.key, color, width: 0, points: [] as Pt[], fillPath };
-    strokesRef.current.set(id, fill);
-    send("stroke", { id, owner: me.key, color, width: 0, pts: [], fillPath });
-    schedule();
-  }, [me.key, schedule, send]);
+  const addFill = useCallback(
+    (color: string, fillPath: string): boolean => {
+      if (!admittedRef.current || !validFill(fillPath)) return false;
+      counterRef.current += 1;
+      const id = `${me.key.slice(0, 8)}-${counterRef.current}`;
+      strokesRef.current.set(id, { id, owner: me.key, color, width: 0, points: [], fillPath });
+      send("stroke", { id, owner: me.key, color, width: 0, fillPath });
+      schedule();
+      return true;
+    },
+    [me.key, schedule, send],
+  );
 
   const moveCursor = useCallback(
     (pt: Pt) => {
@@ -453,6 +495,25 @@ export function useCollabRoom(req: RoomRequest | null) {
     schedule();
   }, [schedule, send]);
 
+  const sendChat = useCallback(
+    (raw: string, isPublic: boolean): ChatResult => {
+      const text = raw.replace(/\s+/g, " ").trim().slice(0, CHAT_MAX_CHARS);
+      if (!text) return "empty";
+      const now = Date.now();
+      if (now - lastChatRef.current < CHAT_MIN_GAP_MS) return "slow";
+      if (isPublic && LINK_RE.test(text)) return "links";
+      lastChatRef.current = now;
+      const id = newId();
+      send("chat", { id, key: me.key, text });
+      setMessages((prev) => [
+        ...prev.slice(-(CHAT_HISTORY - 1)),
+        { id, key: me.key, name: me.name, color: me.color, text, t: now },
+      ]);
+      return "ok";
+    },
+    [me.color, me.key, me.name, send],
+  );
+
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -466,14 +527,69 @@ export function useCollabRoom(req: RoomRequest | null) {
     cursors,
     strokes,
     notice,
+    messages,
+    sendChat,
     begin,
     extend,
-    addFill,
     end,
+    addFill,
     moveCursor,
     undoMine,
     clearMine,
     clearAll,
     retry,
   };
+}
+
+// ── Reports ───────────────────────────────────────────────────────────────
+
+export const REPORT_REASONS = [
+  { value: "inappropriate_drawing", label: "Inappropriate or offensive drawing" },
+  { value: "harassment", label: "Harassment or bullying" },
+  { value: "inappropriate_chat", label: "Inappropriate or offensive chat" },
+  { value: "spam", label: "Spam" },
+  { value: "other", label: "Something else" },
+] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number]["value"];
+
+const MAX_REPORT_SVG_CHARS = 400_000;
+
+/**
+ * Sends a report to the `collab_reports` table (see the SQL migration). The
+ * report carries only what a reviewer needs: the reported person's lines and
+ * their recent chat, never anyone else's.
+ */
+export async function submitReport(input: {
+  room: string;
+  target: { key: string; name: string };
+  reason: ReportReason;
+  note: string;
+  strokes: CStroke[];
+  chat: ChatMsg[];
+}): Promise<void> {
+  const mine = input.strokes.filter((s) => s.owner === input.target.key && s.points.length > 0);
+  let svg = "";
+  for (let keep = mine.length; keep >= 0; keep = Math.floor(keep / 2)) {
+    const lines = mine
+      .slice(mine.length - keep)
+      .map((s) => `<polyline points="${s.points.map((p) => `${p.x},${p.y}`).join(" ")}" fill="none" stroke="${s.color}" stroke-width="${s.width}" stroke-linecap="round" stroke-linejoin="round" />`)
+      .join("");
+    svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CANVAS_W} ${CANVAS_H}"><rect width="${CANVAS_W}" height="${CANVAS_H}" fill="#ffffff" />${lines}</svg>`;
+    if (svg.length <= MAX_REPORT_SVG_CHARS || keep === 0) break;
+  }
+
+  const { error } = await supabase.from("collab_reports").insert({
+    room: input.room,
+    reporter_id: getDeviceId(),
+    reported_key: input.target.key,
+    reported_name: input.target.name,
+    reason: input.reason,
+    note: input.note.trim().slice(0, 500) || null,
+    canvas_svg: svg,
+    chat_excerpt: input.chat
+      .filter((m) => m.key === input.target.key)
+      .slice(-10)
+      .map((m) => ({ text: m.text, at: new Date(m.t).toISOString() })),
+  });
+  if (error) throw error;
 }
