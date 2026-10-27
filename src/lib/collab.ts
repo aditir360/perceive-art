@@ -26,6 +26,18 @@ export const CANVAS_W = 900;
 export const CANVAS_H = 560;
 
 export type Pt = { x: number; y: number };
+export type StrokeTexture = "pen" | "pencil" | "highlighter" | "paintbrush";
+export type StrokeStyle = { texture?: StrokeTexture; opacity?: number; mode?: "draw" | "blend" };
+const TEXTURES = ["pen", "pencil", "highlighter", "paintbrush"];
+// Never trust style fields from the network: coerce to known values.
+function cleanStyle(x: { texture?: unknown; opacity?: unknown; mode?: unknown } | undefined): StrokeStyle {
+  const out: StrokeStyle = {};
+  if (typeof x?.texture === "string" && TEXTURES.includes(x.texture)) out.texture = x.texture as StrokeTexture;
+  if (typeof x?.opacity === "number" && Number.isFinite(x.opacity)) out.opacity = Math.max(0.05, Math.min(1, x.opacity));
+  if (x?.mode === "blend") out.mode = "blend";
+  return out;
+}
+
 export type CStroke = {
   id: string;
   owner: string;
@@ -34,6 +46,10 @@ export type CStroke = {
   points: Pt[];
   /** Bucket fill: SVG path data of the filled region (points is empty). */
   fillPath?: string;
+  /** Brush texture / opacity / blend mode. Missing means a plain opaque pen. */
+  texture?: StrokeTexture;
+  opacity?: number;
+  mode?: "draw" | "blend";
 };
 
 const MAX_FILL_CHARS = 120_000;
@@ -271,7 +287,7 @@ export function useCollabRoom(req: RoomRequest | null) {
       ch.on("presence", { event: "sync" }, handleSync)
         .on("broadcast", { event: "stroke" }, ({ payload }) => {
           if (!isCurrent() || !admittedRef.current) return;
-          const p = payload as { id: string; owner: string; color: string; width: number; pts?: Pt[]; fillPath?: string };
+          const p = payload as { id: string; owner: string; color: string; width: number; pts?: Pt[]; fillPath?: string; texture?: string; opacity?: number; mode?: string };
           if (!p?.id) return;
           if (p.fillPath !== undefined) {
             if (!validFill(p.fillPath) || typeof p.color !== "string") return;
@@ -282,7 +298,7 @@ export function useCollabRoom(req: RoomRequest | null) {
           if (!Array.isArray(p.pts)) return;
           let s = strokesRef.current.get(p.id);
           if (!s) {
-            s = { id: p.id, owner: p.owner, color: p.color, width: p.width, points: [] };
+            s = { id: p.id, owner: p.owner, color: p.color, width: p.width, points: [], ...cleanStyle(p) };
             strokesRef.current.set(p.id, s);
           }
           s.points.push(...p.pts);
@@ -348,7 +364,8 @@ export function useCollabRoom(req: RoomRequest | null) {
           for (const s of p.strokes ?? []) {
             if (s.fillPath !== undefined && !validFill(s.fillPath)) continue;
             const have = strokesRef.current.get(s.id);
-            if (!have || have.points.length < s.points.length) strokesRef.current.set(s.id, s);
+            const clean: CStroke = { ...s, ...cleanStyle(s) };
+            if (!have || have.points.length < s.points.length) strokesRef.current.set(s.id, clean);
           }
           schedule();
         })
@@ -408,20 +425,20 @@ export function useCollabRoom(req: RoomRequest | null) {
       if (local.queue.length === 0 && !done) return;
       const pts = local.queue;
       local.queue = [];
-      send("stroke", { id: stroke.id, owner: me.key, color: stroke.color, width: stroke.width, pts });
+      send("stroke", { id: stroke.id, owner: me.key, color: stroke.color, width: stroke.width, texture: stroke.texture, opacity: stroke.opacity, mode: stroke.mode, pts });
     },
     [me.key, send],
   );
 
   const begin = useCallback(
-    (color: string, width: number, pt: Pt) => {
+    (color: string, width: number, pt: Pt, style?: StrokeStyle) => {
       if (!admittedRef.current) return;
       const prev = localRef.current;
       if (prev?.timer) clearInterval(prev.timer);
       counterRef.current += 1;
       const id = `${me.key.slice(0, 8)}-${counterRef.current}`;
       const p = { x: round1(pt.x), y: round1(pt.y) };
-      strokesRef.current.set(id, { id, owner: me.key, color, width, points: [p] });
+      strokesRef.current.set(id, { id, owner: me.key, color, width, points: [p], ...cleanStyle(style) });
       localRef.current = { id, queue: [p], timer: setInterval(() => flushLocal(false), STROKE_FLUSH_MS) };
       schedule();
     },
@@ -458,6 +475,52 @@ export function useCollabRoom(req: RoomRequest | null) {
       send("stroke", { id, owner: me.key, color, width: 0, fillPath });
       schedule();
       return true;
+    },
+    [me.key, schedule, send],
+  );
+
+  // Eraser: removes the part of YOUR OWN lines under the eraser (splitting a
+  // line in two when the eraser cuts through the middle). Other people's
+  // lines are never touched by your eraser.
+  const eraseOwn = useCallback(
+    (pt: Pt, radius: number): boolean => {
+      let changed = false;
+      const seg = (a: Pt, b: Pt) => {
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const len2 = dx * dx + dy * dy;
+        const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((pt.x - a.x) * dx + (pt.y - a.y) * dy) / len2));
+        return Math.hypot(pt.x - (a.x + t * dx), pt.y - (a.y + t * dy));
+      };
+      for (const s of Array.from(strokesRef.current.values())) {
+        if (s.owner !== me.key || s.fillPath || s.id === localRef.current?.id) continue;
+        const reach = radius + s.width / 2;
+        const parts: Pt[][] = [];
+        let cur: Pt[] = [];
+        let hit = false;
+        for (let i = 0; i < s.points.length; i++) {
+          const near = i === 0 ? Math.hypot(s.points[0].x - pt.x, s.points[0].y - pt.y) <= reach : seg(s.points[i - 1], s.points[i]) <= reach;
+          if (near) {
+            hit = true;
+            if (cur.length > 1) parts.push(cur);
+            cur = [];
+          } else cur.push(s.points[i]);
+        }
+        if (cur.length > 1) parts.push(cur);
+        if (!hit) continue;
+        changed = true;
+        strokesRef.current.delete(s.id);
+        send("undo", { id: s.id });
+        for (const pts of parts) {
+          counterRef.current += 1;
+          const id = `${me.key.slice(0, 8)}-${counterRef.current}`;
+          strokesRef.current.set(id, { ...s, id, points: pts });
+          for (let i = 0; i < pts.length; i += 300) {
+            send("stroke", { id, owner: me.key, color: s.color, width: s.width, texture: s.texture, opacity: s.opacity, mode: s.mode, pts: pts.slice(i, i + 300) });
+          }
+        }
+      }
+      if (changed) schedule();
+      return changed;
     },
     [me.key, schedule, send],
   );
@@ -533,6 +596,7 @@ export function useCollabRoom(req: RoomRequest | null) {
     extend,
     end,
     addFill,
+    eraseOwn,
     moveCursor,
     undoMine,
     clearMine,
