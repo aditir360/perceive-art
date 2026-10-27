@@ -189,6 +189,31 @@
   filter: brightness(0.92);
 }
 
+/* ── Dark-mode gradient boxes ────────────────────────────────────────────
+   The Team page's soft corner-lit look (primary glow fading across the card
+   to a hint of accent) applied to every card, panel, dialog and text field
+   in dark mode. It is a translucent overlay on top of each box's own
+   background, so text contrast is unchanged and light mode is untouched. */
+.dark :is(div, section, article, aside, header, form, li, details)[class*="bg-card"]:not([class*="rounded-full"]):not([class*="bg-gradient"]),
+.dark [role="dialog"]:not([class*="bg-gradient"]),
+.dark [data-slot="card"] {
+  background-image: linear-gradient(
+    to bottom right,
+    color-mix(in oklab, var(--primary) 17%, transparent) 0%,
+    color-mix(in oklab, var(--card) 40%, transparent) 48%,
+    color-mix(in oklab, var(--accent) 16%, transparent) 100%
+  );
+}
+.dark input:not([type="range"]):not([type="radio"]):not([type="checkbox"]):not([type="color"]),
+.dark textarea,
+.dark select {
+  background-image: linear-gradient(
+    to bottom right,
+    color-mix(in oklab, var(--primary) 12%, transparent),
+    color-mix(in oklab, var(--accent) 10%, transparent)
+  );
+}
+
 /* Smooth, but not on first paint and not for reduced-motion users. */
 @media (prefers-reduced-motion: no-preference) {
   html.theme-ready,
