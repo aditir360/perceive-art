@@ -256,7 +256,7 @@ function setUrlCode(code: string | null) {
     else url.searchParams.delete("code");
     window.history.replaceState(null, "", url.toString());
   } catch {
-    /* non-critical */
+    /* non-critical :D */
   }
 }
 
