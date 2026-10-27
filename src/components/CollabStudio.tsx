@@ -32,38 +32,135 @@ import {
   type RoomRequest,
 } from "@/lib/collab";
 import {
+  COLORS,
+  CHECKPOINT_PRAISE,
+  BACK_ON_TRACK_LINES,
+  DEFAULT_TEXTURE_SETTINGS,
+  HEIGHT,
+  MAX_PEN_WIDTH,
+  MIN_PEN_WIDTH,
+  OFF_COURSE_ENTER,
+  OFF_COURSE_EXIT,
+  OFF_COURSE_INTROS,
+  OPACITY_RANGE,
+  OPACITY_STEP,
+  SHAPE_GUIDES,
+  SOUND_STYLE_LABELS,
+  SOUND_STYLE_ORDER,
+  TEXTURE_LABELS,
+  TEXTURE_ORDER,
+  TEXTURE_TONES,
+  VOICE_PERSONA_LABELS,
+  VOICE_PERSONA_ORDER,
+  WIDTH,
+  describeDirection,
+  describeDistance,
+  getBrushDabs,
+  nearestOnGuide,
+  pickVaried,
+  playSineNote,
+  textureVisualProps,
+  useNarrator,
+  useStudioAudio,
+  type SoundStyle,
+  type Stroke,
+  type Texture,
+} from "@/lib/studio-features";
+import {
   ArrowRight,
+  Bell,
+  Box,
   Check,
+  ChevronRight,
+  Circle,
   Copy,
-  Download,
   Eraser,
   Eye,
   EyeOff,
   Flag,
+  Flower2,
   Globe,
   Hand,
+  Heart,
+  HelpCircle,
+  Highlighter,
+  Home,
+  Infinity as InfinityIcon,
   Keyboard,
   KeyRound,
   Link2,
   Loader2,
   Lock,
   LogOut,
+  Map as MapIcon,
   MessageSquare,
+  Mic,
+  MicOff,
+  Minus,
+  Music2,
+  Orbit,
   PaintBucket,
-  Palette,
   Paintbrush,
+  Palette,
+  PenLine,
   Pencil,
-  Sparkles,
+  Plus,
   Send,
   Share2,
+  Sparkles,
+  Square,
+  Star,
   Trash2,
+  TrendingUp,
+  Triangle,
   Undo2,
   Users,
   Volume2,
   VolumeX,
+  Waves,
+  Wind,
+  X,
+  Zap,
 } from "lucide-react";
 
 const ACCENT = "font-['Instrument_Serif',Georgia,serif] font-normal italic tracking-tight";
+
+type ToolId = "draw" | "eraser" | "blend" | "fill";
+
+const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+
+// Shared control sizes (same scale as the Sketchpad).
+const STEP_BTN = "h-11 w-11 shrink-0 rounded-full bg-card/60 ring-1 ring-white/50 backdrop-blur-sm";
+const SLIDER_CLASS =
+  "h-3 min-w-0 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-card [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary";
+const ACTION_BTN = "h-12 justify-start gap-3 rounded-2xl px-4 text-sm font-medium";
+
+const TEXTURE_ICONS: Record<Texture, typeof PenLine> = {
+  pen: PenLine,
+  pencil: Pencil,
+  highlighter: Highlighter,
+  paintbrush: Paintbrush,
+};
+const SOUND_STYLE_ICONS: Record<SoundStyle, typeof Bell> = {
+  sine: Waves,
+  pad: Wind,
+  chime: Bell,
+  marimba: Music2,
+};
+const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
+  circle:   { Icon: Circle,       color: "#c9a0dc" },
+  square:   { Icon: Square,       color: "#5c6b7a" },
+  heart:    { Icon: Heart,        color: "#e88aab" },
+  star:     { Icon: Star,         color: "#e0b04f" },
+  triangle: { Icon: Triangle,     color: "#ff7f6b" },
+  wave:     { Icon: Waves,        color: "#4da6ff" },
+  spiral:   { Icon: Orbit,        color: "#9b72cf" },
+  house:    { Icon: Home,         color: "#48b376" },
+  infinity: { Icon: InfinityIcon, color: "#5b5ea6" },
+  lightning:{ Icon: Zap,          color: "#f5a623" },
+  flower:   { Icon: Flower2,      color: "#f9a8a8" },
+  staircase:{ Icon: TrendingUp,   color: "#3fb8af" },
+};
 
 function SectionLabel({ id, n, title, Icon }: { id: string; n: string; title: string; Icon: typeof Globe }) {
   return (
@@ -73,26 +170,6 @@ function SectionLabel({ id, n, title, Icon }: { id: string; n: string; title: st
     </h2>
   );
 }
-
-const SWATCHES = [
-  { name: "black", value: "#000000" },
-  { name: "rose", value: "#e88aab" },
-  { name: "crimson", value: "#c2385a" },
-  { name: "coral", value: "#ff7f6b" },
-  { name: "sun", value: "#f5a623" },
-  { name: "gold", value: "#e0b04f" },
-  { name: "mint", value: "#48b376" },
-  { name: "teal", value: "#3fb8af" },
-  { name: "sky", value: "#4da6ff" },
-  { name: "indigo", value: "#5b5ea6" },
-  { name: "plum", value: "#9b72cf" },
-  { name: "white", value: "#ffffff" },
-];
-
-const KEY_STEP = 14;
-const KEY_STEP_BIG = 56;
-
-const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
 // Rasterize the current line work at half resolution, flood-fill the connected
 // paper region, and encode the result as compact SVG rectangle subpaths.
@@ -148,98 +225,6 @@ function makeBucketFillPath(
   return runs.length ? runs.join("") : null;
 }
 
-function buildSvg(strokes: CStroke[]): string {
-  const lines = strokes
-    .filter((s) => s.points.length > 0 || !!s.fillPath)
-    .map((s) => {
-      if (s.fillPath) return `<path d="${s.fillPath}" fill="${s.color}" />`;
-      const pts = s.points.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-      return `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="${s.width}" stroke-linecap="round" stroke-linejoin="round" />`;
-    })
-    .join("\n  ");
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${CANVAS_W}" height="${CANVAS_H}" viewBox="0 0 ${CANVAS_W} ${CANVAS_H}">
-  <rect width="${CANVAS_W}" height="${CANVAS_H}" fill="#ffffff" />
-  ${lines}
-</svg>`;
-}
-
-// ── A small sine "brush tone": left/right pans, up/down changes pitch. ────
-function freqForY(y: number): number {
-  const raw = 220 + (1 - y / CANVAS_H) * 440;
-  const penta = [1, 1.125, 1.25, 1.5, 1.667];
-  const base = 220;
-  const octave = Math.floor(Math.log2(raw / base));
-  const normed = raw / base / Math.pow(2, octave);
-  const closest = penta.reduce((b, r) => (Math.abs(r - normed) < Math.abs(b - normed) ? r : b));
-  return base * closest * Math.pow(2, octave);
-}
-
-function useBrushTone(enabled: boolean) {
-  const ref = useRef<{
-    ctx: AudioContext;
-    osc: OscillatorNode;
-    gain: GainNode;
-    pan: StereoPannerNode;
-    timer: ReturnType<typeof setTimeout> | null;
-  } | null>(null);
-
-  const play = useCallback(
-    (p: Pt, drawing: boolean) => {
-      if (!enabled || typeof window === "undefined") return;
-      let a = ref.current;
-      if (!a) {
-        const Ctor: typeof AudioContext =
-          window.AudioContext ||
-          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-        if (!Ctor) return;
-        const ctx = new Ctor();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        const filter = ctx.createBiquadFilter();
-        const pan = ctx.createStereoPanner();
-        osc.type = "sine";
-        gain.gain.value = 0;
-        filter.type = "lowpass";
-        filter.frequency.value = 1800;
-        osc.connect(gain);
-        gain.connect(filter);
-        filter.connect(pan);
-        pan.connect(ctx.destination);
-        osc.start();
-        a = ref.current = { ctx, osc, gain, pan, timer: null };
-      }
-      if (a.ctx.state === "suspended") void a.ctx.resume();
-      const t = a.ctx.currentTime;
-      a.osc.frequency.setTargetAtTime(freqForY(p.y), t, 0.05);
-      a.pan.pan.setTargetAtTime(clamp((p.x / CANVAS_W) * 2 - 1, -1, 1), t, 0.03);
-      a.gain.gain.setTargetAtTime(drawing ? 0.14 : 0.06, t, 0.04);
-      if (a.timer) clearTimeout(a.timer);
-      const node = a;
-      a.timer = setTimeout(() => node.gain.gain.setTargetAtTime(0, node.ctx.currentTime, 0.2), 220);
-    },
-    [enabled],
-  );
-
-  const silence = useCallback(() => {
-    const a = ref.current;
-    if (a) a.gain.gain.setTargetAtTime(0, a.ctx.currentTime, 0.1);
-  }, []);
-
-  useEffect(
-    () => () => {
-      const a = ref.current;
-      if (a) {
-        if (a.timer) clearTimeout(a.timer);
-        void a.ctx.close();
-        ref.current = null;
-      }
-    },
-    [],
-  );
-
-  return { play, silence };
-}
-
 async function copyText(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
@@ -256,7 +241,7 @@ function setUrlCode(code: string | null) {
     else url.searchParams.delete("code");
     window.history.replaceState(null, "", url.toString());
   } catch {
-    /* non-critical :D */
+    /* non-critical */
   }
 }
 
@@ -478,7 +463,7 @@ function Room({
   req,
   room,
   onLeave,
-  say,
+  say: announceText,
 }: {
   req: RoomRequest;
   room: RoomApi;
@@ -489,14 +474,33 @@ function Room({
   const isPrivate = req.kind === "private";
   const cap = isPrivate ? PRIVATE_CAP : PUBLIC_CAP;
 
-  const [color, setColor] = useState(SWATCHES[1].value);
-  const [width, setWidth] = useState(6);
-  const [tool, setTool] = useState<"draw" | "fill">("draw");
+  // Narrator: every message is both announced to screen readers (live region)
+  // and, when narration is on, spoken aloud by Bennett or the lady guide.
+  const narrator = useNarrator(announceText);
+  const say = narrator.say;
+
+  const [colorIndex, setColorIndex] = useState(2);
+  const color = COLORS[colorIndex].value;
+  const [texture, setTexture] = useState<Texture>("pen");
+  const [textureSettings, setTextureSettings] = useState(DEFAULT_TEXTURE_SETTINGS);
+  const penWidth = textureSettings[texture].width;
+  const penOpacity = textureSettings[texture].opacity;
+  const [tool, setTool] = useState<ToolId>("draw");
+  const [eraserSize, setEraserSize] = useState(28);
+  const [blendSize, setBlendSize] = useState(36);
   const [soundOn, setSoundOn] = useState(true);
+  const [soundStyle, setSoundStyle] = useState<SoundStyle>("sine");
+  const [soundVolume, setSoundVolume] = useState(0.7);
+  const [visualAids, setVisualAids] = useState(true);
+  const [guideKey, setGuideKey] = useState<string | null>(null);
+  const [guidesOpen, setGuidesOpen] = useState(true);
+  const [kbdOpen, setKbdOpen] = useState(true);
   const [pos, setPos] = useState<Pt>({ x: CANVAS_W / 2, y: CANVAS_H / 2 });
   const [penDown, setPenDown] = useState(false);
   const [copied, setCopied] = useState<"" | "code" | "link">("");
   const [sharing, setSharing] = useState(false);
+  const [justPosted, setJustPosted] = useState(false);
+  const [postConfirmOpen, setPostConfirmOpen] = useState(false);
   const [muted, setMuted] = useState<Set<string>>(() => new Set());
   const [reportTarget, setReportTarget] = useState<Peer | null>(null);
 
@@ -505,28 +509,27 @@ function Room({
   // something you chose not to see.
   const strokes = room.strokes.filter((s) => !muted.has(s.owner));
 
+  const audio = useStudioAudio(soundOn, soundStyle, soundVolume);
+
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const fillAt = (p: Pt) => {
-    const path = makeBucketFillPath(strokes, CANVAS_W, CANVAS_H, p);
-    if (path && room.addFill(colorRef.current, path)) say("Filled.");
-    else say("Nothing to fill there. Click an empty area enclosed by lines.");
-  };
   const posRef = useRef(pos);
   const penDownRef = useRef(false);
   const pointerDrawingRef = useRef(false);
-  const colorRef = useRef(color);
-  const widthRef = useRef(width);
-  const toolRef = useRef(tool);
-  useEffect(() => { toolRef.current = tool; }, [tool]);
-  useEffect(() => { colorRef.current = color; }, [color]);
-  useEffect(() => { widthRef.current = width; }, [width]);
+  const trailRef = useRef<Pt[]>([]);
+  const lineCountRef = useRef(0);
+  // Guide-voice bookkeeping (same behaviour as the Sketchpad guides).
+  const lastCheckpoint = useRef(-1);
+  const offCourseRef = useRef(false);
+  const lastOffCourseSayAt = useRef(0);
+  const lastOffCourseIntro = useRef("");
+  const lastBackOnTrackLine = useRef("");
+  const lastPraiseLine = useRef("");
+  const guideCompletedRef = useRef(false);
 
-  const tone = useBrushTone(soundOn);
-
-  const setPosition = useCallback((p: Pt) => {
+  const setPosition = (p: Pt) => {
     posRef.current = p;
     setPos(p);
-  }, []);
+  };
 
   const toPt = (e: { clientX: number; clientY: number }): Pt => {
     const r = svgRef.current!.getBoundingClientRect();
@@ -536,110 +539,373 @@ function Room({
     };
   };
 
-  // Pointer (mouse / touch / pen) drawing
+  // ── Colour / brush settings ─────────────────────────────────────────────
+  const pickColor = (i: number) => {
+    setColorIndex(i);
+    audio.note(COLORS[i].tone, 0.2, 0.11, true);
+    say(`Color: ${COLORS[i].name}`);
+  };
+  const cycleColor = (dir: 1 | -1) => pickColor((colorIndex + dir + COLORS.length) % COLORS.length);
+
+  const changePenWidth = (next: number) => {
+    const w = clamp(Math.round(next), MIN_PEN_WIDTH, MAX_PEN_WIDTH);
+    if (w === penWidth) return;
+    audio.note(300 + (MAX_PEN_WIDTH - w) * 6, 0.12, 0.09);
+    say(`${TEXTURE_LABELS[texture]} thickness ${w}`);
+    setTextureSettings((prev) => ({ ...prev, [texture]: { ...prev[texture], width: w } }));
+  };
+  const changePenOpacity = (next: number) => {
+    const { min, max } = OPACITY_RANGE[texture];
+    const stepped = Math.round(next / OPACITY_STEP) * OPACITY_STEP;
+    const o = Math.round(clamp(stepped, min, max) * 100) / 100;
+    if (o === penOpacity) return;
+    audio.note(500, 0.12, 0.04 + o * 0.08);
+    say(`${TEXTURE_LABELS[texture]} opacity ${Math.round(o * 100)} percent`);
+    setTextureSettings((prev) => ({ ...prev, [texture]: { ...prev[texture], opacity: o } }));
+  };
+  const changeTexture = (next: Texture) => {
+    if (next === texture) return;
+    audio.note(TEXTURE_TONES[next], 0.16, 0.11, true);
+    say(`${TEXTURE_LABELS[next]} selected`);
+    setTexture(next);
+  };
+  const cycleTexture = () => changeTexture(TEXTURE_ORDER[(TEXTURE_ORDER.indexOf(texture) + 1) % TEXTURE_ORDER.length]);
+
+  const changeToolSize = (next: number) => {
+    const v = clamp(Math.round(next), 4, 100);
+    if (tool === "eraser") setEraserSize(v);
+    else if (tool === "blend") setBlendSize(v);
+    else changePenWidth(v);
+  };
+
+  const releasePen = () => {
+    if (penDownRef.current) {
+      penDownRef.current = false;
+      setPenDown(false);
+      room.end();
+      audio.silence();
+    }
+  };
+
+  const selectTool = (next: ToolId) => {
+    releasePen();
+    setTool(next);
+    say(
+      next === "draw" ? "Drawing tool selected"
+      : next === "eraser" ? `Eraser selected, size ${eraserSize}. It only erases your own lines.`
+      : next === "blend" ? `Blend tool selected, size ${blendSize}`
+      : "Fill tool. Click an enclosed area, or press Space to fill at the pen.",
+    );
+  };
+
+  // ── Fill / blend / erase ────────────────────────────────────────────────
+  const fillAt = (p: Pt) => {
+    const path = makeBucketFillPath(strokes, CANVAS_W, CANVAS_H, p);
+    if (path && room.addFill(color, path)) {
+      audio.note(587, 0.15, 0.1);
+      say("Filled.");
+    } else say("Nothing to fill there. Click an empty area enclosed by lines.");
+  };
+
+  const hexRgb = (hex: string) => {
+    const n = parseInt(hex.replace("#", ""), 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  };
+  const rgbHex = (r: number, g: number, b: number) =>
+    `#${[r, g, b].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("")}`;
+  const segDist = (p: Pt, a: Pt, b: Pt) => {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    if (len2 === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+    const t = clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / len2, 0, 1);
+    return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+  };
+  const blendColorAt = (p: Pt): string => {
+    const radius = blendSize / 2 + 12;
+    const found: { r: number; g: number; b: number; weight: number }[] = [];
+    for (const s of strokes) {
+      if (s.fillPath) continue;
+      for (let i = 1; i < s.points.length; i++) {
+        const d = segDist(p, s.points[i - 1], s.points[i]);
+        if (d <= radius + s.width / 2) {
+          found.push({ ...hexRgb(s.color), weight: Math.max(0.1, 1 - d / radius) });
+          break;
+        }
+      }
+    }
+    if (!found.length) return color;
+    const total = found.reduce((sum, c) => sum + c.weight, 0);
+    return rgbHex(
+      found.reduce((sum, c) => sum + c.r * c.weight, 0) / total,
+      found.reduce((sum, c) => sum + c.g * c.weight, 0) / total,
+      found.reduce((sum, c) => sum + c.b * c.weight, 0) / total,
+    );
+  };
+
+  const praiseLine = () => {
+    lineCountRef.current += 1;
+    if (lineCountRef.current % 10 === 0) say("Great line! Saved it.");
+  };
+
+  const strokeStyle = () => ({ texture, opacity: penOpacity });
+
+  // ── Shape guides (traced locally; nobody else sees your guide) ──────────
+  const trackGuide = (p: Pt) => {
+    if (!guideKey || !soundOn) return;
+    const guide = SHAPE_GUIDES[guideKey];
+    const { distance, progress, point: nearestPt } = nearestOnGuide(p, guide);
+    const now = Date.now();
+    if (!offCourseRef.current && distance > OFF_COURSE_ENTER) {
+      offCourseRef.current = true;
+      lastOffCourseSayAt.current = now;
+      const intro = pickVaried(OFF_COURSE_INTROS, lastOffCourseIntro.current);
+      lastOffCourseIntro.current = intro;
+      say(`${intro} Move ${describeDirection(p, nearestPt)}, ${describeDistance(distance)}, and you'll be right back on the ${guide.name.toLowerCase()} line.`);
+      audio.bump();
+    } else if (offCourseRef.current && distance < OFF_COURSE_EXIT) {
+      offCourseRef.current = false;
+      const line = pickVaried(BACK_ON_TRACK_LINES, lastBackOnTrackLine.current);
+      lastBackOnTrackLine.current = line;
+      say(line);
+    } else if (offCourseRef.current && now - lastOffCourseSayAt.current > 4000) {
+      lastOffCourseSayAt.current = now;
+      say(`I'm still with you — head ${describeDirection(p, nearestPt)}, ${describeDistance(distance)}.`);
+    }
+    audio.guideProximity(distance);
+
+    const cps = guide.checkpoints;
+    for (let i = cps.length - 1; i >= 0; i--) {
+      if (progress >= cps[i].at && i > lastCheckpoint.current) {
+        lastCheckpoint.current = i;
+        if (i > 0 && !offCourseRef.current) {
+          const praise = pickVaried(CHECKPOINT_PRAISE, lastPraiseLine.current);
+          lastPraiseLine.current = praise;
+          say(`${praise} ${cps[i].say}`);
+        } else say(cps[i].say);
+        audio.note([523, 587, 659, 698, 784][i % 5], 0.2, 0.08);
+        break;
+      }
+    }
+    if (!guideCompletedRef.current && progress >= 0.97 && distance < OFF_COURSE_EXIT) {
+      guideCompletedRef.current = true;
+      say(`You did it! That's a perfect ${guide.name.toLowerCase()}. Press stop guide, or trace it again with me.`);
+      audio.complete();
+    }
+  };
+
+  const startGuide = (key: string) => {
+    audio.stopGuideTone();
+    setGuideKey(key);
+    lastCheckpoint.current = -1;
+    offCourseRef.current = false;
+    guideCompletedRef.current = false;
+    lastOffCourseSayAt.current = 0;
+    lastOffCourseIntro.current = "";
+    lastBackOnTrackLine.current = "";
+    lastPraiseLine.current = "";
+    setGuidesOpen(false);
+    if (soundOn) {
+      audio.startGuideTone();
+      audio.guideStart(392);
+    }
+    const guide = SHAPE_GUIDES[key];
+    say(
+      `Let's trace a ${guide.name.toLowerCase()} together! ${guide.checkpoints[0].say} ` +
+        (soundOn
+          ? "Get close to the glowing line and I'll hum louder the closer you get."
+          : "Turn sound on and I'll talk you through it as you draw."),
+    );
+  };
+  const stopGuide = () => {
+    if (!guideKey) return;
+    audio.stopGuideTone();
+    offCourseRef.current = false;
+    say("Guide stopped — nice tracing!");
+    setGuideKey(null);
+  };
+
+  // ── Pointer (mouse / touch / pen) ───────────────────────────────────────
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (e.button !== 0 && e.pointerType === "mouse") return;
     e.currentTarget.setPointerCapture(e.pointerId);
     const p = toPt(e);
     setPosition(p);
-    if (toolRef.current === "fill") {
+    audio.update(p, true);
+    if (tool === "fill") {
       fillAt(p);
       return;
     }
     pointerDrawingRef.current = true;
-    room.begin(colorRef.current, widthRef.current, p);
-    tone.play(p, true);
+    if (tool === "eraser") room.eraseOwn(p, eraserSize / 2);
+    else if (tool === "blend") room.begin(blendColorAt(p), blendSize, p, { texture: "paintbrush", opacity: 0.42, mode: "blend" });
+    else room.begin(color, penWidth, p, strokeStyle());
   };
   const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const p = toPt(e);
     setPosition(p);
+    audio.update(p, pointerDrawingRef.current);
+    trackGuide(p);
     if (pointerDrawingRef.current) {
-      room.extend(p);
-      tone.play(p, true);
-    } else {
-      room.moveCursor(p);
-    }
+      if (tool === "eraser") room.eraseOwn(p, eraserSize / 2);
+      else room.extend(p);
+    } else room.moveCursor(p);
   };
   const endPointer = () => {
     if (!pointerDrawingRef.current) return;
     pointerDrawingRef.current = false;
-    room.end();
-    tone.silence();
-  };
-
-  // Keyboard drawing: arrows move, Space lowers/lifts the pen.
-  const togglePen = useCallback(() => {
-    if (toolRef.current === "fill") {
-      fillAt(posRef.current);
+    audio.silence();
+    if (tool === "eraser") {
+      say("Erased that part of your lines.");
       return;
     }
+    room.end();
+    if (tool === "blend") say("Colors blended together.");
+    else praiseLine();
+  };
+
+  // ── Keyboard drawing: arrows move, Space lowers/lifts the pen ───────────
+  const togglePen = () => {
+    if (tool === "fill") return fillAt(posRef.current);
+    if (tool === "blend") return say("Blend works with a mouse, finger or pen. Switch to Draw or Eraser for keyboard use.");
     if (penDownRef.current) {
-      penDownRef.current = false;
-      setPenDown(false);
-      room.end();
-      tone.silence();
-      say("Pen up.");
+      releasePen();
+      audio.note(392, 0.18, 0.1);
+      say(tool === "eraser" ? "Eraser up." : "Pen up.");
     } else {
       penDownRef.current = true;
       setPenDown(true);
-      room.begin(colorRef.current, widthRef.current, posRef.current);
-      tone.play(posRef.current, true);
-      say("Pen down. Use the arrow keys to draw.");
+      audio.note(659, 0.15, 0.12);
+      if (tool === "eraser") {
+        room.eraseOwn(posRef.current, eraserSize / 2);
+        say("Eraser down. Move with the arrow keys to erase your lines.");
+      } else {
+        room.begin(color, penWidth, posRef.current, strokeStyle());
+        say("Drawing on. Use the arrow keys to draw.");
+      }
+      audio.update(posRef.current, true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [room, say, tone, strokes]);
+  };
 
-  const doUndo = useCallback(() => {
-    say(room.undoMine() ? "Undid your last line." : "You have nothing to undo.");
-  }, [room, say]);
-
-  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
-      e.preventDefault();
-      doUndo();
-      return;
-    }
-    const step = e.shiftKey ? KEY_STEP_BIG : KEY_STEP;
-    let dx = 0;
-    let dy = 0;
-    switch (e.key) {
-      case "ArrowLeft": dx = -step; break;
-      case "ArrowRight": dx = step; break;
-      case "ArrowUp": dy = -step; break;
-      case "ArrowDown": dy = step; break;
-      case " ":
-      case "Enter":
-        e.preventDefault();
-        togglePen();
-        return;
-      case "m":
-      case "M":
-        setSoundOn((v) => !v);
-        return;
-      default:
-        return;
-    }
-    e.preventDefault();
-    const p = {
-      x: clamp(posRef.current.x + dx, 0, CANVAS_W),
-      y: clamp(posRef.current.y + dy, 0, CANVAS_H),
-    };
+  const moveTo = (next: Pt) => {
+    const p = { x: clamp(next.x, 0, CANVAS_W), y: clamp(next.y, 0, CANVAS_H) };
+    const hitBorder = p.x !== next.x || p.y !== next.y;
     setPosition(p);
-    if (penDownRef.current) room.extend(p);
-    else room.moveCursor(p);
-    tone.play(p, penDownRef.current);
+    audio.update(p, penDownRef.current);
+    trackGuide(p);
+    if (hitBorder) {
+      audio.bump();
+      say("Whoa, that's the edge!");
+    }
+    if (penDownRef.current) {
+      if (tool === "eraser") room.eraseOwn(p, eraserSize / 2);
+      else room.extend(p);
+    } else room.moveCursor(p);
   };
 
-  // If the keyboard pen is down when the person leaves the canvas, lift it.
-  const onBlur = () => {
-    if (penDownRef.current) {
-      penDownRef.current = false;
-      setPenDown(false);
-      room.end();
-      tone.silence();
+  const doUndo = () => {
+    audio.note(330, 0.18, 0.09);
+    say(room.undoMine() ? "Oops, undone! Let's try that again." : "You have nothing to undo.");
+  };
+  const clearMine = () => {
+    room.clearMine();
+    audio.note(262, 0.2, 0.08);
+    say("Cleared your lines.");
+  };
+  const clearEveryone = () => {
+    if (window.confirm("Clear the whole canvas for everyone in this room?")) {
+      room.clearAll();
+      say("Cleared the canvas for everyone.");
     }
   };
 
+  const toggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    if (next) {
+      const a = audio.ensure();
+      playSineNote(a.ctx, 440, 0.2, 0.1, true);
+      say("Sound on! Move around and I'll turn it into music.");
+    } else {
+      audio.silence();
+      audio.stopGuideTone();
+      say("Sound's off.");
+    }
+  };
+  const toggleVisualAids = () => {
+    const next = !visualAids;
+    setVisualAids(next);
+    say(next ? "Visual aids are on! I've got you." : "Visual aids off — I'll guide you by sound.");
+  };
+
+  const explainStudio = () => {
+    narrator.sayForced(
+      [
+        "Here's a tour of the collab studio.",
+        "In the middle is the shared canvas. Everyone in the room draws on it at once. Drag anywhere to draw, or use the arrow keys to move your brush and Space or D to start and stop drawing.",
+        "On the left: People lists who is here, and you can mute or report anyone. Tools has Draw, Eraser, Blend and Fill. Your eraser and blend only change your own lines. Color has eighteen swatches, and Q or E cycles through them. Brush lets you pick pen, pencil, highlighter or paintbrush, with its own size and opacity.",
+        "On the right: Chat talks to the room. Sound plays music as you move, where left and right pans it and up and down changes the pitch. Guide voice switches the narrator between Bennett the bear and a lady voice. Inspiration has shape guides that talk you through drawing a circle, heart, star and more. Guides are just for you, nobody else sees them.",
+        "Below the canvas: Keep saves your drawing as swell paper, a colour SVG, or a 3D printable file. Share sends the whole shared canvas to the gallery for review.",
+        "Press H any time to hear this again.",
+      ].join(" "),
+    );
+  };
+
+  // ── Window shortcuts (ignored while typing in chat or a dialog) ─────────
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (postConfirmOpen) {
+        if (e.key === "Escape") { e.preventDefault(); cancelPost(); }
+        else if (e.key === "Enter") { e.preventDefault(); void confirmPost(); }
+        return;
+      }
+      if (reportTarget) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); doUndo(); return; }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const step = e.shiftKey ? 30 : 10;
+      const k = e.key.toLowerCase();
+      const pos0 = posRef.current;
+      if (e.key === "ArrowLeft") { e.preventDefault(); moveTo({ x: pos0.x - step, y: pos0.y }); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); moveTo({ x: pos0.x + step, y: pos0.y }); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); moveTo({ x: pos0.x, y: pos0.y - step }); }
+      else if (e.key === "ArrowDown") { e.preventDefault(); moveTo({ x: pos0.x, y: pos0.y + step }); }
+      else if (e.key === " " || k === "d") { e.preventDefault(); togglePen(); }
+      else if (k === "s" || k === "m") { e.preventDefault(); toggleSound(); }
+      else if (k === "c") { e.preventDefault(); clearMine(); }
+      else if (k === "x") { e.preventDefault(); toggleVisualAids(); }
+      else if (k === "h") { e.preventDefault(); explainStudio(); }
+      else if (k === "g") {
+        e.preventDefault();
+        const next = !guidesOpen;
+        setGuidesOpen(next);
+        say(next ? "Here are the audio guides — pick one and I'll walk you through it." : "Closing the guides panel.");
+      }
+      else if (k === "q") { e.preventDefault(); cycleColor(-1); }
+      else if (k === "e") { e.preventDefault(); cycleColor(1); }
+      else if (e.key === "[") { e.preventDefault(); changePenWidth(penWidth - 1); }
+      else if (e.key === "]") { e.preventDefault(); changePenWidth(penWidth + 1); }
+      else if (e.key === ",") { e.preventDefault(); changePenOpacity(penOpacity - OPACITY_STEP); }
+      else if (e.key === ".") { e.preventDefault(); changePenOpacity(penOpacity + OPACITY_STEP); }
+      else if (k === "t") { e.preventDefault(); cycleTexture(); }
+      else if (k === "r") { e.preventDefault(); selectTool("eraser"); }
+      else if (k === "b") { e.preventDefault(); selectTool("blend"); }
+      else if (k === "v") { e.preventDefault(); selectTool("draw"); }
+      else if (k === "f") { e.preventDefault(); selectTool("fill"); }
+      else if (k === "escape" && guideKey) { e.preventDefault(); stopGuide(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  // If the page loses focus mid-line, lift the pen so no line gets stuck.
+  useEffect(() => {
+    const lift = () => releasePen();
+    window.addEventListener("blur", lift);
+    return () => window.removeEventListener("blur", lift);
+  });
+
+  // ── Invite / copy ───────────────────────────────────────────────────────
   const code = req.kind === "private" ? req.code : "";
   const inviteLink = () => {
     const url = new URL(window.location.href);
@@ -649,30 +915,118 @@ function Room({
   const copy = async (what: "code" | "link") => {
     const ok = await copyText(what === "code" ? code : inviteLink());
     setCopied(ok ? what : "");
-    say(ok ? (what === "code" ? "Room code copied." : "Invite link copied.") : "Couldn't copy. Select the code and copy it by hand.");
+    announceText(ok ? (what === "code" ? "Room code copied." : "Invite link copied.") : "Couldn't copy. Select the code and copy it by hand.");
     if (ok) setTimeout(() => setCopied(""), 2000);
   };
 
-  const download = () => {
-    if (!strokes.length) return say("There's nothing drawn yet to save.");
-    const blob = new Blob([buildSvg(strokes)], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "perceive-collab-drawing.svg";
+  // ── Export ──────────────────────────────────────────────────────────────
+  const toStroke = (s: CStroke): Stroke => ({
+    color: s.color,
+    width: s.width,
+    opacity: s.opacity ?? 1,
+    texture: s.texture ?? "pen",
+    points: s.points,
+    mode: s.mode,
+  });
+
+  const buildSvgString = (highContrast: boolean) => {
+    const bg = highContrast ? "#ffffff" : "#fff5f8";
+    const defsExtra = highContrast
+      ? ""
+      : `<defs><filter id="pencilTexture" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.4" numOctaves="3" seed="7" result="grain"/><feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.33 0.33 0.33 0 0" result="grainAlpha"/><feComponentTransfer in="grainAlpha" result="grainMask"><feFuncA type="discrete" tableValues="0 0 0.15 0.35 0.55 0.7 0.82 0.92 1 1"/></feComponentTransfer><feComposite in="SourceGraphic" in2="grainMask" operator="in" result="speckled"/><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="edgeNoise"/><feDisplacementMap in="speckled" in2="edgeNoise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/></filter><filter id="brushSoften" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0.6"/></filter><filter id="blendSoften" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter></defs>`;
+    const paths = strokes
+      .map((cs) => {
+        if (cs.fillPath) return `<path d="${cs.fillPath}" fill="${highContrast ? "#000" : cs.color}" />`;
+        if (cs.points.length === 0) return "";
+        const s = toStroke(cs);
+        const d = s.points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+        const w = highContrast ? Math.max(4, s.width + 1) : s.width;
+        const op = highContrast ? 1 : s.opacity;
+        const cap = !highContrast && s.texture === "highlighter" ? "square" : "round";
+        const join = !highContrast && s.texture === "highlighter" ? "miter" : "round";
+        const filterAttr = !highContrast
+          ? s.mode === "blend" ? ` filter="url(#blendSoften)"`
+          : s.texture === "pencil" ? ` filter="url(#pencilTexture)"`
+          : s.texture === "paintbrush" ? ` filter="url(#brushSoften)"` : ""
+          : "";
+        const blendStyle = !highContrast && (s.texture === "highlighter" || s.mode === "blend") ? ` style="mix-blend-mode:multiply"` : "";
+        const pathStr = `<path d="${d}" fill="none" stroke="${highContrast ? "#000" : s.color}" stroke-width="${w}" stroke-opacity="${op}" stroke-linecap="${cap}" stroke-linejoin="${join}"${filterAttr}${blendStyle}/>`;
+        const dabs = getBrushDabs(s)
+          .map((dab) => `<ellipse cx="${dab.cx.toFixed(1)}" cy="${dab.cy.toFixed(1)}" rx="${dab.rx.toFixed(1)}" ry="${dab.ry.toFixed(1)}" transform="rotate(${dab.rotation.toFixed(1)} ${dab.cx.toFixed(1)} ${dab.cy.toFixed(1)})" fill="${highContrast ? "#000" : s.color}" fill-opacity="${op}"${highContrast ? "" : ` filter="url(#brushSoften)"`}/>`)
+          .join("");
+        return pathStr + dabs;
+      })
+      .join("");
+    return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CANVAS_W} ${CANVAS_H}" width="${CANVAS_W}" height="${CANVAS_H}">${defsExtra}<rect width="100%" height="100%" fill="${bg}"/>${paths}</svg>`;
+  };
+
+  const dl = (name: string, content: string, type: string) => {
+    const url = URL.createObjectURL(new Blob([content], { type }));
+    const a = Object.assign(document.createElement("a"), { href: url, download: name });
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(url);
-    say("Saved your drawing as an SVG.");
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const needArt = (what: string) => {
+    if (strokes.length > 0) return false;
+    say(`There's nothing drawn yet to ${what}.`);
+    return true;
+  };
+  const exportSwell = () => {
+    if (needArt("save")) return;
+    dl("perceive-collab-swell.svg", buildSvgString(true), "image/svg+xml");
+    say("There you go — your swell paper SVG is downloading.");
+  };
+  const exportColor = () => {
+    if (needArt("save")) return;
+    dl("perceive-collab-color.svg", buildSvgString(false), "image/svg+xml");
+    say("Nice! Your color SVG is downloading.");
+  };
+  const exportStl = () => {
+    if (needArt("save")) return;
+    const H = 3, W = 1.5, scale = 150 / CANVAS_W;
+    const facets: string[] = [];
+    const f3 = (n: number[], v1: number[], v2: number[], v3: number[]) =>
+      `facet normal ${n.join(" ")}\nouter loop\nvertex ${v1.join(" ")}\nvertex ${v2.join(" ")}\nvertex ${v3.join(" ")}\nendloop\nendfacet`;
+    const box = (x1: number, y1: number, x2: number, y2: number) => {
+      const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
+      const nx = (-dy / len) * W, ny = (dx / len) * W;
+      const a = [x1 + nx, y1 + ny, 0], b = [x1 - nx, y1 - ny, 0], c = [x2 + nx, y2 + ny, 0], d = [x2 - nx, y2 - ny, 0];
+      const A = [a[0], a[1], H], B = [b[0], b[1], H], C = [c[0], c[1], H], D = [d[0], d[1], H];
+      facets.push(f3([0, 0, 1], A, C, D), f3([0, 0, 1], A, D, B));
+      facets.push(f3([0, 0, -1], a, d, c), f3([0, 0, -1], a, b, d));
+      [[a, c, C, A], [b, B, D, d], [a, A, B, b], [c, d, D, C]].forEach(([p1, p2, p3, p4]) => {
+        facets.push(f3([0, 0, 0], p1, p2, p3), f3([0, 0, 0], p1, p3, p4));
+      });
+    };
+    for (const s of strokes) {
+      for (let i = 1; i < s.points.length; i++) {
+        box(s.points[i - 1].x * scale, (CANVAS_H - s.points[i - 1].y) * scale, s.points[i].x * scale, (CANVAS_H - s.points[i].y) * scale);
+      }
+    }
+    dl("perceive-collab.stl", `solid sb\n${facets.join("\n")}\nendsolid sb`, "model/stl");
+    say("Your 3D file is ready — happy printing!");
   };
 
-  const share = async () => {
-    if (!strokes.length) return say("There's nothing drawn yet to share.");
+  // ── Share to gallery (with a deliberate second step) ────────────────────
+  const requestPost = () => {
+    if (strokes.length === 0) return say("Let's draw something first — then I can send it for you!");
+    setPostConfirmOpen(true);
+  };
+  const cancelPost = () => {
+    setPostConfirmOpen(false);
+    say("No worries — I kept it just for you.");
+  };
+  const confirmPost = async () => {
+    setPostConfirmOpen(false);
     setSharing(true);
     try {
-      await saveArtwork(buildSvg(strokes));
-      say("Sent to the gallery for review.");
+      await saveArtwork(buildSvgString(false));
+      setJustPosted(true);
+      setTimeout(() => setJustPosted(false), 2200);
+      audio.complete();
+      say("Yay! Sent it in for review — it'll go live on the gallery once approved.");
     } catch {
       say("Something went wrong sending that to the gallery.");
     } finally {
@@ -680,13 +1034,7 @@ function Room({
     }
   };
 
-  const clearAll = () => {
-    if (window.confirm("Clear the whole canvas for everyone in this room?")) {
-      room.clearAll();
-      say("Cleared the canvas for everyone.");
-    }
-  };
-
+  // ── People: mute / report ───────────────────────────────────────────────
   const peerByKey = new Map(peers.map((p) => [p.key, p]));
 
   const toggleMute = (p: Peer) => {
@@ -697,7 +1045,7 @@ function Room({
       else next.delete(p.key);
       return next;
     });
-    say(nowMuted ? `Muted ${p.name}. You won't see their lines or messages.` : `Unmuted ${p.name}.`);
+    announceText(nowMuted ? `Muted ${p.name}. You won't see their lines or messages.` : `Unmuted ${p.name}.`);
   };
 
   const handleReport = async (reason: ReportReason, note: string) => {
@@ -713,20 +1061,34 @@ function Room({
     });
     setMuted((prev) => new Set(prev).add(target.key));
     setReportTarget(null);
-    say(`Report sent. ${target.name} is muted for you.`);
+    announceText(`Report sent. ${target.name} is muted for you.`);
   };
 
+  // ── Derived display values ──────────────────────────────────────────────
+  trailRef.current = [...trailRef.current.slice(-14), pos];
+  const activeGuide = guideKey ? SHAPE_GUIDES[guideKey] : null;
+  const colorName = COLORS[colorIndex].name;
+  const drawingNow = penDown && tool !== "fill";
+  const statusText = drawingNow
+    ? tool === "eraser" ? "Erasing" : "Drawing"
+    : strokes.length === 0 ? "A fresh start" : `${strokes.length} ${strokes.length === 1 ? "line" : "lines"} drawn`;
   const sectionBase = "p-5";
   const ROW = "flex h-11 w-full items-center gap-3 rounded-xl px-3.5 text-sm font-medium transition-colors";
+  const ROW_ON = "bg-foreground text-background shadow-md";
   const ROW_OFF = "text-foreground hover:bg-primary/10";
-  const statusText = penDown ? "Drawing" : strokes.length === 0 ? "A fresh start" : `${strokes.length} ${strokes.length === 1 ? "line" : "lines"} drawn`;
-  const colorName = SWATCHES.find((s) => s.value === color)?.name ?? "";
+  const ROW_SOFT = "bg-primary/15 text-foreground ring-1 ring-primary/40";
+  const sizeValue = tool === "eraser" ? eraserSize : blendSize;
+  const pct = (v: number, lo: number, hi: number) => ((v - lo) / (hi - lo)) * 100;
+  const sliderBg = (v: number, lo: number, hi: number) => ({
+    background: `linear-gradient(to right, oklch(0.58 0.15 20) ${pct(v, lo, hi)}%, oklch(0.58 0.15 20 / 0.18) ${pct(v, lo, hi)}%)`,
+  });
+  const cursorRadius = tool === "eraser" ? eraserSize / 2 : tool === "blend" ? blendSize / 2 : tool === "fill" ? 10 : 12;
 
   return (
     <section aria-label="Collaborative canvas">
       <div className="overflow-hidden rounded-[2rem] bg-card/70 shadow-2xl shadow-primary/15 ring-1 ring-white/60 backdrop-blur-xl">
         <div className="grid xl:grid-cols-[264px_minmax(0,1fr)_316px] xl:grid-rows-[auto_1fr]">
-          {/* ───────── LEFT: people, color, brush, shortcuts ───────── */}
+          {/* ───────── LEFT: people, tools, color, brush, shortcuts ───────── */}
           <aside
             aria-label="Room and drawing tools"
             className="order-2 divide-y divide-border/70 border-t border-border/70 xl:col-start-1 xl:row-span-2 xl:row-start-1 xl:border-r xl:border-t-0"
@@ -777,103 +1139,190 @@ function Room({
               </ul>
             </section>
 
-            {/* 02 / Color */}
-            <section aria-labelledby="colors-heading" className={sectionBase}>
-              <SectionLabel id="colors-heading" n="02" title="Color" Icon={Palette} />
-              <div className="mt-4 grid grid-cols-6 gap-2.5" role="group" aria-label="Brush color">
-                {SWATCHES.map((s) => (
-                  <button
-                    key={s.value}
-                    type="button"
-                    onClick={() => setColor(s.value)}
-                    aria-label={s.name}
-                    aria-pressed={color === s.value}
-                    className={`relative aspect-square w-full rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
-                      color === s.value ? "scale-105 ring-foreground" : "ring-border/60"
-                    }`}
-                    style={{ backgroundColor: s.value }}
-                  >
-                    {color === s.value && (
-                      <Check
-                        className="absolute inset-0 m-auto h-4 w-4 drop-shadow"
-                        style={{ color: ["#f5a623", "#e0b04f", "#ffffff"].includes(s.value) ? "#3a1f2b" : "#fff" }}
-                      />
-                    )}
+            {/* 02 / Tools :D */}
+            <section aria-labelledby="tools-heading" className={sectionBase}>
+              <SectionLabel id="tools-heading" n="02" title="Tools" Icon={Hand} />
+              <div className="mt-4 space-y-1.5">
+                {([
+                  ["draw", "Draw", Pencil, "V"],
+                  ["eraser", "Eraser", Eraser, "R"],
+                  ["blend", "Blend", Waves, "B"],
+                  ["fill", "Fill", PaintBucket, "F"],
+                ] as const).map(([id, label, Icon, key]) => (
+                  <button key={id} type="button" onClick={() => selectTool(id)} aria-pressed={tool === id} className={`${ROW} ${tool === id ? ROW_ON : ROW_OFF}`}>
+                    <Icon className="h-4 w-4 shrink-0" /> {label} <span className="ml-auto text-xs opacity-60">{key}</span>
                   </button>
                 ))}
               </div>
-              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{colorName}</p>
-            </section>
-
-            {/* 03 / Brush */}
-            <section aria-labelledby="brush-heading" className={sectionBase}>
-              <SectionLabel id="brush-heading" n="03" title="Brush" Icon={Paintbrush} />
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                {([["draw", "Draw", Pencil], ["fill", "Fill", PaintBucket]] as const).map(([id, label, Icon]) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => { setTool(id); say(id === "fill" ? "Fill tool. Click an enclosed area, or press Space to fill at the pen." : "Draw tool."); }}
-                    aria-pressed={tool === id}
-                    className={`flex h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-2 text-sm font-medium transition-colors ${
-                      tool === id ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : "text-foreground ring-1 ring-border/70 hover:bg-primary/10"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" /> {label}
-                  </button>
-                ))}
-              </div>
-              <label htmlFor="collab-width" className="mt-5 flex items-center justify-between text-sm">
-                <span className="font-medium">Size</span>
-                <span className="text-muted-foreground">{width} px</span>
-              </label>
-              <input
-                id="collab-width"
-                type="range"
-                min={2}
-                max={28}
-                value={width}
-                onChange={(e) => setWidth(Number(e.target.value))}
-                className="mt-2 w-full accent-primary"
-              />
+              {(tool === "eraser" || tool === "blend") && (
+                <label className="mt-3 flex items-center gap-3 text-sm font-medium text-muted-foreground">
+                  <span className="shrink-0">{tool === "eraser" ? "Eraser" : "Blend"} size</span>
+                  <input
+                    type="range" min="4" max="100" step="1" value={sizeValue}
+                    onChange={(e) => changeToolSize(Number(e.target.value))}
+                    className="min-w-0 flex-1 accent-primary"
+                    aria-label={`${tool === "eraser" ? "Eraser" : "Blend"} size`}
+                  />
+                  <span className="w-8 text-right text-foreground">{sizeValue}</span>
+                </label>
+              )}
               <div className="mt-4 space-y-1.5 border-t border-border/70 pt-4">
-                <button type="button" onClick={togglePen} aria-pressed={penDown} className={`${ROW} ${penDown ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : ROW_OFF}`}>
+                <button type="button" onClick={togglePen} aria-pressed={penDown} className={`${ROW} ${penDown ? ROW_SOFT : ROW_OFF}`}>
                   {penDown ? <Pencil className="h-4 w-4 shrink-0 text-primary" /> : <Hand className="h-4 w-4 shrink-0" />}
                   {penDown ? "Pen down" : "Pen up"} <span className="ml-auto text-xs opacity-60">Space</span>
                 </button>
+                <button type="button" onClick={toggleVisualAids} aria-pressed={visualAids} className={`${ROW} ${visualAids ? ROW_SOFT : ROW_OFF}`}>
+                  <Eye className="h-4 w-4 shrink-0" /> Visual aids <span className="ml-auto text-xs opacity-60">X</span>
+                </button>
+                {guideKey && (
+                  <button type="button" onClick={stopGuide} className={`${ROW} bg-destructive text-destructive-foreground shadow-sm`}>
+                    <X className="h-4 w-4 shrink-0" /> Stop guide <span className="ml-auto text-xs opacity-70">Esc</span>
+                  </button>
+                )}
                 <button type="button" onClick={doUndo} className={`${ROW} ${ROW_OFF}`}>
                   <Undo2 className="h-4 w-4 shrink-0" /> Undo mine <span className="ml-auto text-xs opacity-60">Ctrl Z</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    room.clearMine();
-                    say("Cleared your lines.");
-                  }}
-                  className={`${ROW} ${ROW_OFF}`}
-                >
-                  <Eraser className="h-4 w-4 shrink-0" /> Clear mine
+                <button type="button" onClick={clearMine} className={`${ROW} ${ROW_OFF}`}>
+                  <Eraser className="h-4 w-4 shrink-0" /> Clear mine <span className="ml-auto text-xs opacity-60">C</span>
                 </button>
                 {isPrivate && (
-                  <button type="button" onClick={clearAll} className={`${ROW} text-destructive hover:bg-destructive/10`}>
+                  <button type="button" onClick={clearEveryone} className={`${ROW} text-destructive hover:bg-destructive/10`}>
                     <Trash2 className="h-4 w-4 shrink-0" /> Clear everyone's
                   </button>
                 )}
               </div>
             </section>
 
-            {/* 04 / Shortcuts */}
+            {/* 03 / Color */}
+            <section aria-labelledby="colors-heading" className={sectionBase}>
+              <SectionLabel id="colors-heading" n="03" title="Color" Icon={Palette} />
+              <div className="mt-4 grid grid-cols-6 gap-2.5" role="group" aria-label="Brush color">
+                {COLORS.map((c, i) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => pickColor(i)}
+                    aria-label={`Color ${c.name}`}
+                    aria-pressed={colorIndex === i}
+                    className={`relative aspect-square w-full rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
+                      colorIndex === i ? "scale-105 ring-foreground" : "ring-border/60"
+                    }`}
+                    style={{ backgroundColor: c.value }}
+                  >
+                    {colorIndex === i && (
+                      <Check
+                        className="absolute inset-0 m-auto h-4 w-4 drop-shadow"
+                        style={{ color: ["#f5a623", "#e0b04f", "#f9a8a8", "#ffffff"].includes(c.value) ? "#3a1f2b" : "#fff" }}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                {colorName} <span className="font-medium normal-case tracking-normal">· Q / E to cycle</span>
+              </p>
+            </section>
+
+            {/* 04 / Brush */}
+            <section aria-labelledby="brush-heading" className={sectionBase}>
+              <SectionLabel id="brush-heading" n="04" title="Brush" Icon={Paintbrush} />
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {TEXTURE_ORDER.map((t) => {
+                  const TextureIcon = TEXTURE_ICONS[t];
+                  const active = texture === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => changeTexture(t)}
+                      aria-pressed={active}
+                      className={`flex h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-2 text-sm font-medium transition-colors ${
+                        active ? ROW_SOFT : "ring-1 ring-border/70 text-foreground hover:bg-primary/10"
+                      }`}
+                    >
+                      <TextureIcon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{TEXTURE_LABELS[t]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">T to cycle textures</p>
+
+              <div className="mt-5 flex items-center justify-between text-sm">
+                <span className="font-medium">Size</span>
+                <span className="text-muted-foreground">{penWidth} px <span className="ml-1 text-xs">[ / ]</span></span>
+              </div>
+              <div className="mt-2 flex items-center gap-2.5">
+                <Button type="button" onClick={() => changePenWidth(penWidth - 1)} variant="outline" size="icon" className={STEP_BTN} aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}>
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <input
+                  type="range" min={MIN_PEN_WIDTH} max={MAX_PEN_WIDTH} step={1} value={penWidth}
+                  onChange={(e) => changePenWidth(Number(e.target.value))}
+                  aria-label={`${TEXTURE_LABELS[texture]} thickness`}
+                  className={SLIDER_CLASS}
+                  style={sliderBg(penWidth, MIN_PEN_WIDTH, MAX_PEN_WIDTH)}
+                />
+                <Button type="button" onClick={() => changePenWidth(penWidth + 1)} variant="outline" size="icon" className={STEP_BTN} aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} thickness`}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="mt-5 flex items-center justify-between text-sm">
+                <span className="font-medium">Opacity</span>
+                <span className="text-muted-foreground">{Math.round(penOpacity * 100)}% <span className="ml-1 text-xs">, / .</span></span>
+              </div>
+              <div className="mt-2 flex items-center gap-2.5">
+                <Button type="button" onClick={() => changePenOpacity(penOpacity - OPACITY_STEP)} variant="outline" size="icon" className={STEP_BTN} aria-label={`Decrease ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}>
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <input
+                  type="range" min={OPACITY_RANGE[texture].min} max={OPACITY_RANGE[texture].max} step={OPACITY_STEP} value={penOpacity}
+                  onChange={(e) => changePenOpacity(Number(e.target.value))}
+                  aria-label={`${TEXTURE_LABELS[texture]} opacity`}
+                  className={SLIDER_CLASS}
+                  style={sliderBg(penOpacity, OPACITY_RANGE[texture].min, OPACITY_RANGE[texture].max)}
+                />
+                <Button type="button" onClick={() => changePenOpacity(penOpacity + OPACITY_STEP)} variant="outline" size="icon" className={STEP_BTN} aria-label={`Increase ${TEXTURE_LABELS[texture].toLowerCase()} opacity`}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </section>
+
+            {/* 05 / Shortcuts */}
             <section aria-labelledby="kbd-heading" className={sectionBase}>
-              <SectionLabel id="kbd-heading" n="04" title="Shortcuts" Icon={Keyboard} />
+              <SectionLabel id="kbd-heading" n="05" title="Shortcuts" Icon={Keyboard} />
               <h3 className="mt-4 text-xl font-black tracking-tight">
                 Keys for <span className={`${ACCENT} text-[1.15em]`}>speed.</span>
               </h3>
-              <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-                <li>Arrows: move (Shift = bigger steps)</li>
-                <li>Space / Enter: pen down or up (fills at the pen with Fill)</li>
-                <li>Ctrl Z: undo your last line</li>
-                <li>M: toggle your brush sound</li>
-              </ul>
+              <button
+                type="button"
+                onClick={() => setKbdOpen((o) => !o)}
+                aria-expanded={kbdOpen}
+                aria-controls="kbd-list"
+                className="mt-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-primary"
+              >
+                {kbdOpen ? "Hide shortcuts" : "Show shortcuts"}
+                <ChevronRight className={`h-4 w-4 transition-transform ${kbdOpen ? "rotate-90" : ""}`} />
+              </button>
+              {kbdOpen && (
+                <ul id="kbd-list" className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                  <li>Arrows: move brush (Shift = x3)</li>
+                  <li>Space / D: pen down or up (or fill)</li>
+                  <li>S / M: toggle sound</li>
+                  <li>C: clear my lines</li>
+                  <li>Ctrl Z: undo my last line</li>
+                  <li>Q / E: cycle colour</li>
+                  <li>[ / ]: thickness</li>
+                  <li>, / .: opacity</li>
+                  <li>T: cycle texture</li>
+                  <li>V / R / B / F: draw, eraser, blend, fill</li>
+                  <li>G: open / close guides</li>
+                  <li>Esc: stop active guide</li>
+                  <li>H: explain this page out loud</li>
+                  <li>X: toggle visual aids</li>
+                </ul>
+              )}
             </section>
           </aside>
 
@@ -889,13 +1338,25 @@ function Room({
                 {isPrivate && <span className="font-mono text-sm normal-case tracking-[0.2em] text-primary">{code}</span>}
                 <span className="hidden font-medium normal-case tracking-normal text-muted-foreground sm:inline">{CANVAS_W} × {CANVAS_H}</span>
               </div>
-              <button
-                type="button"
-                onClick={onLeave}
-                className="flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium text-foreground ring-1 ring-border/70 transition-colors hover:bg-primary/10"
-              >
-                <LogOut className="h-4 w-4" /> Leave room
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={explainStudio}
+                  className="flex h-10 items-center gap-2 rounded-full bg-primary/15 px-3.5 text-sm font-semibold text-foreground ring-1 ring-primary/40 transition-colors hover:bg-primary/25"
+                  aria-label="Explain this page out loud: what every feature is and how to use it"
+                >
+                  <HelpCircle className="h-4 w-4 text-primary" /> Explain this page <span className="text-xs opacity-60">H</span>
+                </button>
+                <button type="button" onClick={doUndo} className="flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium text-foreground ring-1 ring-border/70 transition-colors hover:bg-primary/10">
+                  <Undo2 className="h-4 w-4" /> Undo
+                </button>
+                <button type="button" onClick={clearMine} className="flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium text-foreground ring-1 ring-border/70 transition-colors hover:bg-primary/10">
+                  <Eraser className="h-4 w-4" /> Clear mine <span className="text-xs opacity-60">C</span>
+                </button>
+                <button type="button" onClick={onLeave} className="flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium text-foreground ring-1 ring-border/70 transition-colors hover:bg-primary/10">
+                  <LogOut className="h-4 w-4" /> Leave room
+                </button>
+              </div>
             </div>
 
             {isPrivate && (
@@ -912,41 +1373,97 @@ function Room({
               </div>
             )}
 
-            <div
-              tabIndex={0}
-              role="group"
-              aria-label="Shared canvas. Use the arrow keys to move, Space to put the pen down or lift it, Shift for bigger steps, Control Z to undo, M to toggle sound."
-              onKeyDown={onKeyDown}
-              onBlur={onBlur}
-              className="relative rounded-2xl bg-card/60 p-2 shadow-inner ring-1 ring-border/70 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
+            <div className="relative rounded-2xl bg-card/60 p-2 shadow-inner ring-1 ring-border/70">
               <svg
                 ref={svgRef}
                 viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
-                className="w-full touch-none select-none rounded-xl bg-white dark:brightness-[0.92]"
-                style={{ cursor: "crosshair" }}
+                tabIndex={0}
+                className={`w-full touch-none select-none rounded-xl bg-white outline-none dark:brightness-[0.92] ${
+                  visualAids ? "ring-4 ring-primary/60 focus-visible:ring-primary" : "ring-2 ring-primary/40"
+                }`}
+                style={{ cursor: "crosshair", aspectRatio: `${CANVAS_W} / ${CANVAS_H}` }}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={endPointer}
                 onPointerCancel={endPointer}
                 role="img"
-                aria-label={`Canvas with ${strokes.length} ${strokes.length === 1 ? "line" : "lines"} from ${peers.length} ${peers.length === 1 ? "person" : "people"}.`}
+                aria-label={`Shared canvas with ${strokes.length} ${strokes.length === 1 ? "line" : "lines"} from ${peers.length} ${peers.length === 1 ? "person" : "people"}. Use the arrow keys to move and Space to draw. Press H for a spoken tour.`}
               >
+                <defs>
+                  <filter id="glow">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  </filter>
+                  <filter id="pencilTexture" x="-20%" y="-20%" width="140%" height="140%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.4" numOctaves="3" seed="7" result="grain" />
+                    <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.33 0.33 0.33 0 0" result="grainAlpha" />
+                    <feComponentTransfer in="grainAlpha" result="grainMask">
+                      <feFuncA type="discrete" tableValues="0 0 0.15 0.35 0.55 0.7 0.82 0.92 1 1" />
+                    </feComponentTransfer>
+                    <feComposite in="SourceGraphic" in2="grainMask" operator="in" result="speckled" />
+                    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="edgeNoise" />
+                    <feDisplacementMap in="speckled" in2="edgeNoise" scale="1.5" xChannelSelector="R" yChannelSelector="G" />
+                  </filter>
+                  <filter id="brushSoften" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="0.6" />
+                  </filter>
+                  <filter id="blendSoften" x="-60%" y="-60%" width="220%" height="220%">
+                    <feGaussianBlur stdDeviation="5" />
+                  </filter>
+                </defs>
                 <rect width={CANVAS_W} height={CANVAS_H} fill="#ffffff" />
-                {strokes.map((s) => s.fillPath ? (
-                  <path key={s.id} d={s.fillPath} fill={s.color} />
-                ) : (
-                  <polyline
-                    key={s.id}
-                    points={s.points.map((p) => `${p.x},${p.y}`).join(" ")}
-                    fill="none"
-                    stroke={s.color}
-                    strokeWidth={s.width}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                ))}
 
+                {/* Your shape guide (local only) */}
+                {activeGuide && (
+                  <>
+                    <polyline
+                      points={activeGuide.points.map((p) => `${p.x * WIDTH},${p.y * HEIGHT}`).join(" ")}
+                      fill="none" stroke="oklch(0.75 0.18 170)" strokeWidth={18} strokeLinecap="round" strokeLinejoin="round" strokeOpacity={0.12}
+                    />
+                    <polyline
+                      points={activeGuide.points.map((p) => `${p.x * WIDTH},${p.y * HEIGHT}`).join(" ")}
+                      fill="none" stroke="oklch(0.72 0.18 170)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
+                      strokeDasharray="8 6" strokeOpacity={0.55} filter="url(#glow)"
+                    />
+                    {activeGuide.checkpoints.map((cp, i) => {
+                      const pt = activeGuide.points[Math.round(cp.at * (activeGuide.points.length - 1))];
+                      return (
+                        <circle
+                          key={i} cx={pt.x * WIDTH} cy={pt.y * HEIGHT} r={i === 0 ? 10 : 6}
+                          fill="oklch(0.72 0.18 170)" fillOpacity={i === 0 ? 0.7 : 0.45}
+                          stroke="white" strokeWidth={1.5} strokeOpacity={0.6}
+                        />
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Everyone's strokes */}
+                {strokes.map((cs) => {
+                  if (cs.fillPath) return <path key={cs.id} d={cs.fillPath} fill={cs.color} />;
+                  const s = toStroke(cs);
+                  const tv = textureVisualProps(s.texture);
+                  return (
+                    <g key={cs.id}>
+                      <polyline
+                        points={s.points.map((p) => `${p.x},${p.y}`).join(" ")}
+                        fill="none" stroke={s.color} strokeWidth={s.width} strokeOpacity={s.opacity}
+                        strokeLinecap={tv.strokeLinecap} strokeLinejoin={tv.strokeLinejoin}
+                        filter={s.mode === "blend" ? "url(#blendSoften)" : tv.filter}
+                        style={s.mode === "blend" ? { mixBlendMode: "multiply" } : tv.style}
+                      />
+                      {getBrushDabs(s).map((d, j) => (
+                        <ellipse
+                          key={j} cx={d.cx} cy={d.cy} rx={d.rx} ry={d.ry}
+                          transform={`rotate(${d.rotation} ${d.cx} ${d.cy})`}
+                          fill={s.color} fillOpacity={s.opacity} filter="url(#brushSoften)"
+                        />
+                      ))}
+                    </g>
+                  );
+                })}
+
+                {/* Other people's cursors */}
                 {Object.entries(cursors).map(([key, c]) => {
                   const peer = peerByKey.get(key);
                   if (!peer || key === me.key || muted.has(key)) return null;
@@ -955,15 +1472,8 @@ function Room({
                     <g key={key} transform={`translate(${c.x} ${c.y})`} pointerEvents="none">
                       <circle r={7} fill={peer.color} stroke="#ffffff" strokeWidth={2} />
                       <text
-                        x={flip ? -12 : 12}
-                        y={-10}
-                        textAnchor={flip ? "end" : "start"}
-                        fontSize={15}
-                        fontWeight={700}
-                        fill={peer.color}
-                        stroke="#ffffff"
-                        strokeWidth={4}
-                        paintOrder="stroke"
+                        x={flip ? -12 : 12} y={-10} textAnchor={flip ? "end" : "start"}
+                        fontSize={15} fontWeight={700} fill={peer.color} stroke="#ffffff" strokeWidth={4} paintOrder="stroke"
                       >
                         {peer.name}
                       </text>
@@ -971,15 +1481,27 @@ function Room({
                   );
                 })}
 
+                {/* Your cursor trail (visual aids) */}
+                {visualAids && trailRef.current.map((p, i) => (
+                  <circle
+                    key={i} cx={p.x} cy={p.y}
+                    r={1.5 + (i / trailRef.current.length) * 4}
+                    fill={color} fillOpacity={(i / trailRef.current.length) * 0.28}
+                  />
+                ))}
+
+                {/* Your brush */}
                 <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={penDown ? 10 : 8}
-                  fill={color}
-                  stroke="#111111"
-                  strokeWidth={2}
+                  cx={pos.x} cy={pos.y} r={cursorRadius}
+                  fill={tool === "eraser" ? "white" : color}
+                  fillOpacity={tool === "eraser" ? 0.5 : 0.18}
+                  stroke={tool === "eraser" ? "oklch(0.55 0.08 20)" : color}
+                  strokeWidth={2} strokeDasharray={tool === "eraser" ? "5 4" : undefined}
                   pointerEvents="none"
                 />
+                {tool === "draw" && (
+                  <circle cx={pos.x} cy={pos.y} r={Math.max(2, penWidth / 2)} fill={color} fillOpacity={penOpacity} stroke="#111111" strokeWidth={penDown ? 2 : 1} pointerEvents="none" />
+                )}
               </svg>
               {strokes.length === 0 && (
                 <div aria-hidden className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
@@ -993,7 +1515,7 @@ function Room({
             <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
               <span className="flex items-center gap-2.5">
                 <img
-                  src={penDown ? bearDrawing : bearSleeping}
+                  src={drawingNow ? bearDrawing : bearSleeping}
                   alt=""
                   aria-hidden="true"
                   className="h-10 w-10 select-none object-contain drop-shadow-[0_4px_6px_rgba(58,31,43,0.2)]"
@@ -1005,7 +1527,7 @@ function Room({
             </div>
           </section>
 
-          {/* ───────── CENTER, ROW 2: session, how it sounds, keep your art ───────── */}
+          {/* ───────── CENTER, ROW 2: session, how it sounds, keep, share ───────── */}
           <div className="order-4 flex min-w-0 flex-col gap-4 p-5 pt-2 xl:col-start-2 xl:row-start-2">
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-secondary/40 px-4 py-3 text-sm ring-1 ring-border/70">
               <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Session</span>
@@ -1013,8 +1535,14 @@ function Room({
                 <span aria-hidden className="h-4 w-4 rounded-full ring-1 ring-border" style={{ backgroundColor: color }} />
                 {colorName}
               </span>
-              <span>{width}px brush</span>
+              <span>
+                {tool === "draw" ? `${TEXTURE_LABELS[texture]} · ${penWidth}px · ${Math.round(penOpacity * 100)}%`
+                  : tool === "eraser" ? `Eraser · ${eraserSize}px`
+                  : tool === "blend" ? `Blend · ${blendSize}px`
+                  : "Fill"}
+              </span>
               <span>Sound {soundOn ? "on" : "off"}</span>
+              <span>{narrator.voiceOn ? `${VOICE_PERSONA_LABELS[narrator.persona]} guiding` : "Narration off"}</span>
               <span>{muted.size > 0 ? `${muted.size} muted` : "Nobody muted"}</span>
               <span className="ml-auto text-muted-foreground">{statusText}</span>
             </div>
@@ -1025,28 +1553,34 @@ function Room({
                 Up and down <span className={`${ACCENT} text-[1.15em]`}>sings.</span>
               </p>
               <p className="max-w-xs text-sm text-muted-foreground">
-                Move across the canvas to sweep the sound between your ears. Move higher for a higher note.
+                Move across the canvas to sweep the sound between your ears. Move higher for a higher note. You hear only your own brush.
               </p>
             </div>
 
             <div className="grid flex-1 items-stretch gap-4 md:grid-cols-2">
               <section aria-labelledby="export-heading" className="flex flex-col rounded-2xl p-5 ring-1 ring-border/70">
-                <SectionLabel id="export-heading" n="07" title="Keep" Icon={Download} />
+                <SectionLabel id="export-heading" n="10" title="Export" Icon={Box} />
                 <h3 className="mt-4 text-xl font-black tracking-tight">
-                  Take it <span className={`${ACCENT} text-[1.15em]`}>with you.</span>
+                  Hold it in your <span className={`${ACCENT} text-[1.15em]`}>hands.</span>
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   Saves the shared canvas as it looks to you, without anyone you've muted.
                 </p>
-                <div className="mt-auto grid gap-2 pt-4">
-                  <Button onClick={download} variant="outline" className="h-12 justify-start gap-3 rounded-2xl bg-background/60 px-4 text-sm font-medium ring-1 ring-primary/15">
-                    <Download className="h-4 w-4 shrink-0" /> Save as SVG
+                <div className="mt-4 grid gap-2">
+                  <Button type="button" onClick={exportSwell} className={`${ACTION_BTN} shadow-md`}>
+                    <Waves className="h-4 w-4 shrink-0" /> Swell Paper SVG
+                  </Button>
+                  <Button type="button" onClick={exportColor} variant="secondary" className={`${ACTION_BTN} shadow-sm`}>
+                    <Palette className="h-4 w-4 shrink-0" /> Colour SVG
+                  </Button>
+                  <Button type="button" onClick={exportStl} variant="outline" className={`${ACTION_BTN} bg-background/60 ring-1 ring-primary/15`}>
+                    <Box className="h-4 w-4 shrink-0" /> 3D Print (STL)
                   </Button>
                 </div>
               </section>
 
               <section aria-labelledby="share-heading" className="flex flex-col rounded-2xl p-5 ring-1 ring-border/70">
-                <SectionLabel id="share-heading" n="08" title="Share" Icon={Globe} />
+                <SectionLabel id="share-heading" n="11" title="Share" Icon={Globe} />
                 <h3 className="mt-4 text-xl font-black tracking-tight">
                   Let the world <span className={`${ACCENT} text-[1.15em]`}>see it.</span>
                 </h3>
@@ -1054,8 +1588,9 @@ function Room({
                   The gallery gets the whole shared canvas, so check with the room first. Pieces are reviewed before they appear.
                 </p>
                 <div className="mt-auto grid gap-2 pt-4">
-                  <Button onClick={() => void share()} disabled={sharing} className="h-12 w-full justify-center gap-2 rounded-2xl text-sm font-medium">
-                    <Share2 className="h-4 w-4" /> {sharing ? "Sending…" : "Send to Gallery"}
+                  <Button type="button" onClick={requestPost} disabled={sharing} variant={justPosted ? "secondary" : "default"} className="h-12 w-full justify-center gap-2 rounded-2xl text-sm font-medium">
+                    {justPosted ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+                    {sharing ? "Sending…" : justPosted ? "Sent for review!" : "Send to Gallery"}
                   </Button>
                   <Button asChild variant="outline" className="h-12 w-full rounded-2xl bg-card/60 text-sm font-medium">
                     <Link to="/gallery" className="gap-2"><Globe className="h-4 w-4" /> View Gallery</Link>
@@ -1065,46 +1600,179 @@ function Room({
             </div>
           </div>
 
-          {/* ───────── RIGHT: chat, sound ───────── */}
+          {/* ───────── RIGHT: chat, sound, guide voice, inspiration ───────── */}
           <aside
-            aria-label="Chat and sound"
+            aria-label="Chat, sound and inspiration"
             className="order-3 divide-y divide-border/70 border-t border-border/70 xl:col-start-3 xl:row-span-2 xl:row-start-1 xl:border-l xl:border-t-0"
           >
             <section aria-labelledby="chat-heading" className={sectionBase}>
-              <SectionLabel id="chat-heading" n="05" title="Chat" Icon={MessageSquare} />
+              <SectionLabel id="chat-heading" n="06" title="Chat" Icon={MessageSquare} />
               <h3 className="mt-4 text-xl font-black tracking-tight">
                 Say <span className={`${ACCENT} text-[1.15em]`}>hello.</span>
               </h3>
-              <ChatPanel
-                messages={room.messages}
-                muted={muted}
-                meKey={me.key}
-                isPublic={!isPrivate}
-                onSend={room.sendChat}
-              />
+              <ChatPanel messages={room.messages} muted={muted} meKey={me.key} isPublic={!isPrivate} onSend={room.sendChat} />
             </section>
 
             <section aria-labelledby="sound-heading" className={sectionBase}>
-              <SectionLabel id="sound-heading" n="06" title="Sound" Icon={Volume2} />
-              <h3 className="mt-4 text-xl font-black tracking-tight">
+              <SectionLabel id="sound-heading" n="07" title="Sound" Icon={Volume2} />
+              <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight">
                 Give it a <span className={`${ACCENT} text-[1.15em]`}>voice.</span>
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                You hear your own brush only. Everyone else's lines are silent, so the room stays calm.
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">Every movement can make music.</p>
               <button
                 type="button"
-                onClick={() => setSoundOn((v) => !v)}
+                onClick={toggleSound}
                 aria-pressed={soundOn}
-                className={`${ROW} mt-4 ${soundOn ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : ROW_OFF}`}
+                className={`mt-4 flex h-12 w-full items-center gap-3 rounded-xl px-3.5 text-sm font-semibold transition-colors ${
+                  soundOn ? "bg-primary text-primary-foreground shadow-md" : "bg-card text-foreground ring-1 ring-border hover:bg-primary/10"
+                }`}
               >
-                {soundOn ? <Volume2 className="h-4 w-4 shrink-0 text-primary" /> : <VolumeX className="h-4 w-4 shrink-0" />}
-                {soundOn ? "My brush sound: on" : "My brush sound: off"} <span className="ml-auto text-xs opacity-60">M</span>
+                {soundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+                {soundOn ? "Sound on" : "Sound off"}
+                <span className="ml-auto text-xs opacity-70">S</span>
               </button>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {SOUND_STYLE_ORDER.map((st) => {
+                  const StyleIcon = SOUND_STYLE_ICONS[st];
+                  const active = soundStyle === st;
+                  return (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => { setSoundStyle(st); say(`${SOUND_STYLE_LABELS[st]} sound.`); }}
+                      aria-pressed={active}
+                      className={`flex h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-2 text-sm font-medium transition-colors ${
+                        active ? "bg-primary/15 ring-1 ring-primary/40" : "ring-1 ring-border/70 hover:bg-primary/10"
+                      }`}
+                    >
+                      <StyleIcon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{SOUND_STYLE_LABELS[st]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-4 flex items-center gap-2.5">
+                <Button type="button" onClick={() => setSoundVolume((v) => Math.max(0, +(v - 0.1).toFixed(2)))} variant="outline" size="icon" className={STEP_BTN} aria-label="Decrease canvas sound volume">
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <input
+                  type="range" min={0} max={1} step={0.05} value={soundVolume}
+                  onChange={(e) => setSoundVolume(Number(e.target.value))}
+                  aria-label="Canvas sound volume"
+                  className={SLIDER_CLASS}
+                  style={sliderBg(soundVolume, 0, 1)}
+                />
+                <Button type="button" onClick={() => setSoundVolume((v) => Math.min(1, +(v + 0.1).toFixed(2)))} variant="outline" size="icon" className={STEP_BTN} aria-label="Increase canvas sound volume">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="mt-2 text-right text-sm text-muted-foreground">{Math.round(soundVolume * 100)}%</p>
+            </section>
+
+            <section aria-labelledby="voice-heading" className={sectionBase}>
+              <SectionLabel id="voice-heading" n="08" title="Guide voice" Icon={Mic} />
+              <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight">
+                Pick your <span className={`${ACCENT} text-[1.15em]`}>guide.</span>
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">Who talks you through the canvas.</p>
+              <div role="group" aria-label="Guide voice" className="mt-4 grid grid-cols-2 gap-2">
+                {VOICE_PERSONA_ORDER.map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => narrator.choosePersona(v)}
+                    aria-pressed={narrator.persona === v}
+                    className={`flex h-11 items-center justify-center rounded-xl px-3 text-sm font-medium transition-colors ${
+                      narrator.persona === v ? ROW_ON : "ring-1 ring-border/70 text-foreground hover:bg-primary/10"
+                    }`}
+                  >
+                    {VOICE_PERSONA_LABELS[v]}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={narrator.toggleVoice}
+                aria-pressed={narrator.voiceOn}
+                aria-label={narrator.voiceOn ? "Turn narration voice off" : "Turn narration voice on"}
+                className={`mt-2 flex h-11 w-full items-center gap-3 rounded-xl px-3.5 text-sm font-medium transition-colors ${
+                  narrator.voiceOn ? "bg-primary/15 ring-1 ring-primary/40" : "bg-muted text-muted-foreground ring-1 ring-border"
+                }`}
+              >
+                {narrator.voiceOn ? <Mic className="h-4 w-4 text-primary" /> : <MicOff className="h-4 w-4" />}
+                {narrator.voiceOn ? "Narration on" : "Narration off"}
+              </button>
+            </section>
+
+            <section aria-labelledby="guides-heading" className={sectionBase}>
+              <SectionLabel id="guides-heading" n="09" title="Inspiration" Icon={MapIcon} />
+              <h3 className="mt-4 text-2xl font-black leading-tight tracking-tight">
+                Need a place <span className={`${ACCENT} text-[1.15em]`}>to start?</span>
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">Try following a shape. The guide is only visible to you.</p>
+              <button
+                type="button"
+                onClick={() => setGuidesOpen((o) => !o)}
+                aria-expanded={guidesOpen}
+                aria-controls="guide-list"
+                className="mt-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-primary"
+              >
+                {guidesOpen ? "Hide shapes" : "Show shapes"} <span className="font-medium normal-case tracking-normal text-muted-foreground">· G</span>
+                <ChevronRight className={`h-4 w-4 transition-transform ${guidesOpen ? "rotate-90" : ""}`} />
+              </button>
+              {guideKey && (
+                <p className="mt-3 rounded-xl bg-primary/10 px-3 py-2 text-xs text-primary ring-1 ring-primary/20">
+                  Active: <strong>{SHAPE_GUIDES[guideKey].name}</strong>. Move near the glowing path to hear the guide tone.
+                </p>
+              )}
+              {guidesOpen && (
+                <div id="guide-list" className="mt-3 grid grid-cols-2 gap-2">
+                  {Object.entries(SHAPE_GUIDES).map(([key, guide]) => {
+                    const { Icon, color: gColor } = GUIDE_ICONS[key];
+                    const active = guideKey === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => (active ? stopGuide() : startGuide(key))}
+                        aria-pressed={active}
+                        title={guide.description}
+                        className={`flex min-h-12 min-w-0 items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors ${
+                          active ? "bg-primary/15 text-foreground ring-1 ring-primary/50" : "ring-1 ring-border/70 hover:bg-primary/10"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" style={{ color: gColor }} />
+                        <span className="min-w-0 leading-tight">
+                          {guide.name}
+                          {active && <span className="block text-[10px] font-normal text-muted-foreground">Active. Press to stop</span>}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </section>
           </aside>
         </div>
       </div>
+
+      {/* Send-to-gallery confirmation: a deliberate second step before anything goes public */}
+      <Dialog open={postConfirmOpen} onOpenChange={(open) => !open && cancelPost()}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Send this to the gallery?</DialogTitle>
+            <DialogDescription>
+              This is the whole shared canvas, including everyone's lines. Our team reviews every submission before it goes live.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 gap-2">
+            <Button type="button" variant="outline" onClick={cancelPost} className="rounded-full">Cancel</Button>
+            <Button type="button" onClick={() => void confirmPost()} className="gap-2 rounded-full">
+              <Globe className="h-4 w-4" /> Yes, send for review
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ReportDialog target={reportTarget} onClose={() => setReportTarget(null)} onSubmit={handleReport} />
     </section>
