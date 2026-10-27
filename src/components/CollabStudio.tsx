@@ -1,18 +1,34 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { saveArtwork } from "@/lib/gallery-storage";
+import bearSleeping from "@/assets/bear_sleeping.png";
+import bearDrawing from "@/assets/bear_drawing.png";
 import {
   CANVAS_H,
   CANVAS_W,
+  CHAT_MAX_CHARS,
   CODE_LENGTH,
   PRIVATE_CAP,
   PUBLIC_CAP,
+  REPORT_REASONS,
   makeRoomCode,
   normalizeCode,
+  submitReport,
   useCollabRoom,
+  type ChatMsg,
   type CStroke,
+  type Peer,
   type Pt,
+  type ReportReason,
   type RoomRequest,
 } from "@/lib/collab";
 import {
@@ -21,14 +37,24 @@ import {
   Copy,
   Download,
   Eraser,
-  PaintBucket,
-  Pencil,
+  Eye,
+  EyeOff,
+  Flag,
   Globe,
+  Hand,
+  Keyboard,
   KeyRound,
   Link2,
   Loader2,
   Lock,
   LogOut,
+  MessageSquare,
+  PaintBucket,
+  Palette,
+  Paintbrush,
+  Pencil,
+  Sparkles,
+  Send,
   Share2,
   Trash2,
   Undo2,
@@ -38,6 +64,15 @@ import {
 } from "lucide-react";
 
 const ACCENT = "font-['Instrument_Serif',Georgia,serif] font-normal italic tracking-tight";
+
+function SectionLabel({ id, n, title, Icon }: { id: string; n: string; title: string; Icon: typeof Globe }) {
+  return (
+    <h2 id={id} className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+      <span><span className="text-primary">{n}</span> / {title}</span>
+      <Icon className="h-4 w-4 opacity-70" aria-hidden />
+    </h2>
+  );
+}
 
 const SWATCHES = [
   { name: "black", value: "#000000" },
@@ -273,7 +308,7 @@ export function CollabStudio({ initialCode }: { initialCode?: string }) {
   const liveText = room.notice || announce;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6">
       <p aria-live="polite" role="status" className="sr-only">
         {liveText}
       </p>
@@ -350,14 +385,14 @@ function Lobby(props: {
 
       <div className="mt-10 grid gap-6 md:grid-cols-2">
         {/* Public */}
-        <div className="flex flex-col rounded-3xl bg-card p-7 shadow-sm ring-1 ring-primary/15">
+        <div className="flex flex-col rounded-3xl bg-card/70 p-7 shadow-xl shadow-primary/10 ring-1 ring-white/60 backdrop-blur-xl">
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
             <Globe className="h-6 w-6" />
           </span>
           <h2 className="mt-5 text-2xl font-bold text-foreground">Public room</h2>
           <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
             Drop into a shared canvas with other creators. You'll be matched into a room with space (up to {PUBLIC_CAP}{" "}
-            people) and given a friendly random name. There's no chat, and nobody sees who you are.
+            people) and given a friendly random name. Chat is on, links are blocked, and nobody sees who you are.
           </p>
           <Button onClick={props.onJoinPublic} size="lg" className="mt-6 w-full gap-2 rounded-full shadow-md sm:w-fit">
             Join a public room <ArrowRight className="h-4 w-4" />
@@ -365,7 +400,7 @@ function Lobby(props: {
         </div>
 
         {/* Private */}
-        <div className="flex flex-col rounded-3xl bg-card p-7 shadow-sm ring-1 ring-primary/15">
+        <div className="flex flex-col rounded-3xl bg-card/70 p-7 shadow-xl shadow-primary/10 ring-1 ring-white/60 backdrop-blur-xl">
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
             <Lock className="h-6 w-6" />
           </span>
@@ -424,7 +459,7 @@ function Lobby(props: {
 
 function StatusCard(props: { icon: React.ReactNode; title: string; body: string; action?: React.ReactNode }) {
   return (
-    <div className="mx-auto mt-16 max-w-md rounded-3xl bg-card p-10 text-center shadow-sm ring-1 ring-primary/15">
+    <div className="mx-auto mt-16 max-w-md rounded-3xl bg-card/70 p-10 text-center shadow-xl shadow-primary/10 ring-1 ring-white/60 backdrop-blur-xl">
       <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20">
         {props.icon}
       </span>
@@ -450,7 +485,7 @@ function Room({
   onLeave: () => void;
   say: (m: string) => void;
 }) {
-  const { me, peers, strokes, cursors } = room;
+  const { me, peers, cursors } = room;
   const isPrivate = req.kind === "private";
   const cap = isPrivate ? PRIVATE_CAP : PUBLIC_CAP;
 
@@ -462,13 +497,27 @@ function Room({
   const [penDown, setPenDown] = useState(false);
   const [copied, setCopied] = useState<"" | "code" | "link">("");
   const [sharing, setSharing] = useState(false);
+  const [muted, setMuted] = useState<Set<string>>(() => new Set());
+  const [reportTarget, setReportTarget] = useState<Peer | null>(null);
+
+  // Muting is local: you stop seeing that person's lines, cursor and chat.
+  // Saving and sharing also leave out their lines, so you never send on
+  // something you chose not to see.
+  const strokes = room.strokes.filter((s) => !muted.has(s.owner));
 
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const fillAt = (p: Pt) => {
+    const path = makeBucketFillPath(strokes, CANVAS_W, CANVAS_H, p);
+    if (path && room.addFill(colorRef.current, path)) say("Filled.");
+    else say("Nothing to fill there. Click an empty area enclosed by lines.");
+  };
   const posRef = useRef(pos);
   const penDownRef = useRef(false);
   const pointerDrawingRef = useRef(false);
   const colorRef = useRef(color);
   const widthRef = useRef(width);
+  const toolRef = useRef(tool);
+  useEffect(() => { toolRef.current = tool; }, [tool]);
   useEffect(() => { colorRef.current = color; }, [color]);
   useEffect(() => { widthRef.current = width; }, [width]);
 
@@ -493,9 +542,8 @@ function Room({
     e.currentTarget.setPointerCapture(e.pointerId);
     const p = toPt(e);
     setPosition(p);
-    if (tool === "fill") {
-      const path = makeBucketFillPath(room.strokes, CANVAS_W, CANVAS_H, p);
-      if (path) room.addFill(colorRef.current, path);
+    if (toolRef.current === "fill") {
+      fillAt(p);
       return;
     }
     pointerDrawingRef.current = true;
@@ -521,6 +569,10 @@ function Room({
 
   // Keyboard drawing: arrows move, Space lowers/lifts the pen.
   const togglePen = useCallback(() => {
+    if (toolRef.current === "fill") {
+      fillAt(posRef.current);
+      return;
+    }
     if (penDownRef.current) {
       penDownRef.current = false;
       setPenDown(false);
@@ -534,7 +586,8 @@ function Room({
       tone.play(posRef.current, true);
       say("Pen down. Use the arrow keys to draw.");
     }
-  }, [room, say, tone]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room, say, tone, strokes]);
 
   const doUndo = useCallback(() => {
     say(room.undoMine() ? "Undid your last line." : "You have nothing to undo.");
@@ -636,238 +689,613 @@ function Room({
 
   const peerByKey = new Map(peers.map((p) => [p.key, p]));
 
+  const toggleMute = (p: Peer) => {
+    const nowMuted = !muted.has(p.key);
+    setMuted((prev) => {
+      const next = new Set(prev);
+      if (nowMuted) next.add(p.key);
+      else next.delete(p.key);
+      return next;
+    });
+    say(nowMuted ? `Muted ${p.name}. You won't see their lines or messages.` : `Unmuted ${p.name}.`);
+  };
+
+  const handleReport = async (reason: ReportReason, note: string) => {
+    const target = reportTarget;
+    if (!target) return;
+    await submitReport({
+      room: req.kind === "private" ? `private-${req.code}` : room.roomLabel,
+      target,
+      reason,
+      note,
+      strokes: room.strokes,
+      chat: room.messages,
+    });
+    setMuted((prev) => new Set(prev).add(target.key));
+    setReportTarget(null);
+    say(`Report sent. ${target.name} is muted for you.`);
+  };
+
+  const sectionBase = "p-5";
+  const ROW = "flex h-11 w-full items-center gap-3 rounded-xl px-3.5 text-sm font-medium transition-colors";
+  const ROW_OFF = "text-foreground hover:bg-primary/10";
+  const statusText = penDown ? "Drawing" : strokes.length === 0 ? "A fresh start" : `${strokes.length} ${strokes.length === 1 ? "line" : "lines"} drawn`;
+  const colorName = SWATCHES.find((s) => s.value === color)?.name ?? "";
+
   return (
-    <section aria-label="Collaborative canvas" className="relative isolate">
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-primary/15 blur-3xl" />
-        <div className="absolute -right-40 top-1/3 h-96 w-96 rounded-full bg-accent/20 blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 h-80 w-[42rem] -translate-x-1/2 rounded-full bg-secondary/20 blur-3xl" />
-      </div>
-      {/* Room header */}
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
-            <span aria-hidden className="h-px w-8 bg-primary/60" />
-            {isPrivate ? <Lock className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
-            {isPrivate ? "Private room" : "Public room"}
-          </div>
-          <h1 className="mt-4 text-5xl font-black tracking-[-0.04em] text-foreground sm:text-7xl">
-            {isPrivate ? (
-              <>
-                Room <span className="font-mono tracking-[0.18em]">{code}</span>
-              </>
-            ) : (
-              <>
-                {room.roomLabel.replace("Public r", "R")}
-                <span className={`${ACCENT} ml-2 text-[1.1em]`}>together.</span>
-              </>
-            )}
-          </h1>
-        </div>
-        <Button onClick={onLeave} variant="outline" className="gap-2 rounded-full shadow-sm backdrop-blur-md">
-          <LogOut className="h-4 w-4" /> Leave room
-        </Button>
-      </div>
-
-      {isPrivate && (
-        <div className="relative mb-6 flex flex-wrap items-center gap-3 overflow-hidden rounded-2xl border border-white/30 bg-gradient-to-br from-primary/15 via-card/70 to-accent/15 px-5 py-4 shadow-xl shadow-primary/10 ring-1 ring-white/40 backdrop-blur-xl">
-          <p className="min-w-[14rem] flex-1 text-sm text-foreground">
-            Share this code with up to {PRIVATE_CAP - 1} friends. Anyone who has it can join.
-          </p>
-          <Button onClick={() => void copy("code")} variant="outline" size="sm" className="gap-2 rounded-full">
-            {copied === "code" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} Copy code
-          </Button>
-          <Button onClick={() => void copy("link")} variant="outline" size="sm" className="gap-2 rounded-full">
-            {copied === "link" ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />} Copy invite link
-          </Button>
-        </div>
-      )}
-
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-        {/* Canvas */}
-        <div className="min-w-0">
-          <div
-            tabIndex={0}
-            role="group"
-            aria-label="Shared canvas. Use the arrow keys to move, Space to put the pen down or lift it, Shift for bigger steps, Control Z to undo, M to toggle sound."
-            onKeyDown={onKeyDown}
-            onBlur={onBlur}
-            className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-br from-primary/20 via-card/75 to-accent/20 p-1.5 shadow-2xl shadow-primary/20 ring-1 ring-white/40 backdrop-blur-xl outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-2"
+    <section aria-label="Collaborative canvas">
+      <div className="overflow-hidden rounded-[2rem] bg-card/70 shadow-2xl shadow-primary/15 ring-1 ring-white/60 backdrop-blur-xl">
+        <div className="grid xl:grid-cols-[264px_minmax(0,1fr)_316px] xl:grid-rows-[auto_1fr]">
+          {/* ───────── LEFT: people, color, brush, shortcuts ───────── */}
+          <aside
+            aria-label="Room and drawing tools"
+            className="order-2 divide-y divide-border/70 border-t border-border/70 xl:col-start-1 xl:row-span-2 xl:row-start-1 xl:border-r xl:border-t-0"
           >
-            <svg
-              ref={svgRef}
-              viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
-              className="w-full touch-none select-none rounded-[1.85rem] border border-white/60 bg-white shadow-inner dark:brightness-[0.92]"
-              style={{ cursor: "crosshair" }}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={endPointer}
-              onPointerCancel={endPointer}
-              role="img"
-              aria-label={`Canvas with ${strokes.length} ${strokes.length === 1 ? "line" : "lines"} from ${peers.length} ${peers.length === 1 ? "person" : "people"}.`}
-            >
-              <rect width={CANVAS_W} height={CANVAS_H} fill="#ffffff" />
-              {strokes.map((s) => s.fillPath ? (
-                <path key={s.id} d={s.fillPath} fill={s.color} />
-              ) : (
-                <polyline key={s.id} points={s.points.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke={s.color} strokeWidth={s.width} strokeLinecap="round" strokeLinejoin="round" />
-              ))}
+            {/* 01 / People */}
+            <section aria-labelledby="people-heading" className={sectionBase}>
+              <h2 id="people-heading" className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                <span><span className="text-primary">01</span> / People</span>
+                <span className="rounded-full bg-background/60 px-2.5 py-0.5 text-[11px] font-medium normal-case tracking-normal">{peers.length} of {cap}</span>
+              </h2>
+              <ul className="mt-4 space-y-1">
+                {peers.map((p) => {
+                  const isMe = p.key === me.key;
+                  const isMuted = muted.has(p.key);
+                  return (
+                    <li key={p.key} className="flex items-center gap-2.5 text-sm text-foreground">
+                      <span aria-hidden className="h-3 w-3 shrink-0 rounded-full ring-1 ring-border" style={{ background: p.color }} />
+                      <span className={`min-w-0 flex-1 truncate ${isMuted ? "text-muted-foreground line-through" : ""}`}>
+                        {p.name}
+                        {isMe && <span className="ml-1.5 text-xs text-muted-foreground">(you)</span>}
+                      </span>
+                      {!isMe && (
+                        <span className="flex shrink-0 items-center gap-0.5">
+                          <button
+                            type="button"
+                            onClick={() => toggleMute(p)}
+                            aria-pressed={isMuted}
+                            aria-label={isMuted ? `Unmute ${p.name}` : `Mute ${p.name}`}
+                            title={isMuted ? "Unmute" : "Mute"}
+                            className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            {isMuted ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setReportTarget(p)}
+                            aria-label={`Report ${p.name}`}
+                            title="Report"
+                            className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <Flag className="h-4 w-4" />
+                          </button>
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
 
-              {/* Other people's cursors */}
-              {Object.entries(cursors).map(([key, c]) => {
-                const peer = peerByKey.get(key);
-                if (!peer || key === me.key) return null;
-                const flip = c.x > CANVAS_W - 130;
-                return (
-                  <g key={key} transform={`translate(${c.x} ${c.y})`} pointerEvents="none">
-                    <circle r={7} fill={peer.color} stroke="#ffffff" strokeWidth={2} />
-                    <text
-                      x={flip ? -12 : 12}
-                      y={-10}
-                      textAnchor={flip ? "end" : "start"}
-                      fontSize={15}
-                      fontWeight={700}
-                      fill={peer.color}
-                      stroke="#ffffff"
-                      strokeWidth={4}
-                      paintOrder="stroke"
-                    >
-                      {peer.name}
-                    </text>
-                  </g>
-                );
-              })}
+            {/* 02 / Color */}
+            <section aria-labelledby="colors-heading" className={sectionBase}>
+              <SectionLabel id="colors-heading" n="02" title="Color" Icon={Palette} />
+              <div className="mt-4 grid grid-cols-6 gap-2.5" role="group" aria-label="Brush color">
+                {SWATCHES.map((s) => (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => setColor(s.value)}
+                    aria-label={s.name}
+                    aria-pressed={color === s.value}
+                    className={`relative aspect-square w-full rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
+                      color === s.value ? "scale-105 ring-foreground" : "ring-border/60"
+                    }`}
+                    style={{ backgroundColor: s.value }}
+                  >
+                    {color === s.value && (
+                      <Check
+                        className="absolute inset-0 m-auto h-4 w-4 drop-shadow"
+                        style={{ color: ["#f5a623", "#e0b04f", "#ffffff"].includes(s.value) ? "#3a1f2b" : "#fff" }}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{colorName}</p>
+            </section>
 
-              {/* Your pen */}
-              <circle
-                cx={pos.x}
-                cy={pos.y}
-                r={penDown ? 10 : 8}
-                fill={color}
-                stroke="#111111"
-                strokeWidth={2}
-                pointerEvents="none"
+            {/* 03 / Brush */}
+            <section aria-labelledby="brush-heading" className={sectionBase}>
+              <SectionLabel id="brush-heading" n="03" title="Brush" Icon={Paintbrush} />
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {([["draw", "Draw", Pencil], ["fill", "Fill", PaintBucket]] as const).map(([id, label, Icon]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => { setTool(id); say(id === "fill" ? "Fill tool. Click an enclosed area, or press Space to fill at the pen." : "Draw tool."); }}
+                    aria-pressed={tool === id}
+                    className={`flex h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-2 text-sm font-medium transition-colors ${
+                      tool === id ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : "text-foreground ring-1 ring-border/70 hover:bg-primary/10"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" /> {label}
+                  </button>
+                ))}
+              </div>
+              <label htmlFor="collab-width" className="mt-5 flex items-center justify-between text-sm">
+                <span className="font-medium">Size</span>
+                <span className="text-muted-foreground">{width} px</span>
+              </label>
+              <input
+                id="collab-width"
+                type="range"
+                min={2}
+                max={28}
+                value={width}
+                onChange={(e) => setWidth(Number(e.target.value))}
+                className="mt-2 w-full accent-primary"
               />
-            </svg>
-          </div>
-
-          <p className="mt-4 px-2 text-sm leading-relaxed text-muted-foreground">
-            Draw with a mouse, finger, or pen. Or focus the canvas and use the arrow keys with Space to draw by keyboard —
-            moving left and right pans the tone, and up and down changes its pitch.
-          </p>
-        </div>
-
-        {/* Side panel */}
-        <div className="space-y-4">
-          {/* People */}
-          <div className="rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-card/90 via-card/75 to-primary/10 p-5 shadow-xl shadow-primary/10 ring-1 ring-primary/15 backdrop-blur-xl">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Users className="h-4 w-4 text-primary" /> In this room
-              <span className="ml-auto rounded-full bg-background/60 px-2.5 py-0.5 text-xs font-normal text-muted-foreground">
-                {peers.length} of {cap}
-              </span>
-            </h2>
-            <ul className="mt-3 space-y-2">
-              {peers.map((p) => (
-                <li key={p.key} className="flex items-center gap-2.5 text-sm text-foreground">
-                  <span aria-hidden className="h-3 w-3 shrink-0 rounded-full" style={{ background: p.color }} />
-                  <span className="truncate">{p.name}</span>
-                  {p.key === me.key && <span className="text-xs text-muted-foreground">(you)</span>}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Tools */}
-          <div className="rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-card/90 via-card/75 to-primary/10 p-5 shadow-xl shadow-primary/10 ring-1 ring-primary/15 backdrop-blur-xl">
-            <h2 className="text-sm font-semibold text-foreground">Tools</h2>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <Button onClick={() => setTool("draw")} variant={tool === "draw" ? "default" : "outline"} size="sm" className="gap-2 rounded-full"><Pencil className="h-4 w-4" /> Draw</Button>
-              <Button onClick={() => setTool("fill")} variant={tool === "fill" ? "default" : "outline"} size="sm" className="gap-2 rounded-full"><PaintBucket className="h-4 w-4" /> Fill</Button>
-            </div>
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Color</h2>
-            <div className="mt-3 grid grid-cols-6 gap-2" role="group" aria-label="Brush color">
-              {SWATCHES.map((s) => (
+              <div className="mt-4 space-y-1.5 border-t border-border/70 pt-4">
+                <button type="button" onClick={togglePen} aria-pressed={penDown} className={`${ROW} ${penDown ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : ROW_OFF}`}>
+                  {penDown ? <Pencil className="h-4 w-4 shrink-0 text-primary" /> : <Hand className="h-4 w-4 shrink-0" />}
+                  {penDown ? "Pen down" : "Pen up"} <span className="ml-auto text-xs opacity-60">Space</span>
+                </button>
+                <button type="button" onClick={doUndo} className={`${ROW} ${ROW_OFF}`}>
+                  <Undo2 className="h-4 w-4 shrink-0" /> Undo mine <span className="ml-auto text-xs opacity-60">Ctrl Z</span>
+                </button>
                 <button
-                  key={s.value}
                   type="button"
-                  onClick={() => setColor(s.value)}
-                  aria-label={s.name}
-                  aria-pressed={color === s.value}
-                  className={`h-8 w-8 rounded-full ring-1 ring-border transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                    color === s.value ? "scale-110 ring-2 ring-primary ring-offset-2 ring-offset-card" : ""
-                  }`}
-                  style={{ background: s.value }}
+                  onClick={() => {
+                    room.clearMine();
+                    say("Cleared your lines.");
+                  }}
+                  className={`${ROW} ${ROW_OFF}`}
+                >
+                  <Eraser className="h-4 w-4 shrink-0" /> Clear mine
+                </button>
+                {isPrivate && (
+                  <button type="button" onClick={clearAll} className={`${ROW} text-destructive hover:bg-destructive/10`}>
+                    <Trash2 className="h-4 w-4 shrink-0" /> Clear everyone's
+                  </button>
+                )}
+              </div>
+            </section>
+
+            {/* 04 / Shortcuts */}
+            <section aria-labelledby="kbd-heading" className={sectionBase}>
+              <SectionLabel id="kbd-heading" n="04" title="Shortcuts" Icon={Keyboard} />
+              <h3 className="mt-4 text-xl font-black tracking-tight">
+                Keys for <span className={`${ACCENT} text-[1.15em]`}>speed.</span>
+              </h3>
+              <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                <li>Arrows: move (Shift = bigger steps)</li>
+                <li>Space / Enter: pen down or up (fills at the pen with Fill)</li>
+                <li>Ctrl Z: undo your last line</li>
+                <li>M: toggle your brush sound</li>
+              </ul>
+            </section>
+          </aside>
+
+          {/* ───────── CENTER: the shared canvas ───────── */}
+          <section aria-label="Canvas" className="order-1 min-w-0 p-5 pb-3 xl:col-start-2 xl:row-start-1">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3 text-[11px] font-bold uppercase tracking-[0.18em]">
+                <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-[oklch(0.58_0.13_150)]" />
+                <span className="flex items-center gap-1.5 truncate text-foreground">
+                  {isPrivate ? <Lock className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
+                  {isPrivate ? "Private room" : room.roomLabel}
+                </span>
+                {isPrivate && <span className="font-mono text-sm normal-case tracking-[0.2em] text-primary">{code}</span>}
+                <span className="hidden font-medium normal-case tracking-normal text-muted-foreground sm:inline">{CANVAS_W} × {CANVAS_H}</span>
+              </div>
+              <button
+                type="button"
+                onClick={onLeave}
+                className="flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium text-foreground ring-1 ring-border/70 transition-colors hover:bg-primary/10"
+              >
+                <LogOut className="h-4 w-4" /> Leave room
+              </button>
+            </div>
+
+            {isPrivate && (
+              <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-secondary/40 px-4 py-3 ring-1 ring-border/70">
+                <p className="min-w-[14rem] flex-1 text-sm text-foreground">
+                  Share this code with up to {PRIVATE_CAP - 1} friends. Anyone who has it can join.
+                </p>
+                <button type="button" onClick={() => void copy("code")} className="flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium ring-1 ring-border/70 transition-colors hover:bg-primary/10">
+                  {copied === "code" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} Copy code
+                </button>
+                <button type="button" onClick={() => void copy("link")} className="flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium ring-1 ring-border/70 transition-colors hover:bg-primary/10">
+                  {copied === "link" ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />} Copy invite link
+                </button>
+              </div>
+            )}
+
+            <div
+              tabIndex={0}
+              role="group"
+              aria-label="Shared canvas. Use the arrow keys to move, Space to put the pen down or lift it, Shift for bigger steps, Control Z to undo, M to toggle sound."
+              onKeyDown={onKeyDown}
+              onBlur={onBlur}
+              className="relative rounded-2xl bg-card/60 p-2 shadow-inner ring-1 ring-border/70 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <svg
+                ref={svgRef}
+                viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
+                className="w-full touch-none select-none rounded-xl bg-white dark:brightness-[0.92]"
+                style={{ cursor: "crosshair" }}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={endPointer}
+                onPointerCancel={endPointer}
+                role="img"
+                aria-label={`Canvas with ${strokes.length} ${strokes.length === 1 ? "line" : "lines"} from ${peers.length} ${peers.length === 1 ? "person" : "people"}.`}
+              >
+                <rect width={CANVAS_W} height={CANVAS_H} fill="#ffffff" />
+                {strokes.map((s) => s.fillPath ? (
+                  <path key={s.id} d={s.fillPath} fill={s.color} />
+                ) : (
+                  <polyline
+                    key={s.id}
+                    points={s.points.map((p) => `${p.x},${p.y}`).join(" ")}
+                    fill="none"
+                    stroke={s.color}
+                    strokeWidth={s.width}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                ))}
+
+                {Object.entries(cursors).map(([key, c]) => {
+                  const peer = peerByKey.get(key);
+                  if (!peer || key === me.key || muted.has(key)) return null;
+                  const flip = c.x > CANVAS_W - 130;
+                  return (
+                    <g key={key} transform={`translate(${c.x} ${c.y})`} pointerEvents="none">
+                      <circle r={7} fill={peer.color} stroke="#ffffff" strokeWidth={2} />
+                      <text
+                        x={flip ? -12 : 12}
+                        y={-10}
+                        textAnchor={flip ? "end" : "start"}
+                        fontSize={15}
+                        fontWeight={700}
+                        fill={peer.color}
+                        stroke="#ffffff"
+                        strokeWidth={4}
+                        paintOrder="stroke"
+                      >
+                        {peer.name}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={penDown ? 10 : 8}
+                  fill={color}
+                  stroke="#111111"
+                  strokeWidth={2}
+                  pointerEvents="none"
                 />
-              ))}
-            </div>
-
-            <label htmlFor="collab-width" className="mt-5 flex items-center justify-between text-sm font-semibold text-foreground">
-              Brush size <span className="text-xs font-normal text-muted-foreground">{width}px</span>
-            </label>
-            <input
-              id="collab-width"
-              type="range"
-              min={2}
-              max={28}
-              value={width}
-              onChange={(e) => setWidth(Number(e.target.value))}
-              className="mt-2 w-full accent-[var(--primary)]"
-            />
-
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              <Button onClick={doUndo} variant="outline" size="sm" className="gap-1.5 rounded-full">
-                <Undo2 className="h-3.5 w-3.5" /> Undo
-              </Button>
-              <Button
-                onClick={() => {
-                  room.clearMine();
-                  say("Cleared your lines.");
-                }}
-                variant="outline"
-                size="sm"
-                className="gap-1.5 rounded-full"
-              >
-                <Eraser className="h-3.5 w-3.5" /> Clear mine
-              </Button>
-              {isPrivate && (
-                <Button onClick={clearAll} variant="outline" size="sm" className="col-span-2 gap-1.5 rounded-full">
-                  <Trash2 className="h-3.5 w-3.5" /> Clear everyone's
-                </Button>
+              </svg>
+              {strokes.length === 0 && (
+                <div aria-hidden className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+                  <Sparkles className="h-6 w-6 text-primary" />
+                  <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-700">This space is shared</p>
+                  <p className={`${ACCENT} mt-2 text-3xl text-neutral-500 sm:text-4xl`}>Make the first mark together.</p>
+                </div>
               )}
-              <Button
-                onClick={() => setSoundOn((v) => !v)}
-                variant="outline"
-                size="sm"
-                aria-pressed={soundOn}
-                className="col-span-2 gap-1.5 rounded-full"
-              >
-                {soundOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-                {soundOn ? "My brush sound: on" : "My brush sound: off"}
-              </Button>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+              <span className="flex items-center gap-2.5">
+                <img
+                  src={penDown ? bearDrawing : bearSleeping}
+                  alt=""
+                  aria-hidden="true"
+                  className="h-10 w-10 select-none object-contain drop-shadow-[0_4px_6px_rgba(58,31,43,0.2)]"
+                />
+                <span aria-hidden className="h-2 w-2 rounded-full bg-[oklch(0.58_0.13_150)]" />
+                <span className="text-[oklch(0.42_0.1_150)] dark:text-[oklch(0.78_0.12_150)]">{statusText}</span>
+              </span>
+              <span>Drag to draw <span aria-hidden>·</span> Every line has a sound</span>
+            </div>
+          </section>
+
+          {/* ───────── CENTER, ROW 2: session, how it sounds, keep your art ───────── */}
+          <div className="order-4 flex min-w-0 flex-col gap-4 p-5 pt-2 xl:col-start-2 xl:row-start-2">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-secondary/40 px-4 py-3 text-sm ring-1 ring-border/70">
+              <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Session</span>
+              <span className="flex items-center gap-2">
+                <span aria-hidden className="h-4 w-4 rounded-full ring-1 ring-border" style={{ backgroundColor: color }} />
+                {colorName}
+              </span>
+              <span>{width}px brush</span>
+              <span>Sound {soundOn ? "on" : "off"}</span>
+              <span>{muted.size > 0 ? `${muted.size} muted` : "Nobody muted"}</span>
+              <span className="ml-auto text-muted-foreground">{statusText}</span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-2 px-1">
+              <p className="text-2xl font-black leading-tight tracking-tight sm:text-3xl">
+                Left and right <span className={`${ACCENT} text-[1.15em]`}>pans.</span>{" "}
+                Up and down <span className={`${ACCENT} text-[1.15em]`}>sings.</span>
+              </p>
+              <p className="max-w-xs text-sm text-muted-foreground">
+                Move across the canvas to sweep the sound between your ears. Move higher for a higher note.
+              </p>
+            </div>
+
+            <div className="grid flex-1 items-stretch gap-4 md:grid-cols-2">
+              <section aria-labelledby="export-heading" className="flex flex-col rounded-2xl p-5 ring-1 ring-border/70">
+                <SectionLabel id="export-heading" n="07" title="Keep" Icon={Download} />
+                <h3 className="mt-4 text-xl font-black tracking-tight">
+                  Take it <span className={`${ACCENT} text-[1.15em]`}>with you.</span>
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  Saves the shared canvas as it looks to you, without anyone you've muted.
+                </p>
+                <div className="mt-auto grid gap-2 pt-4">
+                  <Button onClick={download} variant="outline" className="h-12 justify-start gap-3 rounded-2xl bg-background/60 px-4 text-sm font-medium ring-1 ring-primary/15">
+                    <Download className="h-4 w-4 shrink-0" /> Save as SVG
+                  </Button>
+                </div>
+              </section>
+
+              <section aria-labelledby="share-heading" className="flex flex-col rounded-2xl p-5 ring-1 ring-border/70">
+                <SectionLabel id="share-heading" n="08" title="Share" Icon={Globe} />
+                <h3 className="mt-4 text-xl font-black tracking-tight">
+                  Let the world <span className={`${ACCENT} text-[1.15em]`}>see it.</span>
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  The gallery gets the whole shared canvas, so check with the room first. Pieces are reviewed before they appear.
+                </p>
+                <div className="mt-auto grid gap-2 pt-4">
+                  <Button onClick={() => void share()} disabled={sharing} className="h-12 w-full justify-center gap-2 rounded-2xl text-sm font-medium">
+                    <Share2 className="h-4 w-4" /> {sharing ? "Sending…" : "Send to Gallery"}
+                  </Button>
+                  <Button asChild variant="outline" className="h-12 w-full rounded-2xl bg-card/60 text-sm font-medium">
+                    <Link to="/gallery" className="gap-2"><Globe className="h-4 w-4" /> View Gallery</Link>
+                  </Button>
+                </div>
+              </section>
             </div>
           </div>
 
-          {/* Keep */}
-          <div className="rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-card/90 via-card/75 to-primary/10 p-5 shadow-xl shadow-primary/10 ring-1 ring-primary/15 backdrop-blur-xl">
-            <h2 className="text-sm font-semibold text-foreground">Keep your art</h2>
-            <div className="mt-3 grid gap-2">
-              <Button onClick={download} variant="outline" size="sm" className="gap-2 rounded-full">
-                <Download className="h-4 w-4" /> Save as SVG
-              </Button>
-              <Button onClick={() => void share()} disabled={sharing} size="sm" className="gap-2 rounded-full">
-                <Share2 className="h-4 w-4" /> {sharing ? "Sending…" : "Send to gallery"}
-              </Button>
-            </div>
-            <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-              The gallery gets the whole shared canvas, so check with the room first.{" "}
-              <Link to="/gallery" className="font-medium text-primary underline-offset-2 hover:underline">
-                See the gallery
-              </Link>
-            </p>
-          </div>
+          {/* ───────── RIGHT: chat, sound ───────── */}
+          <aside
+            aria-label="Chat and sound"
+            className="order-3 divide-y divide-border/70 border-t border-border/70 xl:col-start-3 xl:row-span-2 xl:row-start-1 xl:border-l xl:border-t-0"
+          >
+            <section aria-labelledby="chat-heading" className={sectionBase}>
+              <SectionLabel id="chat-heading" n="05" title="Chat" Icon={MessageSquare} />
+              <h3 className="mt-4 text-xl font-black tracking-tight">
+                Say <span className={`${ACCENT} text-[1.15em]`}>hello.</span>
+              </h3>
+              <ChatPanel
+                messages={room.messages}
+                muted={muted}
+                meKey={me.key}
+                isPublic={!isPrivate}
+                onSend={room.sendChat}
+              />
+            </section>
+
+            <section aria-labelledby="sound-heading" className={sectionBase}>
+              <SectionLabel id="sound-heading" n="06" title="Sound" Icon={Volume2} />
+              <h3 className="mt-4 text-xl font-black tracking-tight">
+                Give it a <span className={`${ACCENT} text-[1.15em]`}>voice.</span>
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                You hear your own brush only. Everyone else's lines are silent, so the room stays calm.
+              </p>
+              <button
+                type="button"
+                onClick={() => setSoundOn((v) => !v)}
+                aria-pressed={soundOn}
+                className={`${ROW} mt-4 ${soundOn ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : ROW_OFF}`}
+              >
+                {soundOn ? <Volume2 className="h-4 w-4 shrink-0 text-primary" /> : <VolumeX className="h-4 w-4 shrink-0" />}
+                {soundOn ? "My brush sound: on" : "My brush sound: off"} <span className="ml-auto text-xs opacity-60">M</span>
+              </button>
+            </section>
+          </aside>
         </div>
       </div>
+
+      <ReportDialog target={reportTarget} onClose={() => setReportTarget(null)} onSubmit={handleReport} />
     </section>
+  );
+}
+
+// ───────────────────────────── Chat ───────────────────────────────────────
+
+function ChatPanel({
+  messages,
+  muted,
+  meKey,
+  isPublic,
+  onSend,
+}: {
+  messages: ChatMsg[];
+  muted: Set<string>;
+  meKey: string;
+  isPublic: boolean;
+  onSend: (text: string, isPublic: boolean) => "ok" | "empty" | "slow" | "links";
+}) {
+  const [text, setText] = useState("");
+  const [hint, setHint] = useState("");
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const visible = messages.filter((m) => !muted.has(m.key));
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [visible.length]);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = onSend(text, isPublic);
+    if (result === "ok") {
+      setText("");
+      setHint("");
+    } else if (result === "slow") setHint("Slow down a little.");
+    else if (result === "links") setHint("Links aren't allowed in public rooms.");
+  };
+
+  return (
+    <div>
+      <div
+        ref={listRef}
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
+        aria-label="Room chat"
+        className="mt-3 max-h-72 min-h-[6rem] space-y-2 overflow-y-auto rounded-2xl bg-background/60 p-3 text-sm"
+      >
+        {visible.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No messages yet. Say hi.</p>
+        ) : (
+          visible.map((m) => (
+            <p key={m.id} className="break-words leading-snug text-foreground">
+              <span className="font-semibold" style={{ color: m.color }}>
+                {m.key === meKey ? "You" : m.name}
+              </span>
+              <span className="sr-only">: </span>
+              <span aria-hidden> </span>
+              {m.text}
+            </p>
+          ))
+        )}
+      </div>
+
+      <form onSubmit={submit} className="mt-3 flex gap-2">
+        <label htmlFor="collab-chat" className="sr-only">
+          Message
+        </label>
+        <input
+          id="collab-chat"
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (hint) setHint("");
+          }}
+          maxLength={CHAT_MAX_CHARS}
+          placeholder="Write a message"
+          autoComplete="off"
+          className="h-10 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none ring-primary/30 placeholder:text-muted-foreground/60 focus:ring-2"
+        />
+        <Button type="submit" size="sm" className="h-10 gap-1.5 rounded-xl px-3" aria-label="Send message">
+          <Send className="h-4 w-4" />
+        </Button>
+      </form>
+      <p className="mt-2 min-h-[1rem] text-[11px] text-muted-foreground" aria-live="polite">
+        {hint || (isPublic ? "Public chat: be kind, and no links." : "Only people in this room can see messages.")}
+      </p>
+    </div>
+  );
+}
+
+// ───────────────────────────── Report ─────────────────────────────────────
+
+function ReportDialog({
+  target,
+  onClose,
+  onSubmit,
+}: {
+  target: Peer | null;
+  onClose: () => void;
+  onSubmit: (reason: ReportReason, note: string) => Promise<void>;
+}) {
+  const [reason, setReason] = useState<ReportReason | "">("");
+  const [note, setNote] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (target) {
+      setReason("");
+      setNote("");
+      setError("");
+      setSending(false);
+    }
+  }, [target]);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reason) return;
+    setSending(true);
+    setError("");
+    try {
+      await onSubmit(reason, note);
+    } catch {
+      setError("Couldn't send the report. Please try again.");
+      setSending(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!target} onOpenChange={(open) => !open && !sending && onClose()}>
+      <DialogContent className="max-w-md rounded-3xl">
+        <form onSubmit={submit}>
+          <DialogHeader>
+            <DialogTitle>Report {target?.name}</DialogTitle>
+            <DialogDescription>
+              We'll send their lines and recent messages to the Perceive team to review. You won't see them again in this room.
+            </DialogDescription>
+          </DialogHeader>
+
+          <fieldset className="mt-4 space-y-2">
+            <legend className="sr-only">Reason for report</legend>
+            {REPORT_REASONS.map((r) => (
+              <label
+                key={r.value}
+                className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm text-foreground ring-1 ring-border transition-colors hover:bg-primary/5 has-[:checked]:bg-primary/10 has-[:checked]:ring-primary/40"
+              >
+                <input
+                  type="radio"
+                  name="report-reason"
+                  value={r.value}
+                  checked={reason === r.value}
+                  onChange={() => setReason(r.value)}
+                  className="h-4 w-4 accent-[var(--primary)]"
+                />
+                {r.label}
+              </label>
+            ))}
+          </fieldset>
+
+          <label htmlFor="report-note" className="mt-4 block text-sm font-medium text-foreground">
+            Anything else we should know? <span className="font-normal text-muted-foreground">(optional)</span>
+          </label>
+          <textarea
+            id="report-note"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={500}
+            rows={3}
+            className="mt-1.5 w-full resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-primary/30 focus:ring-2"
+          />
+
+          {error && (
+            <p role="alert" className="mt-3 text-sm text-destructive">
+              {error}
+            </p>
+          )}
+
+          <DialogFooter className="mt-5 gap-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={sending} className="rounded-full">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!reason || sending} className="rounded-full">
+              {sending ? "Sending…" : "Send report"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
