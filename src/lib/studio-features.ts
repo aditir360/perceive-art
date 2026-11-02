@@ -795,3 +795,30 @@ export function useStudioAudio(soundOn: boolean, style: SoundStyle, volume: numb
 
   return { ensure, update, silence, note, complete, guideStart, bump, startGuideTone, stopGuideTone, guideProximity };
 }
+
+// ── Canvas paper colour (shared by the Sketchpad and the Collab Studio) ──────
+// "light" is white paper (dimmed a little when the site is in dark mode so it
+// doesn't glare); "dark" is a charcoal paper. Remembered per browser.
+export const PAPER_STORAGE_KEY = "perceive-paper";
+export const DARK_PAPER = "oklch(0.2 0.02 335)";
+
+export function usePaperMode(): [boolean, (next: boolean) => void] {
+  const [dark, setDarkState] = useState(false);
+  useEffect(() => {
+    try {
+      setDarkState(window.localStorage.getItem(PAPER_STORAGE_KEY) === "dark");
+    } catch { /* storage unavailable */ }
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === PAPER_STORAGE_KEY) setDarkState(e.newValue === "dark");
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+  const setDark = useCallback((next: boolean) => {
+    setDarkState(next);
+    try {
+      window.localStorage.setItem(PAPER_STORAGE_KEY, next ? "dark" : "light");
+    } catch { /* non-critical */ }
+  }, []);
+  return [dark, setDark];
+}
