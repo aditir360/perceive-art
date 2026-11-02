@@ -45,7 +45,10 @@ import {
   Mic,
   MicOff,
   HelpCircle,
+  Moon,
+  Sun,
 } from "lucide-react";
+import { DARK_PAPER, usePaperMode } from "@/lib/studio-features";
 
 type SoundStyle = "sine" | "pad" | "chime" | "marimba";
 const SOUND_STYLE_ORDER: SoundStyle[] = ["sine", "pad", "chime", "marimba"];
@@ -847,6 +850,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const completedLineCountRef = useRef(0);
 
   const stats = useCanvasClicks();
+  const [darkPaper, setDarkPaper] = usePaperMode();
 
   // Pick a system voice for each narrator. Voice lists load asynchronously in
   // most browsers, so we grab them once now and again on the voiceschanged
@@ -1669,6 +1673,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 <button onClick={toggleVisualAids} aria-pressed={visualAids} className={`${ROW_BTN} ${visualAids ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : ROW_OFF}`}>
                   <Eye className="h-4 w-4 shrink-0" /> Visual aids <span className="ml-auto text-xs opacity-60">X</span>
                 </button>
+                <button type="button" role="switch" aria-checked={darkPaper} onClick={() => { setDarkPaper(!darkPaper); say(!darkPaper ? "Dark canvas on." : "Dark canvas off. White canvas."); }} className={`${ROW_BTN} ${darkPaper ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : ROW_OFF}`}>
+                  {darkPaper ? <Moon className="h-4 w-4 shrink-0" /> : <Sun className="h-4 w-4 shrink-0" />} Dark canvas <span className="ml-auto text-xs opacity-70">{darkPaper ? "On" : "Off"}</span>
+                </button>
                 {guideKey && (
                   <button onClick={stopGuide} className={`${ROW_BTN} bg-destructive text-destructive-foreground shadow-sm`}>
                     <X className="h-4 w-4 shrink-0" /> Stop guide <span className="ml-auto text-xs opacity-70">Esc</span>
@@ -1850,13 +1857,16 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-xl bg-[var(--canvas-paper)] [--canvas-paper:oklch(0.975_0.025_15)] [--canvas-grid:oklch(0.88_0.05_20)] dark:[--canvas-paper:oklch(0.25_0.025_15)] dark:[--canvas-grid:oklch(0.38_0.035_20)] shadow-inner ring-1 ring-border">
+            <div
+              className="relative overflow-hidden rounded-xl bg-[var(--canvas-paper)] shadow-inner ring-1 ring-border"
+              style={{ "--canvas-paper": darkPaper ? DARK_PAPER : "oklch(0.975 0.025 15)", "--canvas-grid": darkPaper ? "oklch(0.3 0.03 335)" : "oklch(0.88 0.05 20)" } as React.CSSProperties}
+            >
           <svg
             role="img"
             aria-label="Sonic tactile drawing canvas. Use arrow keys to move, space to toggle drawing."
             tabIndex={0}
             viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-            className={`w-full touch-none rounded-2xl bg-[var(--canvas-paper)] ${
+            className={`w-full touch-none rounded-2xl bg-[var(--canvas-paper)] ${darkPaper ? "" : "dark:brightness-[0.88]"} ${
               visualAids
                 ? "ring-4 ring-primary/60 focus-visible:ring-4 focus-visible:ring-primary"
                 : "ring-2 ring-primary/40"
@@ -2029,8 +2039,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               {strokes.length === 0 && !current && (
                 <div aria-hidden className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
                   <Sparkles className="h-6 w-6 text-primary" />
-                  <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.2em] text-foreground">This space is yours</p>
-                  <p className={`${ACCENT} mt-2 text-3xl text-muted-foreground sm:text-4xl`}>Make your first mark anywhere.</p>
+                  <p className={`mt-4 text-[11px] font-bold uppercase tracking-[0.2em] ${darkPaper ? "text-neutral-200" : "text-neutral-700"}`}>This space is yours</p>
+                  <p className={`${ACCENT} mt-2 text-3xl ${darkPaper ? "text-neutral-400" : "text-neutral-500"} sm:text-4xl`}>Make your first mark anywhere.</p>
                 </div>
               )}
             </div>
