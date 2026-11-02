@@ -62,6 +62,8 @@ import {
   textureVisualProps,
   useNarrator,
   useStudioAudio,
+  usePaperMode,
+  DARK_PAPER,
   type SoundStyle,
   type Stroke,
   type Texture,
@@ -96,6 +98,8 @@ import {
   MessageSquare,
   Mic,
   MicOff,
+  Moon,
+  Sun,
   Minus,
   Music2,
   Orbit,
@@ -495,6 +499,8 @@ function Room({
   const [guideKey, setGuideKey] = useState<string | null>(null);
   const [guidesOpen, setGuidesOpen] = useState(true);
   const [kbdOpen, setKbdOpen] = useState(true);
+  const [darkPaper, setDarkPaper] = usePaperMode();
+  const paperColor = darkPaper ? DARK_PAPER : "#ffffff";
   const [pos, setPos] = useState<Pt>({ x: CANVAS_W / 2, y: CANVAS_H / 2 });
   const [penDown, setPenDown] = useState(false);
   const [copied, setCopied] = useState<"" | "code" | "link">("");
@@ -1174,6 +1180,9 @@ function Room({
                 <button type="button" onClick={toggleVisualAids} aria-pressed={visualAids} className={`${ROW} ${visualAids ? ROW_SOFT : ROW_OFF}`}>
                   <Eye className="h-4 w-4 shrink-0" /> Visual aids <span className="ml-auto text-xs opacity-60">X</span>
                 </button>
+                <button type="button" role="switch" aria-checked={darkPaper} onClick={() => { setDarkPaper(!darkPaper); say(!darkPaper ? "Dark canvas on." : "Dark canvas off. White canvas."); }} className={`${ROW} ${darkPaper ? ROW_SOFT : ROW_OFF}`}>
+                  {darkPaper ? <Moon className="h-4 w-4 shrink-0" /> : <Sun className="h-4 w-4 shrink-0" />} Dark canvas <span className="ml-auto text-xs opacity-70">{darkPaper ? "On" : "Off"}</span>
+                </button>
                 {guideKey && (
                   <button type="button" onClick={stopGuide} className={`${ROW} bg-destructive text-destructive-foreground shadow-sm`}>
                     <X className="h-4 w-4 shrink-0" /> Stop guide <span className="ml-auto text-xs opacity-70">Esc</span>
@@ -1378,10 +1387,10 @@ function Room({
                 ref={svgRef}
                 viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
                 tabIndex={0}
-                className={`w-full touch-none select-none rounded-xl bg-white outline-none dark:brightness-[0.92] ${
+                className={`w-full touch-none select-none rounded-xl outline-none ${darkPaper ? "" : "dark:brightness-[0.88]"} ${
                   visualAids ? "ring-4 ring-primary/60 focus-visible:ring-primary" : "ring-2 ring-primary/40"
                 }`}
-                style={{ cursor: "crosshair", aspectRatio: `${CANVAS_W} / ${CANVAS_H}` }}
+                style={{ cursor: "crosshair", aspectRatio: `${CANVAS_W} / ${CANVAS_H}`, backgroundColor: paperColor }}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={endPointer}
@@ -1411,7 +1420,7 @@ function Room({
                     <feGaussianBlur stdDeviation="5" />
                   </filter>
                 </defs>
-                <rect width={CANVAS_W} height={CANVAS_H} fill="#ffffff" />
+                <rect width={CANVAS_W} height={CANVAS_H} fill={paperColor} />
 
                 {/* Your shape guide (local only) */}
                 {activeGuide && (
@@ -1506,8 +1515,8 @@ function Room({
               {strokes.length === 0 && (
                 <div aria-hidden className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
                   <Sparkles className="h-6 w-6 text-primary" />
-                  <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-700">This space is shared</p>
-                  <p className={`${ACCENT} mt-2 text-3xl text-neutral-500 sm:text-4xl`}>Make the first mark together.</p>
+                  <p className={`mt-4 text-[11px] font-bold uppercase tracking-[0.2em] ${darkPaper ? "text-neutral-200" : "text-neutral-700"}`}>This space is shared</p>
+                  <p className={`${ACCENT} mt-2 text-3xl ${darkPaper ? "text-neutral-400" : "text-neutral-500"} sm:text-4xl`}>Make the first mark together.</p>
                 </div>
               )}
             </div>
