@@ -597,8 +597,8 @@ export function playEdgeBump(ctx: AudioContext): void {
 }
 // ── Narrator (Bennett the bear / lady guide) ─────────────────────────────────
 export function useNarrator(onText: (msg: string) => void) {
-  const [persona, setPersona] = useState<VoicePersona>("bear");
-  const personaRef = useRef<VoicePersona>("bear");
+  const [persona, setPersona] = useState<VoicePersona>("lady");
+  const personaRef = useRef<VoicePersona>("lady");
   const [voiceOn, setVoiceOn] = useState(true);
   const voiceOnRef = useRef(true);
   const bennettRef = useRef<SpeechSynthesisVoice | null>(null);
