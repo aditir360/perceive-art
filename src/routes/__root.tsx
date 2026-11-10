@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -11,13 +12,16 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { THEME_INIT_SCRIPT } from "../components/ThemeToggle";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">
+          Page not found
+        </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
         </p>
@@ -34,11 +38,20 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({
+  error,
+  reset,
+}: {
+  error: Error;
+  reset: () => void;
+}) {
   console.error(error);
   const router = useRouter();
+
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    reportLovableError(error, {
+      boundary: "tanstack_root_error_component",
+    });
   }, [error]);
 
   return (
@@ -72,44 +85,76 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Perceive — Draw with Sound. Feel with Touch." },
-      { name: "description", content: "Perceive is a sonic-tactile art studio for blind and sighted creators. Sketch with audio feedback, then export to swell paper or 3D print." },
-      { name: "author", content: "Perceive" },
-      { property: "og:title", content: "Perceive — Draw with Sound. Feel with Touch." },
-      { property: "og:description", content: "Perceive is a sonic-tactile art studio for blind and sighted creators. Sketch with audio feedback, then export to swell paper or 3D print." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Perceive — Draw with Sound. Feel with Touch." },
-      { name: "twitter:description", content: "Perceive is a sonic-tactile art studio for blind and sighted creators. Sketch with audio feedback, then export to swell paper or 3D print." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Ui0BOivlSHfx7nPKHyfYFwph5vJ3/social-images/social-1785183020767-Screenshot_2026-07-27_at_1.09.27_PM.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Ui0BOivlSHfx7nPKHyfYFwph5vJ3/social-images/social-1785183020767-Screenshot_2026-07-27_at_1.09.27_PM.webp" },
-    ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" },
-    ],
-  }),
-  shellComponent: RootShell,
-  component: RootComponent,
-  notFoundComponent: NotFoundComponent,
-  errorComponent: ErrorComponent,
-});
+export const Route =
+  createRootRouteWithContext<{ queryClient: QueryClient }>()({
+    head: () => ({
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { title: "Perceive — Draw with Sound. Feel with Touch." },
+        {
+          name: "description",
+          content:
+            "Perceive is a sonic-tactile art studio for blind and sighted creators. Sketch with audio feedback, then export to swell paper or 3D print.",
+        },
+        { name: "author", content: "Perceive" },
+        {
+          property: "og:title",
+          content: "Perceive — Draw with Sound. Feel with Touch.",
+        },
+        {
+          property: "og:description",
+          content:
+            "Perceive is a sonic-tactile art studio for blind and sighted creators. Sketch with audio feedback, then export to swell paper or 3D print.",
+        },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:site", content: "@Lovable" },
+        {
+          name: "twitter:title",
+          content: "Perceive — Draw with Sound. Feel with Touch.",
+        },
+        {
+          name: "twitter:description",
+          content:
+            "Perceive is a sonic-tactile art studio for blind and sighted creators. Sketch with audio feedback, then export to swell paper or 3D print.",
+        },
+        {
+          property: "og:image",
+          content:
+            "https://storage.googleapis.com/gpt-engineer-file-uploads/Ui0BOivlSHfx7nPKHyfYFwph5vJ3/social-images/social-1785183020767-Screenshot_2026-07-27_at_1.09.27_PM.webp",
+        },
+        {
+          name: "twitter:image",
+          content:
+            "https://storage.googleapis.com/gpt-engineer-file-uploads/Ui0BOivlSHfx7nPKHyfYFwph5vJ3/social-images/social-1785183020767-Screenshot_2026-07-27_at_1.09.27_PM.webp",
+        },
+      ],
+      links: [
+        { rel: "stylesheet", href: appCss },
+        { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        {
+          rel: "preconnect",
+          href: "https://fonts.gstatic.com",
+          crossOrigin: "anonymous",
+        },
+        {
+          rel: "stylesheet",
+          href: "https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap",
+        },
+      ],
+      scripts: [{ children: THEME_INIT_SCRIPT }],
+    }),
+    shellComponent: RootShell,
+    component: RootComponent,
+    notFoundComponent: NotFoundComponent,
+    errorComponent: ErrorComponent,
+  });
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
@@ -126,7 +171,6 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>
   );

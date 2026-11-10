@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const scrollLinks = [
   { label: "Mission", hash: "mission" },
@@ -44,6 +45,22 @@ export function SiteHeader() {
               Studio
             </Link>
             <Link
+              to="/collab"
+              className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+              activeProps={{ className: "!bg-primary/12 font-semibold !text-foreground" }}
+              activeOptions={{ exact: true }}
+            >
+              Collab
+            </Link>
+            <Link
+              to="/blind"
+              className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+              activeProps={{ className: "!bg-primary/12 font-semibold !text-foreground" }}
+              activeOptions={{ exact: true }}
+            >
+              Voice Studio
+            </Link>
+            <Link
               to="/gallery"
               className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
               activeProps={{ className: "!bg-primary/12 font-semibold !text-foreground" }}
@@ -61,20 +78,24 @@ export function SiteHeader() {
             </Link>
           </nav>
 
-          {/* Desktop CTA */}
-          <Button asChild className="hidden rounded-full shadow-md sm:inline-flex">
-            <Link to="/studio" className="group gap-2">
-              Open studio
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle />
 
-          {/* Mobile CTA (visible next to logo, since mobile nav row is a separate scroller below) */}
-          <Button asChild size="sm" className="rounded-full shadow-sm sm:hidden">
-            <Link to="/studio" className="gap-1.5">
-              Studio <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </Button>
+            {/* Desktop CTA */}
+            <Button asChild className="hidden rounded-full shadow-md sm:inline-flex">
+              <Link to="/studio" className="group gap-2">
+                Open studio
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </Button>
+
+            {/* Mobile CTA (visible next to logo, since mobile nav row is a separate scroller below) */}
+            <Button asChild size="sm" className="rounded-full shadow-sm sm:hidden">
+              <Link to="/studio" className="gap-1.5">
+                Studio <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Mobile navigation — always visible, horizontally scrollable */}
@@ -99,6 +120,22 @@ export function SiteHeader() {
             activeOptions={{ exact: true }}
           >
             Studio
+          </Link>
+          <Link
+            to="/collab"
+            className="shrink-0 rounded-full bg-background/60 px-3.5 py-1.5 text-sm font-medium text-muted-foreground ring-1 ring-primary/10 transition-colors hover:bg-primary/10 hover:text-foreground"
+            activeProps={{ className: "!bg-primary/12 font-semibold !text-foreground" }}
+            activeOptions={{ exact: true }}
+          >
+            Collab
+          </Link>
+          <Link
+            to="/blind"
+            className="shrink-0 rounded-full bg-background/60 px-3.5 py-1.5 text-sm font-medium text-muted-foreground ring-1 ring-primary/10 transition-colors hover:bg-primary/10 hover:text-foreground"
+            activeProps={{ className: "!bg-primary/12 font-semibold !text-foreground" }}
+            activeOptions={{ exact: true }}
+          >
+            Voice Studio
           </Link>
           <Link
             to="/gallery"

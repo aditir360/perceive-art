@@ -12,6 +12,7 @@ import {
   Undo2,
   Eraser,
   Waves,
+  PaintBucket,
   Palette,
   Box,
   Keyboard,
@@ -44,7 +45,11 @@ import {
   Mic,
   MicOff,
   HelpCircle,
+  Moon,
+  Sun,
 } from "lucide-react";
+import { DARK_PAPER, usePaperMode } from "@/lib/studio-features";
+import { ColorWheel } from "@/components/ColorWheel";
 
 type SoundStyle = "sine" | "pad" | "chime" | "marimba";
 const SOUND_STYLE_ORDER: SoundStyle[] = ["sine", "pad", "chime", "marimba"];
@@ -61,8 +66,8 @@ const SOUND_STYLE_ICONS: Record<SoundStyle, typeof Bell> = {
   marimba: Music2,
 };
 
-// Which narrator reads the spoken guidance. Bennett the bear is the default;
-// the lady voice is a brighter, adult female narrator.
+// Which narrator reads the spoken guidance. The lady voice (a bright, friendly
+// adult female narrator) is the default; Bennett the bear is the alternative.
 type VoicePersona = "bear" | "lady";
 const VOICE_PERSONA_ORDER: VoicePersona[] = ["bear", "lady"];
 const VOICE_PERSONA_LABELS: Record<VoicePersona, string> = {
@@ -105,6 +110,7 @@ const GUIDE_ICONS: Record<string, { Icon: typeof Circle; color: string }> = {
 
 type Point = { x: number; y: number };
 type Texture = "pen" | "pencil" | "highlighter" | "paintbrush";
+type FillRegion = { path: string; color: string };
 type Stroke = {
   color: string;
   width: number;
@@ -205,6 +211,61 @@ function SectionLabel({ id, n, title, Icon }: { id: string; n: string; title: st
 
 const WIDTH  = 900;
 const HEIGHT = 560;
+
+// Rasterize the current line work at half resolution, flood-fill the connected
+// paper region, and encode the result as compact SVG rectangle subpaths.
+function makeBucketFillPath(
+  strokes: { points: { x: number; y: number }[]; color: string; width: number; opacity?: number; fillPath?: string }[],
+  width: number, height: number, point: { x: number; y: number },
+): string | null {
+  const scale = 2;
+  const w = Math.ceil(width / scale), h = Math.ceil(height / scale);
+  const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true }); if (!ctx) return null;
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  for (const s of strokes) {
+    if (s.fillPath) {
+      ctx.save(); ctx.scale(1 / scale, 1 / scale); ctx.fillStyle = s.color; ctx.fill(new Path2D(s.fillPath)); ctx.restore();
+      continue;
+    }
+    if (s.points.length < 1) continue;
+    ctx.beginPath(); ctx.moveTo(s.points[0].x / scale, s.points[0].y / scale);
+    for (const p of s.points.slice(1)) ctx.lineTo(p.x / scale, p.y / scale);
+    ctx.strokeStyle = s.color; ctx.globalAlpha = s.opacity ?? 1; ctx.lineWidth = Math.max(1, s.width / scale); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  const image = ctx.getImageData(0, 0, w, h), data = image.data;
+  const sx = Math.max(0, Math.min(w - 1, Math.floor(point.x / scale)));
+  const sy = Math.max(0, Math.min(h - 1, Math.floor(point.y / scale)));
+  const start = (sy * w + sx) * 4;
+  const eligible = (i: number) => data[i + 3] > 0 && data[i] > 238 && data[i + 1] > 238 && data[i + 2] > 238;
+  if (!eligible(start)) return null;
+  const seen = new Uint8Array(w * h), filled = new Uint8Array(w * h), stack = [sy * w + sx];
+  seen[sy * w + sx] = 1;
+  while (stack.length) {
+    const idx = stack.pop()!;
+    if (!eligible(idx * 4)) continue;
+    filled[idx] = 1;
+    const x = idx % w, y = Math.floor(idx / w);
+    const neighbors = [x > 0 ? idx - 1 : -1, x + 1 < w ? idx + 1 : -1, y > 0 ? idx - w : -1, y + 1 < h ? idx + w : -1];
+    for (const next of neighbors) if (next >= 0 && !seen[next]) { seen[next] = 1; stack.push(next); }
+  }
+  const runs: string[] = [];
+  for (let y = 0; y < h; y++) {
+    let x = 0;
+    while (x < w) {
+      while (x < w && !filled[y * w + x]) x++;
+      if (x >= w) break;
+      const left = x;
+      while (x < w && filled[y * w + x]) x++;
+      const runWidth = x - left;
+      runs.push(`M${left * scale},${y * scale}h${runWidth * scale}v${scale}h-${runWidth * scale}z`);
+    }
+  }
+  return runs.length ? runs.join("") : null;
+}
+
 const GRID   = 60;
 
 // Hysteresis for the "off course" guide warning: enter the warned state once
@@ -731,6 +792,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const audioRef = useRef<ReturnType<typeof buildAudio> | null>(null);
 
   const [strokes,   setStrokes]   = useState<Stroke[]>([]);
+  const [fills, setFills] = useState<FillRegion[]>([]);
   const [current,   setCurrent]   = useState<Stroke | null>(null);
   const [drawing,   setDrawing]   = useState(false);
   const [color,     setColor]     = useState(COLORS[0].value);
@@ -744,8 +806,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   useEffect(() => { soundVolumeRef.current = soundVolume; }, [soundVolume]);
   // Which narrator speaks. The ref mirrors the state so the stable `say`
   // callback always reads the latest choice without needing to be recreated.
-  const [voicePersona, setVoicePersona] = useState<VoicePersona>("bear");
-  const voicePersonaRef = useRef<VoicePersona>("bear");
+  const [voicePersona, setVoicePersona] = useState<VoicePersona>("lady");
+  const voicePersonaRef = useRef<VoicePersona>("lady");
   // Master switch for spoken narration. When off, nothing is spoken aloud,
   // but the on-screen/screen-reader announcement text still updates.
   const [voiceOn, setVoiceOn] = useState(true);
@@ -753,12 +815,12 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const lastPluckAt  = useRef(0);
   const lastPluckPos = useRef<Point | null>(null);
   const [announce,  setAnnounce]  = useState(
-    "Hey, Bennett here! Press H any time for a full spoken walkthrough of the studio, S for sound, Space to start drawing, and the arrow keys to move me around the canvas."
+    "Hi there! I'm your guide. Press H any time for a full spoken walkthrough of the studio, S for sound, Space to start drawing, and the arrow keys to move me around the canvas."
   );
   const [colorIndex, setColorIndex] = useState(0);
   const [texture, setTexture] = useState<Texture>("pen");
   const [textureSettings, setTextureSettings] = useState(DEFAULT_TEXTURE_SETTINGS);
-  const [tool, setTool] = useState<"draw" | "eraser" | "blend">("draw");
+  const [tool, setTool] = useState<"draw" | "eraser" | "blend" | "fill">("draw");
   const [eraserSize, setEraserSize] = useState(28);
   const [blendSize, setBlendSize] = useState(36);
   // Derived, not stored directly: always reflects whichever texture is
@@ -789,6 +851,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const completedLineCountRef = useRef(0);
 
   const stats = useCanvasClicks();
+  const [darkPaper, setDarkPaper] = usePaperMode();
 
   // Pick a system voice for each narrator. Voice lists load asynchronously in
   // most browsers, so we grab them once now and again on the voiceschanged
@@ -1298,16 +1361,17 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   }, [tool, changePenWidth]);
 
   // ── Canvas ops ────────────────────────────────────────────────────────────
-  const selectTool = useCallback((next: "draw" | "eraser" | "blend") => {
+  const selectTool = useCallback((next: "draw" | "eraser" | "blend" | "fill") => {
     setTool(next);
     setDrawing(false);
     setCurrent(null);
-    const label = next === "draw" ? "Drawing tool selected" : next === "eraser" ? `Eraser selected, size ${eraserSize}` : `Blend tool selected, size ${blendSize}`;
+    const label = next === "draw" ? "Drawing tool selected" : next === "eraser" ? `Eraser selected, size ${eraserSize}` : next === "blend" ? `Blend tool selected, size ${blendSize}` : "Bucket fill selected. Tap an enclosed area to fill it.";
     say(label);
   }, [eraserSize, blendSize, say]);
 
   const clearCanvas = useCallback(() => {
     setStrokes([]);
+    setFills([]);
     completedLineCountRef.current = 0;
     setCurrent(null);
     setDrawing(false);
@@ -1319,10 +1383,11 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   }, [say]);
 
   const undo = useCallback(() => {
-    setStrokes((s) => s.slice(0, -1));
+    if (fills.length) setFills((f) => f.slice(0, -1));
+    else setStrokes((s) => s.slice(0, -1));
     if (audioRef.current) playSineNote(audioRef.current.ctx, 330, 0.18, 0.09);
     say("Oops, undone! Let's try that again.");
-  }, [say]);
+  }, [fills.length, say]);
 
   const toggleVisualAids = useCallback(() => {
     setVisualAids((v) => {
@@ -1361,7 +1426,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       }).join("");
       return pathStr + dabsStr;
     }).join("");
-    return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" width="${WIDTH}" height="${HEIGHT}">${defsExtra}<rect width="100%" height="100%" fill="${bg}"/>${paths}</svg>`;
+    return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" width="${WIDTH}" height="${HEIGHT}">${defsExtra}<rect width="100%" height="100%" fill="${bg}"/>${fills.map((f) => `<path d="${f.path}" fill="${f.color}"/>`).join("")}${paths}</svg>`;
   };
 
   const dl = (name: string, content: string, type: string) => {
@@ -1405,6 +1470,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   // ── Keyboard ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
       if (postConfirmOpen) {
         if (e.key === "Escape") { e.preventDefault(); cancelPost(); }
         else if (e.key === "Enter") { e.preventDefault(); confirmPost(); }
@@ -1437,6 +1504,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
       else if (e.key.toLowerCase() === "t") { e.preventDefault(); cycleTexture(); }
       else if (e.key.toLowerCase() === "r") { e.preventDefault(); selectTool("eraser"); }
       else if (e.key.toLowerCase() === "b") { e.preventDefault(); selectTool("blend"); }
+      else if (e.key.toLowerCase() === "f") { e.preventDefault(); selectTool("fill"); }
       else if (e.key.toLowerCase() === "v") { e.preventDefault(); selectTool("draw"); }
       else if (e.key.toLowerCase() === "escape" && guideKey) { e.preventDefault(); stopGuide(); }
     };
@@ -1461,6 +1529,15 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
     trackClick();
     const p = svgPoint(e);
     setCursor(p);
+    if (tool === "fill") {
+      const path = makeBucketFillPath([...fills, ...strokes], WIDTH, HEIGHT, p);
+      if (path) { setFills((prev) => [...prev, { path, color }]); say("Filled that area with your selected color."); }
+      else say("That spot is not an enclosed area. Try clicking inside a closed shape.");
+      pointerDrawing.current = false;
+      setDrawing(false);
+      setCurrent(null);
+      return;
+    }
     setDrawing(true);
     if (tool === "eraser") {
       eraseAt(p);
@@ -1542,7 +1619,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   // Guide path rendered on canvas
   const activeGuide = guideKey ? SHAPE_GUIDES[guideKey] : null;
 
-  const activeColorName = COLORS.find((c) => c.value === color)?.name ?? "";
+  const activeColorName = COLORS.find((c) => c.value === color)?.name ?? `Custom ${color}`;
   const statusText = drawing
     ? "Drawing"
     : strokes.length === 0
@@ -1573,9 +1650,12 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 <button onClick={() => selectTool("blend")} aria-pressed={tool === "blend"} className={`${ROW_BTN} ${tool === "blend" ? ROW_ON : ROW_OFF}`}>
                   <Waves className="h-4 w-4 shrink-0" /> Blend <span className="ml-auto text-xs opacity-60">B</span>
                 </button>
+                <button onClick={() => selectTool("fill")} aria-pressed={tool === "fill"} className={`${ROW_BTN} ${tool === "fill" ? ROW_ON : ROW_OFF}`}>
+                  <PaintBucket className="h-4 w-4 shrink-0" /> Fill <span className="ml-auto text-xs opacity-60">F</span>
+                </button>
               </div>
 
-              {tool !== "draw" && (
+              {(tool === "eraser" || tool === "blend") && (
                 <label className="mt-3 flex items-center gap-3 text-sm font-medium text-muted-foreground">
                   <span className="shrink-0">{tool === "eraser" ? "Eraser" : "Blend"} size</span>
                   <input
@@ -1595,6 +1675,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 </button>
                 <button onClick={toggleVisualAids} aria-pressed={visualAids} className={`${ROW_BTN} ${visualAids ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : ROW_OFF}`}>
                   <Eye className="h-4 w-4 shrink-0" /> Visual aids <span className="ml-auto text-xs opacity-60">X</span>
+                </button>
+                <button type="button" role="switch" aria-checked={darkPaper} onClick={() => { setDarkPaper(!darkPaper); say(!darkPaper ? "Dark canvas on." : "Dark canvas off. White canvas."); }} className={`${ROW_BTN} ${darkPaper ? "bg-primary/15 text-foreground ring-1 ring-primary/40" : ROW_OFF}`}>
+                  {darkPaper ? <Moon className="h-4 w-4 shrink-0" /> : <Sun className="h-4 w-4 shrink-0" />} Dark canvas <span className="ml-auto text-xs opacity-70">{darkPaper ? "On" : "Off"}</span>
                 </button>
                 {guideKey && (
                   <button onClick={stopGuide} className={`${ROW_BTN} bg-destructive text-destructive-foreground shadow-sm`}>
@@ -1631,6 +1714,13 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
                 {activeColorName} <span className="font-medium normal-case tracking-normal">· Q / E to cycle</span>
               </p>
+              <ColorWheel
+                value={color}
+                onChange={(hex) => {
+                  setColor(hex);
+                  setColorIndex(COLORS.findIndex((c) => c.value === hex));
+                }}
+              />
             </section>
 
             {/* 03 / Brush */}
@@ -1742,7 +1832,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 <li>[ / ]: thickness</li>
                 <li>, / .: opacity</li>
                 <li>T: cycle texture</li>
-                <li>V / R / B: draw, eraser, blend</li>
+                <li>V / R / B / F: draw, eraser, blend, fill</li>
                 <li>G: open / close guides</li>
                 <li>Esc: stop active guide</li>
                 <li>H: explain this page out loud</li>
@@ -1777,13 +1867,16 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-xl bg-[oklch(0.98_0.02_15)] shadow-inner ring-1 ring-border">
+            <div
+              className="relative overflow-hidden rounded-xl bg-[var(--canvas-paper)] shadow-inner ring-1 ring-border"
+              style={{ "--canvas-paper": darkPaper ? DARK_PAPER : "oklch(0.975 0.025 15)", "--canvas-grid": darkPaper ? "oklch(0.3 0.03 335)" : "oklch(0.88 0.05 20)" } as React.CSSProperties}
+            >
           <svg
             role="img"
             aria-label="Sonic tactile drawing canvas. Use arrow keys to move, space to toggle drawing."
             tabIndex={0}
             viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-            className={`w-full touch-none rounded-2xl bg-[oklch(0.98_0.02_15)] ${
+            className={`w-full touch-none rounded-2xl bg-[var(--canvas-paper)] ${darkPaper ? "" : "dark:brightness-[0.88]"} ${
               visualAids
                 ? "ring-4 ring-primary/60 focus-visible:ring-4 focus-visible:ring-primary"
                 : "ring-2 ring-primary/40"
@@ -1800,7 +1893,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 for tracing/drawing. A warm rose tint on the lines instead of
                 cool grey is the one small upgrade here. */}
             <pattern id="grid" width={GRID} height={GRID} patternUnits="userSpaceOnUse">
-              <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="oklch(0.88 0.05 20)" strokeWidth="1" />
+              <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="var(--canvas-grid)" strokeWidth="1" />
             </pattern>
             {/* Glow filter for guide path */}
             <filter id="glow">
@@ -1833,8 +1926,9 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
             </filter>
           </defs>
 
-          <rect width="100%" height="100%" fill="oklch(0.975 0.025 15)" />
+          <rect width="100%" height="100%" fill="var(--canvas-paper)" />
           <rect width="100%" height="100%" fill="url(#grid)" />
+          {fills.map((f, i) => <path key={`fill-${i}`} d={f.path} fill={f.color} />)}
 
           {/* Corner flourishes — small quarter-arc ornaments purely for
               decoration, drawn under the guide/strokes layers so they never
@@ -1955,8 +2049,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               {strokes.length === 0 && !current && (
                 <div aria-hidden className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
                   <Sparkles className="h-6 w-6 text-primary" />
-                  <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.2em] text-foreground">This space is yours</p>
-                  <p className={`${ACCENT} mt-2 text-3xl text-muted-foreground sm:text-4xl`}>Make your first mark anywhere.</p>
+                  <p className={`mt-4 text-[11px] font-bold uppercase tracking-[0.2em] ${darkPaper ? "text-neutral-200" : "text-neutral-700"}`}>This space is yours</p>
+                  <p className={`${ACCENT} mt-2 text-3xl ${darkPaper ? "text-neutral-400" : "text-neutral-500"} sm:text-4xl`}>Make your first mark anywhere.</p>
                 </div>
               )}
             </div>
@@ -1990,7 +2084,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
                 <span aria-hidden className="h-4 w-4 rounded-full ring-1 ring-border" style={{ backgroundColor: color }} />
                 {activeColorName}
               </span>
-              <span>{tool === "draw" ? `${TEXTURE_LABELS[texture]} · ${penWidth}px · ${Math.round(penOpacity * 100)}%` : tool === "eraser" ? `Eraser · ${eraserSize}px` : `Blend · ${blendSize}px`}</span>
+              <span>{tool === "draw" ? `${TEXTURE_LABELS[texture]} · ${penWidth}px · ${Math.round(penOpacity * 100)}%` : tool === "eraser" ? `Eraser · ${eraserSize}px` : tool === "blend" ? `Blend · ${blendSize}px` : "Bucket fill"}</span>
               <span>Sound {soundOn ? "on" : "off"}</span>
               <span>{voiceOn ? `${VOICE_PERSONA_LABELS[voicePersona]} guiding` : "Narration off"}</span>
               <span className="ml-auto text-muted-foreground">{statusText}</span>

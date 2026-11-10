@@ -37,6 +37,27 @@ export const Route = createFileRoute("/")({
 
 const communityFeatures = [
   {
+    title: "Presence News",
+    type: "Article",
+    meta: "Aditi Ranjan's Perceive makes art more accessible",
+    href: "https://presencenews.org/aditi-ranjan-perceive-accessible-art-technology/",
+    image: "https://presencenews.org/wp-content/uploads/2026/10/pexels-photo-4964510.jpeg",
+  },
+  {
+    title: "Leaders of Today",
+    type: "Article",
+    meta: "A drawing canvas that talks back in sound",
+    href: "https://www.leadersoftoday.com/community-stories/aditi-ranjan",
+    image: "https://res.cloudinary.com/dhtru89jv/image/upload/c_fill,g_auto:faces,ar_1:1,w_1200/f_auto,q_auto/community-stories/aditi-ranjan",
+  },
+  {
+    title: "Global Innovation Field Trip",
+    type: "Video",
+    meta: "Perceive: redefining digital art through sound",
+    href: "https://www.youtube.com/watch?v=cfRmrn90O4U",
+    image: "https://img.youtube.com/vi/cfRmrn90O4U/maxresdefault.jpg",
+  },
+  {
     title: "Raq the Boat Show",
     type: "Video",
     meta: "Featured conversation",
@@ -389,21 +410,22 @@ function Index() {
                 </div>
 
                 <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                  Step into the Studio
+                  Step into the Studios
                 </h2>
 
                 <HoverListen
-                  text="Step into the Studio. The Studio is where Perceive comes to life. Turn on sound, pick a color, and start a line. Every move you make plays back to you as pitch and pan, so you can hear exactly where your brush is. When you're done, export your piece for swell paper or a 3D print, or send it to the gallery. Headphones recommended."
-                  label="the studio"
+                  text="Step into the Studios. Perceive has two ways to create. The Voice Studio is built for blind and low-vision creators: you draw entirely by speaking, with the whole canvas narrated back to you. The Studio is for sighted creators: turn on sound, pick a color, and start a line. Every move you make plays back as pitch and pan. When you're done, export your piece for swell paper or a 3D print, or send it to the gallery. Headphones recommended."
+                  label="the studios"
                   className="mt-4 block"
                 >
                   <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
-                    The Studio is where Perceive comes to life. Turn on sound,
-                    pick a color, and start a line. Every move you make plays
-                    back to you as pitch and pan, so you can hear exactly where
-                    your brush is. When you're done, export your piece for
-                    swell paper or a 3D print, or send it to the gallery for
-                    others to see.
+                    Perceive has two ways to create. The Voice Studio is built
+                    first for blind and low-vision creators: draw entirely by
+                    speaking, with the canvas narrated back to you. The Studio
+                    is for sighted creators: turn on sound, pick a color, and
+                    start a line, and every move plays back as pitch and pan.
+                    Export your piece for swell paper or a 3D print, or send it
+                    to the gallery for others to see.
                   </p>
                 </HoverListen>
 
@@ -413,8 +435,20 @@ function Index() {
                     size="lg"
                     className="group rounded-full shadow-md"
                   >
+                    <Link to="/blind" className="gap-2">
+                      Voice Studio (blind and low vision)
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  </Button>
+
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="secondary"
+                    className="group rounded-full shadow-md"
+                  >
                     <Link to="/studio" className="gap-2">
-                      Go to the Studio
+                      Studio for sighted creators
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                     </Link>
                   </Button>
@@ -603,7 +637,7 @@ function Index() {
 
                           {/* Type badge */}
                           <div className="absolute left-4 top-4">
-                            <span className="inline-flex items-center rounded-full border border-white/60 bg-white/75 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-foreground shadow-sm backdrop-blur-md">
+                            <span className="inline-flex items-center rounded-full border border-white/60 bg-white/75 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-foreground shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-black/60">
                               {type}
                             </span>
                           </div>
@@ -611,15 +645,15 @@ function Index() {
                           {/* Video play button */}
                           {type === "Video" && (
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="grid h-14 w-14 place-items-center rounded-full border border-white/70 bg-white/80 text-foreground shadow-xl backdrop-blur-md transition-all duration-300 group-hover/card:scale-110 group-hover/card:bg-white">
+                              <div className="grid h-14 w-14 place-items-center rounded-full border border-white/70 bg-white/80 text-foreground shadow-xl backdrop-blur-md transition-all duration-300 group-hover/card:scale-110 group-hover/card:bg-white dark:border-white/20 dark:bg-black/60 dark:group-hover/card:bg-black/80">
                                 <Play className="ml-0.5 h-5 w-5 fill-current" />
                               </div>
                             </div>
                           )}
 
                           {/* Publication arrow */}
-                          {type === "Publication" && (
-                            <div className="absolute bottom-4 right-4 grid h-10 w-10 place-items-center rounded-full border border-white/60 bg-white/75 text-foreground shadow-lg backdrop-blur-md transition-transform duration-300 group-hover/card:scale-110">
+                          {(type === "Publication" || type === "Article") && (
+                            <div className="absolute bottom-4 right-4 grid h-10 w-10 place-items-center rounded-full border border-white/60 bg-white/75 text-foreground shadow-lg backdrop-blur-md transition-transform duration-300 group-hover/card:scale-110 dark:border-white/15 dark:bg-black/60">
                               <ArrowUpRight className="h-4 w-4" />
                             </div>
                           )}
@@ -679,7 +713,7 @@ function Index() {
               <Rocket className="h-3.5 w-3.5" /> Coming soon
             </span>
 
-            <h2 className="mx-auto mt-5 max-w-xl bg-gradient-to-br from-[oklch(0.42_0.19_10)] to-[oklch(0.32_0.13_340)] bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-4xl">
+            <h2 className="mx-auto mt-5 max-w-xl bg-gradient-to-br from-[oklch(0.42_0.19_10)] to-[oklch(0.32_0.13_340)] bg-clip-text dark:from-[oklch(0.82_0.11_15)] dark:to-[oklch(0.78_0.1_335)] text-3xl font-bold tracking-tight text-transparent sm:text-4xl">
               More features coming soon
             </h2>
 
@@ -692,13 +726,13 @@ function Index() {
               {[
                 {
                   icon: Ear,
-                  title: "Autonomous sound guide",
-                  body: "A fully hands-free audio guide for blind users, plus a sighted mode with visual aids — two ways to create.",
+                  title: "Smarter Voice Studio",
+                  body: "A fully hands-free smarter & AI-assisted voice studio for blind users.",
                 },
                 {
                   icon: Users2,
-                  title: "Collaborative canvas",
-                  body: "Draw together with someone else in real time.",
+                  title: "Collaborative canvas games",
+                  body: "Draw together and enjoy art games with other sighted users in real time.",
                 },
                 {
                   icon: Smartphone,

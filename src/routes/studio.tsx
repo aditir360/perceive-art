@@ -202,11 +202,11 @@ function StudioPage() {
         ───────────────────────────────────────── */}
         <section
           aria-labelledby="tutorial-heading"
-          className="mb-12 overflow-hidden border-y border-border/70"
+          className="relative mb-12 overflow-hidden rounded-[2.25rem] bg-gradient-to-br from-primary/20 via-card/70 to-accent/20 p-1.5 shadow-2xl shadow-primary/20 ring-1 ring-white/40 backdrop-blur-xl sm:p-2"
         >
-          <div className="grid gap-0 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+          <div className="grid gap-0 overflow-hidden rounded-[1.85rem] bg-card/40 backdrop-blur-md lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
             {/* Media */}
-            <div className="relative min-w-0 py-5 lg:border-r lg:border-border/70 lg:pr-8">
+            <div className="relative min-w-0 px-4 py-5 sm:px-6 lg:border-r lg:border-white/20 lg:px-8 lg:pr-8">
               <div className="mb-4 flex items-center justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
@@ -224,7 +224,7 @@ function StudioPage() {
             </div>
 
             {/* Editorial information */}
-            <div className="flex min-w-0 flex-col justify-between py-6 lg:pl-8">
+            <div className="relative flex min-w-0 flex-col justify-between bg-gradient-to-br from-accent/15 via-card/60 to-primary/10 px-5 py-6 backdrop-blur-md sm:px-7 lg:pl-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   A quick introduction
@@ -245,7 +245,7 @@ function StudioPage() {
                 </p>
               </div>
 
-              <div className="mt-8 divide-y divide-border/70 border-y border-border/70">
+              <div className="mt-8 divide-y divide-white/15 overflow-hidden rounded-2xl border border-white/30 bg-card/40 px-4 shadow-lg shadow-primary/10 backdrop-blur-md sm:px-5">
                 {TUTORIAL_STEPS.map((step) => (
                   <div
                     key={step.number}
@@ -318,8 +318,8 @@ function StudioPage() {
           </div>
 
           {showIntro && (
-            <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-4 rounded-2xl bg-secondary/40 px-5 py-4 ring-1 ring-border/70">
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-card text-primary shadow-sm ring-1 ring-border/70">
+            <div className="relative mb-6 flex flex-wrap items-center gap-x-6 gap-y-4 overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-card/70 to-accent/20 px-5 py-4 shadow-xl shadow-primary/10 ring-1 ring-white/40 backdrop-blur-xl">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-card/70 text-primary shadow-md shadow-primary/10 ring-1 ring-white/50 backdrop-blur-sm">
                 <Sparkles className="h-5 w-5" />
               </span>
               <div className="min-w-[200px] flex-1">
