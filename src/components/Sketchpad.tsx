@@ -65,8 +65,8 @@ const SOUND_STYLE_ICONS: Record<SoundStyle, typeof Bell> = {
   marimba: Music2,
 };
 
-// Which narrator reads the spoken guidance. Bennett the bear is the default;
-// the lady voice is a brighter, adult female narrator.
+// Which narrator reads the spoken guidance. The lady voice (a bright, friendly
+// adult female narrator) is the default; Bennett the bear is the alternative.
 type VoicePersona = "bear" | "lady";
 const VOICE_PERSONA_ORDER: VoicePersona[] = ["bear", "lady"];
 const VOICE_PERSONA_LABELS: Record<VoicePersona, string> = {
@@ -805,8 +805,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   useEffect(() => { soundVolumeRef.current = soundVolume; }, [soundVolume]);
   // Which narrator speaks. The ref mirrors the state so the stable `say`
   // callback always reads the latest choice without needing to be recreated.
-  const [voicePersona, setVoicePersona] = useState<VoicePersona>("bear");
-  const voicePersonaRef = useRef<VoicePersona>("bear");
+  const [voicePersona, setVoicePersona] = useState<VoicePersona>("lady");
+  const voicePersonaRef = useRef<VoicePersona>("lady");
   // Master switch for spoken narration. When off, nothing is spoken aloud,
   // but the on-screen/screen-reader announcement text still updates.
   const [voiceOn, setVoiceOn] = useState(true);
@@ -814,7 +814,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   const lastPluckAt  = useRef(0);
   const lastPluckPos = useRef<Point | null>(null);
   const [announce,  setAnnounce]  = useState(
-    "Hey, Bennett here! Press H any time for a full spoken walkthrough of the studio, S for sound, Space to start drawing, and the arrow keys to move me around the canvas."
+    "Hi there! I'm your guide. Press H any time for a full spoken walkthrough of the studio, S for sound, Space to start drawing, and the arrow keys to move me around the canvas."
   );
   const [colorIndex, setColorIndex] = useState(0);
   const [texture, setTexture] = useState<Texture>("pen");
