@@ -49,6 +49,7 @@ import {
   Sun,
 } from "lucide-react";
 import { DARK_PAPER, usePaperMode } from "@/lib/studio-features";
+import { ColorWheel } from "@/components/ColorWheel";
 
 type SoundStyle = "sine" | "pad" | "chime" | "marimba";
 const SOUND_STYLE_ORDER: SoundStyle[] = ["sine", "pad", "chime", "marimba"];
@@ -1469,6 +1470,8 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   // ── Keyboard ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
       if (postConfirmOpen) {
         if (e.key === "Escape") { e.preventDefault(); cancelPost(); }
         else if (e.key === "Enter") { e.preventDefault(); confirmPost(); }
@@ -1616,7 +1619,7 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
   // Guide path rendered on canvas
   const activeGuide = guideKey ? SHAPE_GUIDES[guideKey] : null;
 
-  const activeColorName = COLORS.find((c) => c.value === color)?.name ?? "";
+  const activeColorName = COLORS.find((c) => c.value === color)?.name ?? `Custom ${color}`;
   const statusText = drawing
     ? "Drawing"
     : strokes.length === 0
@@ -1711,6 +1714,13 @@ export function Sketchpad({ onPost }: SketchpadProps = {}) {
               <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
                 {activeColorName} <span className="font-medium normal-case tracking-normal">· Q / E to cycle</span>
               </p>
+              <ColorWheel
+                value={color}
+                onChange={(hex) => {
+                  setColor(hex);
+                  setColorIndex(COLORS.findIndex((c) => c.value === hex));
+                }}
+              />
             </section>
 
             {/* 03 / Brush */}
