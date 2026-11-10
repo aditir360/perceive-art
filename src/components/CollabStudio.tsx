@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { saveArtwork } from "@/lib/gallery-storage";
+import { ColorWheel } from "@/components/ColorWheel";
 import bearSleeping from "@/assets/bear_sleeping.png";
 import bearDrawing from "@/assets/bear_drawing.png";
 import {
@@ -484,7 +485,8 @@ function Room({
   const say = narrator.say;
 
   const [colorIndex, setColorIndex] = useState(2);
-  const color = COLORS[colorIndex].value;
+  const [customColor, setCustomColor] = useState<string | null>(null);
+  const color = customColor ?? COLORS[colorIndex].value;
   const [texture, setTexture] = useState<Texture>("pen");
   const [textureSettings, setTextureSettings] = useState(DEFAULT_TEXTURE_SETTINGS);
   const penWidth = textureSettings[texture].width;
@@ -547,6 +549,7 @@ function Room({
 
   // ── Colour / brush settings ─────────────────────────────────────────────
   const pickColor = (i: number) => {
+    setCustomColor(null);
     setColorIndex(i);
     audio.note(COLORS[i].tone, 0.2, 0.11, true);
     say(`Color: ${COLORS[i].name}`);
@@ -1073,7 +1076,7 @@ function Room({
   // ── Derived display values ──────────────────────────────────────────────
   trailRef.current = [...trailRef.current.slice(-14), pos];
   const activeGuide = guideKey ? SHAPE_GUIDES[guideKey] : null;
-  const colorName = COLORS[colorIndex].name;
+  const colorName = customColor ? `Custom ${customColor}` : COLORS[colorIndex].name;
   const drawingNow = penDown && tool !== "fill";
   const statusText = drawingNow
     ? tool === "eraser" ? "Erasing" : "Drawing"
@@ -1212,13 +1215,13 @@ function Room({
                     type="button"
                     onClick={() => pickColor(i)}
                     aria-label={`Color ${c.name}`}
-                    aria-pressed={colorIndex === i}
+                    aria-pressed={!customColor && colorIndex === i}
                     className={`relative aspect-square w-full rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all duration-150 hover:scale-110 ${
-                      colorIndex === i ? "scale-105 ring-foreground" : "ring-border/60"
+                      !customColor && colorIndex === i ? "scale-105 ring-foreground" : "ring-border/60"
                     }`}
                     style={{ backgroundColor: c.value }}
                   >
-                    {colorIndex === i && (
+                    {!customColor && colorIndex === i && (
                       <Check
                         className="absolute inset-0 m-auto h-4 w-4 drop-shadow"
                         style={{ color: ["#f5a623", "#e0b04f", "#f9a8a8", "#ffffff"].includes(c.value) ? "#3a1f2b" : "#fff" }}
@@ -1230,6 +1233,7 @@ function Room({
               <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
                 {colorName} <span className="font-medium normal-case tracking-normal">· Q / E to cycle</span>
               </p>
+              <ColorWheel value={color} onChange={(hex) => setCustomColor(hex)} />
             </section>
 
             {/* 04 / Brush */}
