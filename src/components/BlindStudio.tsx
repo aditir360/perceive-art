@@ -17,8 +17,13 @@ import {
   Heart,
   Star,
   Triangle,
-  Compass,
+  Keyboard,
+  Move,
+  Music2,
+  Palette,
+  Pencil,
   Sparkles,
+  type LucideIcon,
 } from "lucide-react";
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -267,6 +272,62 @@ const HELP_LINES = [
   "Say bear voice or lady voice to switch narrators. Say help any time to hear this again.",
 ];
 
+const ACCENT = "font-['Instrument_Serif',Georgia,serif] font-normal italic tracking-tight";
+const SEEN_INTRO_KEY = "perceive-voice-intro-seen";
+
+const INTRO_LONG =
+  "Welcome to the Voice Studio. I'm your guide, and you control everything by speaking. " +
+  "Say move, then up, down, left or right, to move your brush. " +
+  "Say draw to put the pen down, and stop drawing to lift it. " +
+  "Say color, then a name like sky or rose, to change the ink. " +
+  "Say guide, then circle, square, triangle, star or heart, and I'll coach you around the shape. " +
+  "Say undo, clear, save my drawing, or share my drawing. " +
+  "Say help any time to hear every command again. " +
+  "Press any key or tap the screen to skip this. I'm turning on your microphone now.";
+const INTRO_SHORT =
+  "Welcome back. I'm turning on your microphone now. Say help any time to hear every command.";
+const GATE_PROMPT = "Voice Studio. Tap anywhere, or press any key, to begin.";
+
+type CommandGroup = { id: string; title: string; Icon: LucideIcon; phrases: string[]; note: string; speech: string };
+const COMMAND_GROUPS: CommandGroup[] = [
+  {
+    id: "move", title: "Move", Icon: Move,
+    phrases: ["move up", "move down", "left", "right", "up right", "go to the center"],
+    note: "Combine directions, or add a number, like “right three”. Say bigger steps or smaller steps to change how far each move goes.",
+    speech: HELP_LINES[0] + " " + HELP_LINES[2],
+  },
+  {
+    id: "draw", title: "Draw", Icon: Pencil,
+    phrases: ["draw", "pen down", "stop drawing", "pen up", "undo", "clear"],
+    note: "Say draw, then move to make a line. Undo removes the last line. Clear starts over.",
+    speech: HELP_LINES[1] + " Say undo to remove the last line, and clear to start over.",
+  },
+  {
+    id: "color", title: "Color", Icon: Palette,
+    phrases: ["color sky", "color rose", "color mint", "color black"],
+    note: "Sixteen colours: black, white, rose, peach, sun, amber, crimson, coral, gold, lavender, plum, sky, teal, mint, forest and indigo.",
+    speech: HELP_LINES[3],
+  },
+  {
+    id: "sound", title: "Sound", Icon: Music2,
+    phrases: ["sound on", "sound off", "warm tone", "soft pad", "wind chime", "marimba", "louder", "quieter"],
+    note: "Left and right pans the sound. Up and down changes the pitch.",
+    speech: HELP_LINES[4],
+  },
+  {
+    id: "guides", title: "Shape guides", Icon: Sparkles,
+    phrases: ["guide circle", "guide square", "guide triangle", "guide star", "guide heart", "stop guide"],
+    note: "I'll tell you which way to go, and how to get back if you drift off the shape.",
+    speech: HELP_LINES[5],
+  },
+  {
+    id: "keep", title: "Keep and share", Icon: Download,
+    phrases: ["where am I", "save my drawing", "share my drawing", "repeat", "help"],
+    note: "Save downloads your drawing. Share sends it to the gallery for review.",
+    speech: HELP_LINES[6] + " " + HELP_LINES[7] + " " + HELP_LINES[8],
+  },
+];
+
 export function BlindStudio() {
   const audioRef = useRef<ReturnType<typeof buildAudio> | null>(null);
 
@@ -318,6 +379,13 @@ export function BlindStudio() {
   );
   const lastSpokenRef = useRef(announce);
 
+  const introRef = useRef(false);
+  const startedAtRef = useRef(0);
+  const [started, setStarted] = useState(false);
+  const startedRef = useRef(false);
+  const [speaking, setSpeaking] = useState(false);
+  const speakingRef = useRef(false);
+
   const [listening, setListening] = useState(false);
   const listeningRef = useRef(false);
   const [micSupported, setMicSupported] = useState(true);
@@ -348,12 +416,23 @@ export function BlindStudio() {
     return () => window.speechSynthesis.removeEventListener("voiceschanged", pickVoices);
   }, []);
 
-  const say = useCallback((msg: string, opts?: { force?: boolean }) => {
+  const say = useCallback((msg: string, opts?: { force?: boolean; onEnd?: () => void }) => {
     setAnnounce(msg);
     lastSpokenRef.current = msg;
     if ((voiceOnRef.current || opts?.force) && typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(msg);
+      let finished = false;
+      const done = () => {
+        if (finished) return;
+        finished = true;
+        speakingRef.current = false;
+        setSpeaking(false);
+        opts?.onEnd?.();
+      };
+      utter.onstart = () => { speakingRef.current = true; setSpeaking(true); };
+      utter.onend = done;
+      utter.onerror = done;
       if (voicePersonaRef.current === "lady") {
         if (ladyVoiceRef.current) utter.voice = ladyVoiceRef.current;
         utter.rate = 1.05;
@@ -364,6 +443,8 @@ export function BlindStudio() {
         utter.pitch = 1.4;
       }
       window.speechSynthesis.speak(utter);
+    } else if (opts?.onEnd) {
+      window.setTimeout(opts.onEnd, 0);
     }
   }, []);
 
@@ -711,6 +792,8 @@ export function BlindStudio() {
     recognition.interimResults = false;
     recognition.lang = "en-US";
     recognition.onresult = (event: any) => {
+      // Don't treat the guide's own voice (picked up by the mic) as a command.
+      if (speakingRef.current) return;
       const result = event.results[event.results.length - 1];
       const transcript = result?.[0]?.transcript ?? "";
       handleCommand(transcript);
@@ -737,14 +820,57 @@ export function BlindStudio() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handleCommand]);
 
-  const startListening = useCallback(() => {
+  const startListening = useCallback((quiet = false) => {
     if (!recognitionRef.current) { setMicSupported(false); return; }
-    ensureAudio();
+    const a = ensureAudio();
+    if (a.ctx.state === "suspended") void a.ctx.resume();
     listeningRef.current = true;
     setListening(true);
     try { recognitionRef.current.start(); } catch { /* already running */ }
-    say("I'm listening. Say help any time to hear what you can say.", { force: true });
+    if (quiet) {
+      // A short rising two-note cue means "the mic is on, go ahead".
+      playSineNote(a.ctx, 523.25, 0.14, 0.1);
+      window.setTimeout(() => playSineNote(a.ctx, 783.99, 0.18, 0.1), 120);
+      setAnnounce("I'm listening. Say help any time to hear every command.");
+    } else {
+      say("I'm listening. Say help any time to hear what you can say.", { force: true });
+    }
   }, [ensureAudio, say]);
+
+  // First tap / key press: explain the commands out loud, then switch the
+  // mic on as soon as the explanation ends (so it never hears the guide).
+  // The press is also what lets the browser play audio and ask for the mic.
+  const beginSession = useCallback(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    startedAtRef.current = Date.now();
+    setStarted(true);
+    const a = ensureAudio();
+    if (a.ctx.state === "suspended") void a.ctx.resume();
+    let seen = false;
+    try {
+      seen = window.localStorage.getItem(SEEN_INTRO_KEY) === "1";
+      window.localStorage.setItem(SEEN_INTRO_KEY, "1");
+    } catch { /* storage unavailable */ }
+    introRef.current = true;
+    say(seen ? INTRO_SHORT : INTRO_LONG, {
+      force: true,
+      onEnd: () => {
+        introRef.current = false;
+        if (!listeningRef.current) startListening(true);
+      },
+    });
+  }, [ensureAudio, say, startListening]);
+
+  // Skip the spoken intro: stop talking and open the mic straight away.
+  const skipIntro = useCallback(() => {
+    if (!introRef.current || Date.now() - startedAtRef.current < 400) return;
+    introRef.current = false;
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    speakingRef.current = false;
+    setSpeaking(false);
+    if (!listeningRef.current) startListening(true);
+  }, [startListening]);
 
   function stopListening() {
     listeningRef.current = false;
@@ -753,12 +879,44 @@ export function BlindStudio() {
     setAnnounce("Stopped listening. Press Start Listening, or the L key, to continue by voice.");
   }
 
+  // Before the first press: say the "tap anywhere" prompt out loud on a loop
+  // (about every 6 seconds). Browsers may keep speech silent until the very
+  // first press, so the same text is also in the screen-reader live region.
+  useEffect(() => {
+    if (started || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    setAnnounce(GATE_PROMPT);
+    const speakPrompt = () => {
+      if (startedRef.current || window.speechSynthesis.speaking) return;
+      const u = new SpeechSynthesisUtterance(GATE_PROMPT);
+      if (bennettVoiceRef.current) u.voice = bennettVoiceRef.current;
+      u.rate = 1.0;
+      u.pitch = 1.4;
+      window.speechSynthesis.speak(u);
+    };
+    const first = window.setTimeout(speakPrompt, 800);
+    const loop = window.setInterval(speakPrompt, 6000);
+    const onKey = (e: KeyboardEvent) => {
+      if (["Shift", "Control", "Alt", "Meta", "CapsLock", "Tab"].includes(e.key)) return;
+      e.preventDefault();
+      window.speechSynthesis.cancel();
+      beginSession();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(loop);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [started, beginSession]);
+
   // ── Keyboard fallback — full parity for anyone who can't use (or doesn't
   // want to use) the microphone. ───────────────────────────────────────────
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      if (!startedRef.current) return;
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (introRef.current) { e.preventDefault(); skipIntro(); return; }
       const count = e.shiftKey ? 3 : 1;
       switch (e.key) {
         case "ArrowUp": e.preventDefault(); movePosition(0, -stepRef.current, count); break;
@@ -784,7 +942,7 @@ export function BlindStudio() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [clearAll, explainPage, exportDrawing, movePosition, shareToGallery, startDrawing, startGuide, startListening, stopDrawing, undo]);
+  }, [clearAll, explainPage, exportDrawing, movePosition, shareToGallery, startDrawing, startGuide, skipIntro, startListening, stopDrawing, undo]);
 
   useEffect(() => {
     return () => {
@@ -795,77 +953,159 @@ export function BlindStudio() {
   const guidePath = useMemo(() => (guideKey ? scaleGuide(GUIDES[guideKey]) : null), [guideKey]);
   const guidePoints = guidePath ? guidePath.map((p) => `${p.x},${p.y}`).join(" ") : "";
 
+  const speechLabel = voicePersona === "bear" ? "Bennett" : "Lady";
+  const statusText = !started
+    ? "Waiting to begin"
+    : speaking
+      ? `${speechLabel} is speaking`
+      : listening
+        ? "Listening for you"
+        : "Microphone is off";
+  const GLASS = "rounded-[2rem] bg-card/70 shadow-2xl shadow-primary/15 ring-1 ring-white/60 backdrop-blur-xl";
+
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6">
+    <div className="relative mx-auto max-w-6xl px-4 pb-20 pt-6 sm:px-6" onPointerDown={skipIntro}>
       <p aria-live="assertive" role="status" className="sr-only">{announce}</p>
 
-      <div className="rounded-[2rem] bg-card/80 p-5 shadow-lg ring-1 ring-primary/15 backdrop-blur-md sm:p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Voice <span className="font-['Instrument_Serif',Georgia,serif] font-normal italic">Studio</span>
-            </h1>
-            <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Built for people who can't see the screen at all. Everything here — moving, drawing, colour,
-              sound, shape guides, and saving your work — happens by voice. Press Start Listening and say
-              "help" to hear every command.
-            </p>
+      {/* ───────── Start gate: tap anywhere / press any key ───────── */}
+      {!started && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Start the Voice Studio"
+          onPointerDown={(e) => { e.stopPropagation(); beginSession(); }}
+          className="fixed inset-0 z-[70] flex cursor-pointer flex-col items-center justify-center bg-background/95 px-6 text-center backdrop-blur-xl"
+        >
+          <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
+            <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-accent/25 blur-3xl" />
           </div>
-          <Link
-            to="/studio"
-            className="shrink-0 rounded-full bg-background/60 px-3.5 py-2 text-xs font-medium text-muted-foreground ring-1 ring-primary/10 transition-colors hover:bg-primary/10 hover:text-foreground"
-          >
-            Prefer a visual studio? Go there instead
-          </Link>
-        </div>
-
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Button
-            onClick={() => (listening ? stopListening() : startListening())}
-            className="h-14 gap-2 rounded-full px-6 text-base shadow-md"
-            aria-pressed={listening}
-          >
-            {listening ? <Mic className="h-5 w-5 animate-pulse" /> : <MicOff className="h-5 w-5" />}
-            {listening ? "Listening… (say “stop listening”)" : "Start Listening"}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => (voiceOn ? (voiceOnRef.current = false, setVoiceOn(false)) : (voiceOnRef.current = true, setVoiceOn(true), say("Narration is back on.", { force: true })))}
-            className="h-12 gap-2 rounded-full px-4"
-            aria-pressed={voiceOn}
-          >
-            {voiceOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            {voiceOn ? "Narration on" : "Narration off"}
-          </Button>
-          <Button variant="outline" onClick={explainPage} className="h-12 gap-2 rounded-full px-4">
-            <HelpCircle className="h-4 w-4" /> Explain this page
-          </Button>
-          {!micSupported && (
-            <span className="rounded-full bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive">
-              Voice commands aren't supported in this browser — try Chrome or Edge. Keyboard controls below
-              still work fully.
+          <div className="relative">
+            <span aria-hidden className="absolute inset-0 -m-6 animate-ping rounded-full bg-primary/20" />
+            <span className="relative grid h-36 w-36 place-items-center rounded-full bg-primary text-primary-foreground shadow-2xl shadow-primary/40 sm:h-44 sm:w-44">
+              <Mic className="h-16 w-16 sm:h-20 sm:w-20" />
             </span>
-          )}
+          </div>
+          <p className="relative mt-10 text-[11px] font-bold uppercase tracking-[0.24em] text-primary">Voice Studio</p>
+          <h1 className="relative mt-3 text-4xl font-black tracking-[-0.03em] text-foreground sm:text-6xl">
+            Tap anywhere to <span className={`${ACCENT} text-[1.12em]`}>begin.</span>
+          </h1>
+          <p className="relative mt-4 max-w-md text-base text-muted-foreground sm:text-lg">
+            Or press any key. Your guide will explain the commands out loud, then turn on your microphone.
+          </p>
+          <button
+            type="button"
+            autoFocus
+            onClick={beginSession}
+            className="relative mt-8 h-14 rounded-full bg-foreground px-8 text-base font-semibold text-background shadow-xl outline-none ring-offset-2 ring-offset-background focus-visible:ring-4 focus-visible:ring-primary"
+          >
+            Begin voice studio
+          </button>
         </div>
+      )}
 
-        <div aria-hidden="true" className="mt-4 rounded-2xl bg-background/60 p-4 ring-1 ring-white/50">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Last heard</p>
-          <p className="mt-1 text-sm text-foreground">{lastHeard || "— nothing yet —"}</p>
-          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Bennett says</p>
-          <p className="mt-1 text-sm font-medium text-foreground">{announce}</p>
+      {/* ───────── Hero + mic ───────── */}
+      <div className={`${GLASS} overflow-hidden`}>
+        <div className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+          <div className="p-6 sm:p-9">
+            <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+              <span aria-hidden className="h-px w-8 bg-primary/60" />
+              Hands-free studio
+            </div>
+            <h1 className="mt-4 text-5xl font-black tracking-[-0.04em] text-foreground sm:text-6xl">
+              Voice <span className={`${ACCENT} text-[1.12em]`}>Studio.</span>
+            </h1>
+            <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground">
+              Built for people who can't see the screen. Speak a command, and your guide moves the brush, draws,
+              and tells you what happened.
+            </p>
+
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <Button
+                onClick={() => (listening ? stopListening() : startListening())}
+                className="h-14 gap-3 rounded-full px-7 text-base shadow-lg"
+                aria-pressed={listening}
+              >
+                {listening ? <Mic className="h-5 w-5 animate-pulse" /> : <MicOff className="h-5 w-5" />}
+                {listening ? "Listening. Tap to stop" : "Start listening"}
+                <span className="rounded-md bg-primary-foreground/15 px-1.5 text-xs font-semibold">L</span>
+              </Button>
+              <Button variant="outline" onClick={explainPage} className="h-14 gap-2 rounded-full bg-background/60 px-5">
+                <HelpCircle className="h-4 w-4" /> Hear all commands <span className="text-xs opacity-60">H</span>
+              </Button>
+            </div>
+
+            {!micSupported && (
+              <p className="mt-4 rounded-2xl bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+                Voice commands aren't supported in this browser. Try Chrome or Edge. The keyboard controls below
+                still work fully.
+              </p>
+            )}
+
+            <div className="mt-7 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => (voiceOn ? (voiceOnRef.current = false, setVoiceOn(false), setAnnounce("Narration is off.")) : (voiceOnRef.current = true, setVoiceOn(true), say("Narration is back on.", { force: true })))}
+                aria-pressed={voiceOn}
+                className={`flex h-11 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors ${voiceOn ? "bg-primary/15 ring-1 ring-primary/40" : "ring-1 ring-border/70 hover:bg-primary/10"}`}
+              >
+                {voiceOn ? <Volume2 className="h-4 w-4 text-primary" /> : <VolumeX className="h-4 w-4" />}
+                {voiceOn ? "Narration on" : "Narration off"}
+              </button>
+              {(["bear", "lady"] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => { voicePersonaRef.current = p; setVoicePersona(p); say(p === "bear" ? "Hey, Bennett here!" : "Hi, I'm your lady guide.", { force: true }); }}
+                  aria-pressed={voicePersona === p}
+                  className={`flex h-11 items-center rounded-full px-4 text-sm font-medium transition-colors ${voicePersona === p ? "bg-foreground text-background shadow-md" : "ring-1 ring-border/70 hover:bg-primary/10"}`}
+                >
+                  {p === "bear" ? "Bennett" : "Lady"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Live conversation: big, high-contrast text for low-vision helpers */}
+          <div className="border-t border-border/70 bg-secondary/30 p-6 sm:p-9 lg:border-l lg:border-t-0">
+            <div className="flex items-center gap-4">
+              <span className="relative grid h-16 w-16 shrink-0 place-items-center">
+                {(listening || speaking) && <span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-primary/25" />}
+                <span className={`relative grid h-16 w-16 place-items-center rounded-full shadow-lg ${speaking ? "bg-accent text-accent-foreground" : listening ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                  {speaking ? <Volume2 className="h-7 w-7" /> : listening ? <Mic className="h-7 w-7" /> : <MicOff className="h-7 w-7" />}
+                </span>
+              </span>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Status</p>
+                <p className="text-xl font-bold text-foreground">{statusText}</p>
+              </div>
+            </div>
+
+            <div aria-hidden="true" className="mt-6 space-y-4">
+              <div className="rounded-2xl bg-background/60 p-4 ring-1 ring-border/70">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">You said</p>
+                <p className="mt-1.5 min-h-[1.75rem] text-xl font-semibold text-foreground">{lastHeard || "Nothing yet"}</p>
+              </div>
+              <div className="rounded-2xl bg-background/60 p-4 ring-1 ring-primary/30">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">{speechLabel} says</p>
+                <p className="mt-1.5 text-lg font-medium leading-snug text-foreground">{announce}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="rounded-3xl bg-card/80 p-4 shadow-lg ring-1 ring-primary/15 backdrop-blur-md sm:p-5">
+      {/* ───────── Canvas + guides ───────── */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <section aria-label="Canvas" className={`${GLASS} p-4 sm:p-5`}>
           <svg
             viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-            className="w-full rounded-2xl bg-white shadow-inner"
+            className="w-full rounded-2xl bg-white shadow-inner ring-1 ring-border/70 dark:brightness-[0.88]"
             role="img"
             aria-label={`Drawing canvas. Cursor is ${positionPhrase(position)}.`}
           >
             {guidePath && (
-              <polyline points={guidePoints} fill="none" stroke="#c9a0dc" strokeWidth={3} strokeDasharray="6 8" opacity={0.6} />
+              <polyline points={guidePoints} fill="none" stroke="#c9a0dc" strokeWidth={3} strokeDasharray="6 8" opacity={0.7} />
             )}
             {strokes.map((s, i) => (
               <polyline
@@ -878,70 +1118,151 @@ export function BlindStudio() {
                 strokeLinejoin="round"
               />
             ))}
-            <circle cx={position.x} cy={position.y} r={isDrawing ? 10 : 8} fill={COLORS[colorIndex].value} stroke="#ffffff" strokeWidth={2} />
+            <circle cx={position.x} cy={position.y} r={isDrawing ? 10 : 8} fill={COLORS[colorIndex].value} stroke="#111111" strokeWidth={2} />
           </svg>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-            <span>Color: <strong className="text-foreground">{COLORS[colorIndex].name}</strong></span>
-            <span>Sound: <strong className="text-foreground">{soundOn ? SOUND_STYLE_LABELS[soundStyle] : "off"}</strong></span>
-            <span>Guide: <strong className="text-foreground">{guideKey ?? "none"}</strong></span>
-            <span>Voice: <strong className="text-foreground">{voicePersona === "bear" ? "Bennett" : "Lady"}</strong></span>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={undo} className="h-8 gap-1.5 rounded-full px-3 text-xs">
-                <RotateCcw className="h-3 w-3" /> Undo
-              </Button>
-              <Button size="sm" variant="outline" onClick={clearAll} className="h-8 gap-1.5 rounded-full px-3 text-xs">
-                <Trash2 className="h-3 w-3" /> Clear
-              </Button>
-              <Button size="sm" variant="outline" onClick={exportDrawing} className="h-8 gap-1.5 rounded-full px-3 text-xs">
-                <Download className="h-3 w-3" /> Save
-              </Button>
-              <Button size="sm" variant="outline" onClick={shareToGallery} disabled={sharing} className="h-8 gap-1.5 rounded-full px-3 text-xs">
-                <Share2 className="h-3 w-3" /> {sharing ? "Sending…" : "Share"}
-              </Button>
-            </div>
-          </div>
-        </div>
 
-        <div className="space-y-4">
-          <div className="rounded-3xl bg-card/80 p-4 shadow-lg ring-1 ring-primary/15 backdrop-blur-md">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Compass className="h-4 w-4 text-primary" /> Things you can say
-            </h2>
-            <ul className="space-y-2 text-xs leading-relaxed text-muted-foreground">
-              {HELP_LINES.map((l, i) => (<li key={i}>{l}</li>))}
-            </ul>
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+            {[
+              ["Color", COLORS[colorIndex].name],
+              ["Sound", soundOn ? SOUND_STYLE_LABELS[soundStyle] : "off"],
+              ["Guide", guideKey ?? "none"],
+              ["Pen", isDrawing ? "down" : "up"],
+            ].map(([k, v]) => (
+              <span key={k} className="rounded-full bg-background/60 px-3 py-1.5 ring-1 ring-border/70">
+                <span className="text-muted-foreground">{k}: </span>
+                <strong className="capitalize text-foreground">{v}</strong>
+              </span>
+            ))}
+            <span className="ml-auto flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={undo} className="h-9 gap-1.5 rounded-full px-3"><RotateCcw className="h-3.5 w-3.5" /> Undo</Button>
+              <Button size="sm" variant="outline" onClick={clearAll} className="h-9 gap-1.5 rounded-full px-3"><Trash2 className="h-3.5 w-3.5" /> Clear</Button>
+              <Button size="sm" variant="outline" onClick={exportDrawing} className="h-9 gap-1.5 rounded-full px-3"><Download className="h-3.5 w-3.5" /> Save</Button>
+              <Button size="sm" onClick={shareToGallery} disabled={sharing} className="h-9 gap-1.5 rounded-full px-3"><Share2 className="h-3.5 w-3.5" /> {sharing ? "Sending…" : "Share"}</Button>
+            </span>
           </div>
+        </section>
 
-          <div className="rounded-3xl bg-card/80 p-4 shadow-lg ring-1 ring-primary/15 backdrop-blur-md">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Sparkles className="h-4 w-4 text-primary" /> Shape guides
+        <aside className="space-y-6">
+          <section className={`${GLASS} p-5`} aria-labelledby="guides-heading">
+            <h2 id="guides-heading" className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              <span><span className="text-primary">02</span> / Shape guides</span>
+              <Sparkles className="h-4 w-4 opacity-70" aria-hidden />
             </h2>
-            <div className="flex flex-wrap gap-2">
+            <h3 className="mt-4 text-xl font-black tracking-tight">
+              Trace a <span className={`${ACCENT} text-[1.15em]`}>shape.</span>
+            </h3>
+            <div className="mt-4 grid grid-cols-2 gap-2">
               {GUIDE_ORDER.map((g) => {
                 const Icon = GUIDES[g].Icon;
                 const on = guideKey === g;
                 return (
                   <button
                     key={g}
+                    type="button"
                     onClick={() => (on ? stopGuide() : startGuide(g))}
                     aria-pressed={on}
-                    className={`flex h-10 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors ${
-                      on ? "bg-primary text-primary-foreground shadow-md" : "bg-background/60 text-foreground ring-1 ring-primary/10 hover:bg-primary/10"
-                    }`}
+                    className={`flex h-12 items-center gap-2.5 rounded-xl px-3 text-sm font-medium capitalize transition-colors ${on ? "bg-primary/15 ring-1 ring-primary/50" : "ring-1 ring-border/70 hover:bg-primary/10"}`}
                   >
-                    <Icon className="h-3.5 w-3.5" /> {g}
+                    <Icon className="h-4 w-4 shrink-0" /> {g}
                   </button>
                 );
               })}
             </div>
-            <p className="mt-3 text-[11px] text-muted-foreground">
-              Keyboard, no mic needed: arrow keys move, Space draws/lifts the pen, G cycles guides, L toggles
-              listening, H explains the page, U undoes, C clears, E saves, P shares to the gallery, [ and ]
-              change colour.
-            </p>
-          </div>
-        </div>
+            <p className="mt-3 text-xs text-muted-foreground">Say "guide circle", then "stop guide" to leave.</p>
+          </section>
+
+          <section className={`${GLASS} p-5`} aria-labelledby="colors-heading">
+            <h2 id="colors-heading" className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              <span><span className="text-primary">03</span> / Colors</span>
+              <Palette className="h-4 w-4 opacity-70" aria-hidden />
+            </h2>
+            <div className="mt-4 grid grid-cols-8 gap-2">
+              {COLORS.map((c, i) => (
+                <button
+                  key={c.name}
+                  type="button"
+                  onClick={() => setColorByName(c.name)}
+                  aria-label={`Color ${c.name}`}
+                  aria-pressed={colorIndex === i}
+                  className={`aspect-square w-full rounded-full ring-2 ring-offset-2 ring-offset-card transition-all hover:scale-110 ${colorIndex === i ? "scale-110 ring-foreground" : "ring-border/60"}`}
+                  style={{ backgroundColor: c.value }}
+                />
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">Say "color" and a name, like "color {COLORS[2].name}".</p>
+          </section>
+        </aside>
       </div>
+
+      {/* ───────── Everything you can say ───────── */}
+      <section className="mt-10" aria-labelledby="commands-heading">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+              <span aria-hidden className="h-px w-8 bg-primary/60" />
+              Commands
+            </div>
+            <h2 id="commands-heading" className="mt-3 text-3xl font-black tracking-[-0.03em] sm:text-4xl">
+              Everything you can <span className={`${ACCENT} text-[1.12em]`}>say.</span>
+            </h2>
+          </div>
+          <Button variant="outline" onClick={explainPage} className="h-12 gap-2 rounded-full bg-card/60 px-5">
+            <Volume2 className="h-4 w-4" /> Read them all aloud
+          </Button>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {COMMAND_GROUPS.map((g, i) => (
+            <article key={g.id} className={`${GLASS} flex flex-col p-5`} aria-labelledby={`cmd-${g.id}`}>
+              <h3 id={`cmd-${g.id}`} className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                <span><span className="text-primary">{String(i + 1).padStart(2, "0")}</span> / {g.title}</span>
+                <g.Icon className="h-4 w-4 opacity-70" aria-hidden />
+              </h3>
+              <ul className="mt-4 flex flex-wrap gap-2">
+                {g.phrases.map((p) => (
+                  <li key={p} className="rounded-full bg-background/60 px-3 py-1.5 text-sm font-medium text-foreground ring-1 ring-border/70">
+                    “{p}”
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">{g.note}</p>
+              <button
+                type="button"
+                onClick={() => say(g.speech, { force: true })}
+                className="mt-4 flex h-10 items-center gap-2 self-start rounded-full px-3.5 text-sm font-medium text-foreground ring-1 ring-border/70 transition-colors hover:bg-primary/10"
+              >
+                <Volume2 className="h-4 w-4" /> Hear this
+              </button>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* ───────── Keyboard fallback ───────── */}
+      <section className={`${GLASS} mt-8 p-6`} aria-labelledby="kbd-heading">
+        <h2 id="kbd-heading" className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          <span><span className="text-primary">08</span> / Keyboard, no mic needed</span>
+          <Keyboard className="h-4 w-4 opacity-70" aria-hidden />
+        </h2>
+        <ul className="mt-4 grid gap-x-6 gap-y-2 text-sm text-muted-foreground sm:grid-cols-2 lg:grid-cols-3">
+          <li>Arrow keys: move (Shift = 3 steps)</li>
+          <li>Space: pen down or up</li>
+          <li>L: start or stop listening</li>
+          <li>H: hear all commands</li>
+          <li>U: undo. C: clear</li>
+          <li>E: save. P: share to gallery</li>
+          <li>G: cycle shape guides</li>
+          <li>[ and ]: change colour</li>
+        </ul>
+        <div className="mt-5">
+          <Link
+            to="/studio"
+            className="inline-flex h-11 items-center rounded-full px-4 text-sm font-medium text-foreground ring-1 ring-border/70 transition-colors hover:bg-primary/10"
+          >
+            Prefer a visual studio? Go there instead
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }
