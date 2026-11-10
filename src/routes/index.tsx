@@ -726,13 +726,13 @@ function Index() {
               {[
                 {
                   icon: Ear,
-                  title: "Autonomous sound guide",
-                  body: "A fully hands-free audio guide for blind users, plus a sighted mode with visual aids — two ways to create.",
+                  title: "Smarter Voice Studio",
+                  body: "A fully hands-free smarter & AI-assisted voice studio for blind users.",
                 },
                 {
                   icon: Users2,
-                  title: "Collaborative canvas",
-                  body: "Draw together with someone else in real time.",
+                  title: "Collaborative canvas games",
+                  body: "Draw together and enjoy art games with other sighted users in real time.",
                 },
                 {
                   icon: Smartphone,
