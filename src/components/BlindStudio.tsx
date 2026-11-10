@@ -361,8 +361,8 @@ export function BlindStudio() {
   const soundVolumeRef = useRef(0.7);
   useEffect(() => { soundVolumeRef.current = soundVolume; }, [soundVolume]);
 
-  const [voicePersona, setVoicePersona] = useState<VoicePersona>("bear");
-  const voicePersonaRef = useRef<VoicePersona>("bear");
+  const [voicePersona, setVoicePersona] = useState<VoicePersona>("lady");
+  const voicePersonaRef = useRef<VoicePersona>("lady");
   const [voiceOn, setVoiceOn] = useState(true);
   const voiceOnRef = useRef(true);
   useEffect(() => { voiceOnRef.current = voiceOn; }, [voiceOn]);
@@ -888,9 +888,9 @@ export function BlindStudio() {
     const speakPrompt = () => {
       if (startedRef.current || window.speechSynthesis.speaking) return;
       const u = new SpeechSynthesisUtterance(GATE_PROMPT);
-      if (bennettVoiceRef.current) u.voice = bennettVoiceRef.current;
-      u.rate = 1.0;
-      u.pitch = 1.4;
+      if (ladyVoiceRef.current) u.voice = ladyVoiceRef.current;
+      u.rate = 1.05;
+      u.pitch = 1.3;
       window.speechSynthesis.speak(u);
     };
     const first = window.setTimeout(speakPrompt, 800);
@@ -953,7 +953,7 @@ export function BlindStudio() {
   const guidePath = useMemo(() => (guideKey ? scaleGuide(GUIDES[guideKey]) : null), [guideKey]);
   const guidePoints = guidePath ? guidePath.map((p) => `${p.x},${p.y}`).join(" ") : "";
 
-  const speechLabel = voicePersona === "bear" ? "Bennett" : "Lady";
+  const speechLabel = voicePersona === "bear" ? "Bennett" : "Lady guide";
   const statusText = !started
     ? "Waiting to begin"
     : speaking
